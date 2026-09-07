@@ -1,0 +1,189 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Enterprise Multi-Tenant Model
+model Tenant {
+  id        String   @id // e.g. TNT-LNT-001
+  key       String   @unique // TNT_LNT, TNT_TATA, TNT_GODREJ, TNT_SHAPOORJI
+  name      String
+  short     String
+  project   String
+  vendor    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     TenantUser[]
+  prs       PurchaseRequest[]
+  ppos      PPOItem[]
+  pos       PurchaseOrder[]
+}
+
+// 2. Tenant Personnel & Role Assignment
+model TenantUser {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role      String   // PROJECT_TEAM, PROJECT_HEAD_PR, CATEGORY_MANAGER, CATEGORY_MANAGER_2, PROJECT_HEAD_PPO, FINANCE_HEAD, VENDOR
+  name      String
+  title     String
+  email     String?
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, role])
+}
+
+// 3. Purchase Requisitions (PR)
+model PurchaseRequest {
+  id           String   @id // e.g. PR-2026-0005
+  tenantId     String?
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id])
+  title        String
+  projectName  String
+  costCentre   String
+  category     String
+  requester    String
+  reqDate      String?
+  requiredDate String?
+  status       String   @default("SUBMITTED") // DRAFT, SUBMITTED, APPROVED_BY_PROJECT_HEAD, ACCEPTED_BY_CATEGORY_MGR, CANCELLED
+  buyer        String?
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items        BOQItem[]
+  quotes       VendorQuote[]
+  negotiations NegotiationEvent[]
+  ppos         PPOItem[]
+  pos          PurchaseOrder[]
+}
+
+// 4. Granular BOQ Items
+model BOQItem {
+  id          String          @id @default(uuid())
+  prId        String
+  pr          PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  code        String          // e.g. CNT-TOP-GRN20
+  desc        String
+  uom         String
+  qty         Float
+  rateCard    Float?          @default(0)
+  quotedRate  Float?
+  benchmark   Float?          @default(0)
+  std         Float?          @default(0)
+  aiConf      String?         // e.g. "98%"
+  
+  // MLEO Breakdown (Material, Labour, Equipment, Overheads)
+  mleoM       Float?          @default(0)
+  mleoL       Float?          @default(0)
+  mleoE       Float?          @default(0)
+  mleoO       Float?          @default(0)
+
+  createdAt   DateTime        @default(now())
+}
+
+// 5. Vendor Master
+model VendorMaster {
+  id          String        @id // e.g. VND-001
+  name        String
+  category    String
+  rating      Float         @default(4.5)
+  isRateCard  Boolean       @default(false)
+  city        String
+  leadTime    String
+  createdAt   DateTime      @default(now())
+
+  quotes      VendorQuote[]
+}
+
+// 6. Vendor Quotations
+model VendorQuote {
+  id          String          @id @default(uuid())
+  prId        String
+  pr          PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  vendorId    String
+  vendor      VendorMaster    @relation(fields: [vendorId], references: [id])
+  initialRate Float
+  revisedRate Float?
+  gst         Float           @default(18)
+  leadTime    String
+  validTill   String
+  isL1        Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+}
+
+// 7. Multi-Round Negotiation History
+model NegotiationEvent {
+  id          String          @id @default(uuid())
+  prId        String
+  pr          PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  round       Int
+  user        String
+  type        String          // Original Quotation, Buyer Counter-Offer, Vendor Revised Quote
+  rate        Float
+  remarks     String
+  timestamp   String
+  createdAt   DateTime        @default(now())
+}
+
+// 8. Purchase Price Offer (PPO)
+model PPOItem {
+  id                 String           @id // e.g. PPO-2026-0015
+  tenantId           String?
+  tenant             Tenant?          @relation(fields: [tenantId], references: [id])
+  prId               String
+  pr                 PurchaseRequest  @relation(fields: [prId], references: [id])
+  vendor             String
+  itemDesc           String
+  unitRate           Float
+  qty                Float
+  totalVal           Float
+  taxRate            Float            @default(18)
+  taxAmount          Float
+  grandTotal         Float
+  paymentTerms       String?
+  leadTime           String?
+  status             String           @default("PENDING_APPROVAL") // PENDING_APPROVAL, TIER_1_PENDING, APPROVED_PO_ISSUED
+  
+  // Non-L1 Justification
+  isNonL1            Boolean          @default(false)
+  nonL1Category      String?
+  nonL1Justification String?
+
+  createdAt          DateTime         @default(now())
+  pos                PurchaseOrder[]
+}
+
+// 9. Official Purchase Orders / Work Orders
+model PurchaseOrder {
+  id           String          @id // e.g. PO-2026-0089
+  tenantId     String?
+  tenant       Tenant?         @relation(fields: [tenantId], references: [id])
+  ppoId        String?
+  ppo          PPOItem?        @relation(fields: [ppoId], references: [id])
+  prId         String
+  pr           PurchaseRequest @relation(fields: [prId], references: [id])
+  vendor       String
+  amount       Float
+  issueDate    String
+  deliveryDate String?
+  status       String          @default("ISSUED") // ISSUED, DISPATCHED, DELIVERED
+  createdAt    DateTime        @default(now())
+}
+
+// 10. Immutable Audit Trail (Tamper-Proof)
+model AuditLog {
+  id        String   @id @default(uuid())
+  timestamp String
+  user      String
+  role      String?
+  action    String
+  targetId  String?
+  details   String
+  createdAt DateTime @default(now())
+}
