@@ -14,6 +14,16 @@
 - Server logs are persisted to `logs/app.log` and `logs/error.log` with automatic 5MB rotation and automatic 7-day purging.
 - Logs can be searched or purged via `/api/logs`.
 
+### 📦 Separate Constants Architecture & Standards
+- Claude must maintain all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`).
+- Never define inline mock datasets, configuration dictionaries, or constant lists in components, hooks, or context files.
+- Always import constants via the central `@/constants` alias.
+
+### 🏷️ Separate Data Types & Interfaces Architecture & Standards
+- Claude must declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`).
+- Never define inline `interface` or `type` declarations inside components or runtime files.
+- Always import types via the central `@/types` alias.
+
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:
 - **Fast iterations on changed files**:

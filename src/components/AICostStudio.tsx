@@ -4,33 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, UserCheck, Send, Lightbulb, AlertCircle, RefreshCw, Cpu, CheckCircle2 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
-interface AICostStudioProps {
-  onNavigateToNegotiation: () => void;
-}
-
-interface MLEOPillars {
-  material: { percentage: number; cost: number; description: string };
-  labour: { percentage: number; cost: number; description: string };
-  equipment: { percentage: number; cost: number; description: string };
-  overheads: { percentage: number; cost: number; description: string };
-}
-
-interface CostInflator {
-  title: string;
-  description: string;
-}
-
-interface NegotiationScript {
-  title: string;
-  argument: string;
-}
-
-const PRESET_ITEMS = [
-  { name: 'Design Mix Concrete M30 with Fly Ash', qty: 450, uom: 'Cum', quote: 4200 },
-  { name: 'TMT Reinforcement Steel Bars Fe500D 25mm', qty: 150, uom: 'Ton', quote: 54000 },
-  { name: '20mm Polished Jet Black Granite Countertop', qty: 12.5, uom: 'Sqm', quote: 3550 },
-  { name: 'Water Cooled Screw Chiller Unit 200 TR', qty: 2, uom: 'Nos', quote: 3800000 },
-];
+import {
+  AICostStudioProps,
+  MLEOPillars,
+  CostInflator,
+  NegotiationScript,
+} from '@/types';
+import { PRESET_ITEMS } from '@/constants';
 
 export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiation }) => {
   const [selectedItemName, setSelectedItemName] = useState<string>(PRESET_ITEMS[0].name);

@@ -22,32 +22,15 @@ import {
   Calculator
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-
-interface VendorQuoteItem {
-  code: string;
-  desc: string;
-  uom: string;
-  qty: number;
-  rate1: number;
-  targetRate: number;
-  rate2: number;
-}
-
-const INITIAL_ITEMS: VendorQuoteItem[] = [
-  { code: 'CNT-TOP-GRN20', desc: '20mm Polished Jet Black Granite Countertop', uom: 'Sqm', qty: 12.5, rate1: 3900, targetRate: 3380, rate2: 3650 },
-  { code: 'CNT-PLY-BWP18', desc: '18mm Marine Grade BWP Plywood (IS 710)', uom: 'Sqm', qty: 38.0, rate1: 1650, targetRate: 1435, rate2: 1540 },
-  { code: 'CNT-LAM-1MM', desc: '1.0mm Textured HPL Laminate Fascia', uom: 'Sqm', qty: 24.0, rate1: 980, targetRate: 850, rate2: 910 },
-  { code: 'CNT-HDW-SOFT', desc: 'Soft-Close Concealed Hinges & Telescopic Slides', uom: 'Set', qty: 14.0, rate1: 2100, targetRate: 1715, rate2: 1950 },
-  { code: 'CNT-LED-PROF', desc: '12V DC Warm White LED Strip in Profile', uom: 'Rmt', qty: 16.0, rate1: 450, targetRate: 365, rate2: 410 },
-  { code: 'CNT-SKT-SS304', desc: '100mm SS 304 Brushed Skirting', uom: 'Rmt', qty: 14.0, rate1: 850, targetRate: 705, rate2: 780 }
-];
+import { VendorQuoteItem } from '@/types';
+import { INITIAL_VENDOR_QUOTE_ITEMS } from '@/constants';
 
 export const VendorPortal: React.FC = () => {
   const [activeVendor, setActiveVendor] = useState<'VND-001' | 'VND-002' | 'VND-005'>('VND-001');
   const [activePR, setActivePR] = useState<'PR-2026-0005' | 'PR-2026-0003'>('PR-2026-0005');
   const [activeTab, setActiveTab] = useState<'quote1' | 'quote2' | 'final' | 'ppo'>('quote1');
   
-  const [items, setItems] = useState<VendorQuoteItem[]>(INITIAL_ITEMS);
+  const [items, setItems] = useState<VendorQuoteItem[]>(INITIAL_VENDOR_QUOTE_ITEMS);
   const [rfqAccepted, setRfqAccepted] = useState<boolean>(false);
   const [ppoAccepted, setPpoAccepted] = useState<boolean>(false);
   const [quote1Submitted, setQuote1Submitted] = useState<boolean>(false);

@@ -5,10 +5,7 @@ import { FileCheck, FileBadge, Download, Check, Plus, ShieldCheck, CheckCircle2,
 import { useProcurement } from '../context/ProcurementContext';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-
-interface PPOModuleProps {
-  onOpenCreatePPO?: () => void;
-}
+import { PPOModuleProps } from '@/types';
 
 export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
   const { 

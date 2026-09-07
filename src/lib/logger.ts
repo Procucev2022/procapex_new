@@ -10,46 +10,16 @@
  *  - Automatic purging: purges expired logs based on retention compliance (default 7 days)
  */
 
-export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
+import { LogLevel, LogEntry, LogFilterOptions, LoggerConfig } from '@/types';
+import {
+  LOG_LEVEL_SEVERITY,
+  MAX_IN_MEMORY_LOGS,
+  MAX_LOG_FILE_SIZE_BYTES,
+  MAX_ROTATED_FILES,
+  DEFAULT_LOG_RETENTION_DAYS,
+} from '@/constants';
 
-export interface LogEntry {
-  id: string;
-  timestamp: string;
-  level: LogLevel;
-  module: string;
-  message: string;
-  data?: Record<string, any>;
-  correlationId?: string;
-  environment: 'server' | 'browser';
-}
-
-export interface LogFilterOptions {
-  level?: LogLevel;
-  module?: string;
-  search?: string;
-  startDate?: string;
-  endDate?: string;
-  correlationId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface LoggerConfig {
-  minLevel?: LogLevel;
-  maxMemoryLogs?: number;
-  logDir?: string;
-  maxFileSize?: number; // In bytes (default 5MB)
-  maxRotatedFiles?: number; // Default 5
-  retentionDays?: number; // Default 7 days
-  isServer?: boolean;
-}
-
-const LOG_LEVEL_SEVERITY: Record<LogLevel, number> = {
-  DEBUG: 10,
-  INFO: 20,
-  WARN: 30,
-  ERROR: 40,
-};
+export type { LogLevel, LogEntry, LogFilterOptions, LoggerConfig };
 
 /**
  * Safely serialize any object handling circular references and Error instances
@@ -111,10 +81,10 @@ export class CentralizedLogger {
 
   constructor(config: LoggerConfig = {}) {
     this.minLevel = config.minLevel || (process.env.LOG_LEVEL as LogLevel) || 'DEBUG';
-    this.maxMemoryLogs = config.maxMemoryLogs || 1000;
-    this.maxFileSize = config.maxFileSize || 5 * 1024 * 1024; // 5 MB
-    this.maxRotatedFiles = config.maxRotatedFiles || 5;
-    this.retentionDays = config.retentionDays || (parseInt(process.env.LOG_RETENTION_DAYS || '7', 10) || 7);
+    this.maxMemoryLogs = config.maxMemoryLogs || MAX_IN_MEMORY_LOGS;
+    this.maxFileSize = config.maxFileSize || MAX_LOG_FILE_SIZE_BYTES;
+    this.maxRotatedFiles = config.maxRotatedFiles || MAX_ROTATED_FILES;
+    this.retentionDays = config.retentionDays || (parseInt(process.env.LOG_RETENTION_DAYS || String(DEFAULT_LOG_RETENTION_DAYS), 10) || DEFAULT_LOG_RETENTION_DAYS);
     this.isServer = config.isServer !== undefined ? config.isServer : typeof window === 'undefined';
 
     if (this.isServer) {

@@ -3,16 +3,12 @@
 import React from 'react';
 import { Database, ShieldCheck } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
+import { STANDARD_MASTER_RATE_CARDS } from '@/constants';
 
 export const MastersAudit: React.FC = () => {
   const { auditLogs } = useProcurement();
 
-  const masters = [
-    { code: 'CON-RMC-M30', cat: 'Civil Materials', rate: '₹ 4,200', uom: 'Cum', region: 'North Hub (NCR)' },
-    { code: 'STL-TMT-25MM', cat: 'Structural Steel', rate: '₹ 54,000', uom: 'Ton', region: 'All Regions' },
-    { code: 'MEP-CHL-200TR', cat: 'MEP Equipment', rate: '₹ 38,00,000', uom: 'Nos', region: 'National' },
-    { code: 'FIN-TIL-600X600', cat: 'Finishing Services', rate: '₹ 650', uom: 'Sqm', region: 'Western Zone' }
-  ];
+  const masters = STANDARD_MASTER_RATE_CARDS;
 
   return (
     <div className="space-y-6">

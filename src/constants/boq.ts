@@ -1,0 +1,516 @@
+import {
+  RequesterBOQItem,
+  AttachedDoc,
+  DrawingScope,
+  PRData,
+  CommercialCounterItem,
+} from '@/types';
+
+export const DEFAULT_COUNTER_ITEMS: RequesterBOQItem[] = [
+  { code: 'CNT-TOP-GRN20', desc: '20mm thick Polished Jet Black Granite / Solid Surface Countertop with full bullnose edge profiling, sink/cable cutouts & waterproof ply underlay', uom: 'Sqm', qty: 12.5 },
+  { code: 'CNT-PLY-BWP18', desc: 'Marine Grade Boiling Water Proof (BWP) Plywood 18mm thick (IS 710) with anti-termite and borer treatment for counter internal carcass & framing', uom: 'Sqm', qty: 38.0 },
+  { code: 'CNT-LAM-1MM', desc: '1.0mm thick High Pressure Textured / Suede Finish Decorative Laminate on visible external fascias and drawers of Counter Elevation D', uom: 'Sqm', qty: 24.0 },
+  { code: 'CNT-HDW-SOFT', desc: 'Joinery & Hardware Package: Soft-close 3D adjustable concealed hinges, 45kg telescopic slides, and SS 304 profile handles', uom: 'Set', qty: 14.0 },
+  { code: 'CNT-LED-PROF', desc: '12V DC Warm White (3000K) High-CRI LED Strip Light in recessed slim aluminium channel with frosted diffuser under counter apron', uom: 'Rmt', qty: 16.0 },
+  { code: 'CNT-SKT-SS304', desc: '100mm high Stainless Steel Grade 304 Brushed Finish Toe-Kick Skirting / Plinth Protection with waterproof silicone sealing', uom: 'Rmt', qty: 14.0 }
+];
+
+export const INITIAL_DOCS: AttachedDoc[] = [
+  { name: 'Counter_Elevation_D_Approved_Drawing.pdf', type: 'Architectural Drawing (.pdf)', size: '2.4 MB', date: '2026-09-06', status: 'Attached' },
+  { name: 'IS_710_BWP_Plywood_Tech_Specs.pdf', type: 'Technical Specification (.pdf)', size: '1.1 MB', date: '2026-09-06', status: 'Attached' },
+  { name: 'Site_Dimension_Survey_Report.docx', type: 'Site Survey Report (.docx)', size: '850 KB', date: '2026-09-05', status: 'Attached' },
+  { name: 'Site_Readiness_Photo.jpg', type: 'Site Readiness Photo (.jpg)', size: '3.2 MB', date: '2026-09-05', status: 'Attached' }
+];
+
+export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
+  'COUNTER_ELEVATION_D': {
+    title: 'Counter Elevation D (Millwork & Counter Detail Drawing)',
+    scopeName: 'COUNTER ELEVATION D ONLY',
+    scopeDesc: 'Scoped strictly to specifications shown in Counter Elevation D: 20mm Granite/Solid Surface Top, 18mm BWP Plywood Carcass, 1.0mm HPL Textured Laminate, Soft-Close Joinery Hardware, 12V LED Profile & SS 304 Toe-kick.',
+    items: [
+      {
+        code: 'CNT-TOP-GRN20',
+        desc: '20mm thick Polished Jet Black Granite / Solid Surface Countertop with full bullnose edge profiling, cutouts for sink/cables, and waterproof backing over 18mm ply underlay',
+        uom: 'Sqm',
+        qty: 12.5,
+        rateCard: 3400,
+        benchmark: 3250,
+        std: 3300,
+        aiConf: '99%'
+      },
+      {
+        code: 'CNT-PLY-BWP18',
+        desc: 'Marine Grade Boiling Water Proof (BWP) Plywood 18mm thick (IS 710) with anti-termite and borer treatment for counter internal carcass, vertical dividers & base framing',
+        uom: 'Sqm',
+        qty: 38.0,
+        rateCard: 1450,
+        benchmark: 1380,
+        std: 1400,
+        aiConf: '99%'
+      },
+      {
+        code: 'CNT-LAM-1MM',
+        desc: '1.0mm thick High Pressure Textured / Suede Finish Decorative Laminate on all visible external fascias and drawers of Counter Elevation D with balancing laminate on reverse',
+        uom: 'Sqm',
+        qty: 24.0,
+        rateCard: 850,
+        benchmark: 800,
+        std: 820,
+        aiConf: '98%'
+      },
+      {
+        code: 'CNT-HDW-SOFT',
+        desc: 'Joinery & Hardware Package: Soft-close 3D adjustable concealed hinges, 45kg capacity full extension telescopic drawer slides, and SS 304 profile handles for Counter Elevation D',
+        uom: 'Set',
+        qty: 14.0,
+        rateCard: 1850,
+        benchmark: 1750,
+        std: 1800,
+        aiConf: '97%'
+      },
+      {
+        code: 'CNT-LED-PROF',
+        desc: '12V DC Warm White (3000K) High-CRI LED Strip Light (120 LEDs/m) in recessed slim aluminium channel with frosted diffuser under counter apron & bottom kickplate',
+        uom: 'Rmt',
+        qty: 16.0,
+        rateCard: 420,
+        benchmark: 390,
+        std: 400,
+        aiConf: '96%'
+      },
+      {
+        code: 'CNT-SKT-SS304',
+        desc: '100mm high Stainless Steel Grade 304 Brushed Finish Toe-Kick Skirting / Plinth Protection with waterproof silicone sealing at floor junction',
+        uom: 'Rmt',
+        qty: 14.0,
+        rateCard: 580,
+        benchmark: 540,
+        std: 560,
+        aiConf: '98%'
+      }
+    ]
+  },
+  'FOUNDATION_RAFT': {
+    title: 'Foundation Raft & Footing Reinforcement Drawing (DWG-STR-FND-01)',
+    scopeName: 'FOUNDATION RAFT ONLY',
+    scopeDesc: 'Scoped strictly to Raft M30 Concrete, 25mm/16mm Fe500D Rebars & 12mm Plywood Formwork.',
+    items: [
+      {
+        code: 'FND-RCC-M30',
+        desc: 'Design Mix Reinforced Cement Concrete M30 in Footings & Raft Slabs using 20mm graded aggregate (IS 456 & IS 10262)',
+        uom: 'Cum',
+        qty: 450,
+        rateCard: 4200,
+        benchmark: 4350,
+        std: 4150,
+        aiConf: '99%'
+      },
+      {
+        code: 'FND-REB-25MM',
+        desc: 'TMT Reinforcement Rebar Fe500D - 25mm dia for Raft Bottom & Top Main Mesh (IS 1786)',
+        uom: 'Ton',
+        qty: 55,
+        rateCard: 54000,
+        benchmark: 53200,
+        std: 53800,
+        aiConf: '98%'
+      },
+      {
+        code: 'FND-FRM-PLY12',
+        desc: '12mm Shuttering Plywood Formwork for Raft Perimeter',
+        uom: 'Sqm',
+        qty: 120
+      }
+    ]
+  }
+};
+
+export const INITIAL_PRS_DATA: Record<string, PRData> = {
+  'PR-2026-0005': {
+    id: 'PR-2026-0005',
+    title: 'Reception Counter Fabrication (Drawing: Counter Elevation D)',
+    project: 'Godrej Woods, Tower C',
+    costCenter: 'CC-104 (Finishing)',
+    category: 'Interior & Fitouts',
+    categoryMajor: 'INTERIOR',
+    method: 'METHOD_3',
+    methodName: 'Method 3: Drawing / PDF AI Scope Extraction',
+    methodBadgeClass: 'bg-purple-100 text-purple-900 border border-purple-300',
+    sourceFile: 'Counter_Elevation_D.pdf',
+    raiser: 'Rahul Verma (Site Lead)',
+    estBaseline: 141700,
+    targetDate: '2026-09-28',
+    site: 'Tower C Reception Lobby, Godrej Woods, Sector 43, Noida',
+    contact: 'Rajesh Sharma (+91 98765 43210)',
+    docCount: 2,
+    nominatedVendors: ['VND-001', 'VND-002'],
+    items: [
+      {
+        code: 'CNT-TOP-GRN20',
+        desc: '20mm Polished Jet Black Granite Countertop',
+        uom: 'Sqm',
+        qty: 12.5,
+        rateCard: 3400,
+        benchmark: 3250,
+        bestHistoricalPrice: 3400,
+        prevPo: 'PO-2025-0912 (Godrej Woods)',
+        mleo: { m: 1820, l: 580, e: 490, o: 360, conf: '98%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 3900, revisedRate: null },
+          'VND-002': { initialRate: 4100, revisedRate: null },
+          'VND-005': { initialRate: 4050, revisedRate: null }
+        }
+      },
+      {
+        code: 'CNT-PLY-BWP18',
+        desc: '18mm Marine Grade BWP Plywood (IS 710)',
+        uom: 'Sqm',
+        qty: 38.0,
+        rateCard: 1450,
+        benchmark: 1380,
+        bestHistoricalPrice: 1450,
+        prevPo: 'PO-2025-0912 (Godrej Woods)',
+        mleo: { m: 820, l: 290, e: 120, o: 150, conf: '97%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 1650, revisedRate: null },
+          'VND-002': { initialRate: 1780, revisedRate: null },
+          'VND-005': { initialRate: 1720, revisedRate: null }
+        }
+      },
+      {
+        code: 'CNT-LAM-1MM',
+        desc: '1.0mm Textured HPL Laminate Fascia',
+        uom: 'Sqm',
+        qty: 24.0,
+        rateCard: 850,
+        benchmark: 820,
+        bestHistoricalPrice: 850,
+        prevPo: 'PO-2025-0912 (Godrej Woods)',
+        mleo: { m: 480, l: 180, e: 60, o: 100, conf: '96%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 980, revisedRate: null },
+          'VND-002': { initialRate: 1050, revisedRate: null },
+          'VND-005': { initialRate: 1020, revisedRate: null }
+        }
+      },
+      {
+        code: 'CNT-HDW-SOFT',
+        desc: 'Soft-Close Concealed Hinges & Telescopic Slides',
+        uom: 'Set',
+        qty: 14.0,
+        rateCard: 1750,
+        benchmark: 1650,
+        bestHistoricalPrice: 1750,
+        prevPo: 'PO-2025-0912 (Godrej Woods)',
+        mleo: { m: 1050, l: 280, e: 90, o: 230, conf: '95%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 2100, revisedRate: null },
+          'VND-002': { initialRate: 2250, revisedRate: null },
+          'VND-005': { initialRate: 2180, revisedRate: null }
+        }
+      },
+      {
+        code: 'CNT-LED-PROF',
+        desc: '12V DC Warm White LED Strip in Profile',
+        uom: 'Rmt',
+        qty: 16.0,
+        rateCard: 380,
+        benchmark: 350,
+        bestHistoricalPrice: 380,
+        prevPo: 'PO-2025-0912 (Godrej Woods)',
+        mleo: { m: 210, l: 75, e: 20, o: 45, conf: '94%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 450, revisedRate: null },
+          'VND-002': { initialRate: 490, revisedRate: null },
+          'VND-005': { initialRate: 470, revisedRate: null }
+        }
+      },
+      {
+        code: 'CNT-SKT-SS304',
+        desc: '100mm SS 304 Brushed Skirting',
+        uom: 'Rmt',
+        qty: 14.0,
+        rateCard: 720,
+        benchmark: 680,
+        bestHistoricalPrice: 720,
+        prevPo: 'PO-2025-0912 (Godrej Woods)',
+        mleo: { m: 420, l: 140, e: 35, o: 85, conf: '96%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 850, revisedRate: null },
+          'VND-002': { initialRate: 920, revisedRate: null },
+          'VND-005': { initialRate: 890, revisedRate: null }
+        }
+      }
+    ]
+  },
+  'PR-2026-0003': {
+    id: 'PR-2026-0003',
+    title: 'HVAC Chillers, AHU & Air Distribution Package (Standard Template)',
+    project: 'Godrej One Corporate Towers',
+    costCenter: 'CC-103 (MEP & Heavy Systems)',
+    category: 'MEP & Heavy Systems',
+    categoryMajor: 'MEP',
+    method: 'METHOD_2',
+    methodName: 'Method 2: Corporate Standard Template (Filled)',
+    methodBadgeClass: 'bg-teal-100 text-teal-900 border border-teal-300',
+    sourceFile: 'Standard_HVAC_Package_Template_v2.csv',
+    raiser: 'Sanjay Gupta (MEP Lead)',
+    estBaseline: 656350,
+    targetDate: '2026-10-15',
+    site: 'HVAC Plant Room & Floor 4-8 AHU, Godrej One, Mumbai',
+    contact: 'Anil Deshmukh (+91 98330 44556)',
+    docCount: 2,
+    nominatedVendors: ['VND-014', 'VND-015'],
+    items: [
+      {
+        code: 'MEP-HVAC-AHU01',
+        desc: 'Double Skin Floor Mounted AHU 5000 CFM with VFD',
+        uom: 'Nos',
+        qty: 4.0,
+        rateCard: 65000,
+        benchmark: 62000,
+        bestHistoricalPrice: 65000,
+        prevPo: 'PO-2025-0810 (Godrej One)',
+        mleo: { m: 38000, l: 12500, e: 6000, o: 5500, conf: '99%' },
+        vendorRateCards: {
+          'VND-014': 65000,
+          'VND-015': 68500
+        },
+        vendorQuotes: {
+          'VND-014': { initialRate: 72000, revisedRate: null },
+          'VND-015': { initialRate: 76000, revisedRate: null }
+        }
+      },
+      {
+        code: 'MEP-HVAC-DUCT',
+        desc: 'Factory Fabricated Galvanized GI Ducting (Class 24)',
+        uom: 'Sqm',
+        qty: 320.0,
+        rateCard: 680,
+        benchmark: 640,
+        bestHistoricalPrice: 680,
+        prevPo: 'PO-2025-0810 (Godrej One)',
+        mleo: { m: 390, l: 140, e: 45, o: 65, conf: '98%' },
+        vendorRateCards: {
+          'VND-014': 680,
+          'VND-015': 650
+        },
+        vendorQuotes: {
+          'VND-014': { initialRate: 780, revisedRate: null },
+          'VND-015': { initialRate: 820, revisedRate: null }
+        }
+      },
+      {
+        code: 'MEP-HVAC-VAV',
+        desc: 'Pressure Independent VAV Terminal Units with Actuator',
+        uom: 'Nos',
+        qty: 16.0,
+        rateCard: 8500,
+        benchmark: 8100,
+        bestHistoricalPrice: 8500,
+        prevPo: 'PO-2025-0810 (Godrej One)',
+        mleo: { m: 5100, l: 1600, e: 600, o: 800, conf: '97%' },
+        vendorRateCards: {
+          'VND-014': 8500,
+          'VND-015': 8900
+        },
+        vendorQuotes: {
+          'VND-014': { initialRate: 9400, revisedRate: null },
+          'VND-015': { initialRate: 9900, revisedRate: null }
+        }
+      },
+      {
+        code: 'MEP-HVAC-GRIL',
+        desc: 'Extruded Aluminium Powder Coated Supply Air Grilles',
+        uom: 'Rmt',
+        qty: 45.0,
+        rateCard: 950,
+        benchmark: 900,
+        bestHistoricalPrice: 950,
+        prevPo: 'PO-2025-0810 (Godrej One)',
+        mleo: { m: 560, l: 190, e: 60, o: 90, conf: '95%' },
+        vendorRateCards: {
+          'VND-014': 950,
+          'VND-015': 920
+        },
+        vendorQuotes: {
+          'VND-014': { initialRate: 1080, revisedRate: null },
+          'VND-015': { initialRate: 1150, revisedRate: null }
+        }
+      }
+    ]
+  },
+  'PR-2026-0002': {
+    id: 'PR-2026-0002',
+    title: 'Substructure Concrete & Raft Foundation Package',
+    project: 'L&T Infotech Park Phase II',
+    costCenter: 'CC-101 (Civil & Structural)',
+    category: 'Civil & Structural',
+    categoryMajor: 'CIVIL',
+    method: 'METHOD_1',
+    methodName: 'Method 1: Spreadsheet Upload / Blank BOQ',
+    methodBadgeClass: 'bg-sky-100 text-sky-900 border border-sky-300',
+    sourceFile: 'Foundation_BOQ_Rev3.xlsx',
+    raiser: 'Amit Sharma (Structural Lead)',
+    estBaseline: 435000,
+    targetDate: '2026-09-20',
+    site: 'Block A Substructure, Infotech Park, Powai, Mumbai',
+    contact: 'Vikram Patil (+91 98220 11223)',
+    docCount: 3,
+    nominatedVendors: ['VND-011', 'VND-012'],
+    items: [
+      {
+        code: 'CIV-CONC-M30',
+        desc: 'Ready Mix Concrete M30 Grade with Flyash',
+        uom: 'Cum',
+        qty: 85.0,
+        rateCard: 4350,
+        benchmark: 4200,
+        bestHistoricalPrice: 4350,
+        prevPo: 'PO-2025-0450 (L&T Phase I)',
+        mleo: { m: 2650, l: 680, e: 450, o: 420, conf: '99%' },
+        vendorQuotes: {
+          'VND-011': { initialRate: 4850, revisedRate: null },
+          'VND-012': { initialRate: 5100, revisedRate: null }
+        }
+      },
+      {
+        code: 'CIV-FRM-PLY12',
+        desc: 'Waterproof Film-Faced Shuttering Plywood 12mm',
+        uom: 'Sqm',
+        qty: 140.0,
+        rateCard: 460,
+        benchmark: 430,
+        bestHistoricalPrice: 460,
+        prevPo: 'PO-2025-0450 (L&T Phase I)',
+        mleo: { m: 270, l: 90, e: 25, o: 45, conf: '97%' },
+        vendorQuotes: {
+          'VND-011': { initialRate: 520, revisedRate: null },
+          'VND-012': { initialRate: 550, revisedRate: null }
+        }
+      }
+    ]
+  },
+  'PR-2026-0004': {
+    id: 'PR-2026-0004',
+    title: 'Executive Joinery, Acoustic Paneling & Door Assemblies',
+    project: 'Tata Cyber City Tower 2',
+    costCenter: 'CC-104 (Finishing)',
+    category: 'Interior & Fitouts',
+    categoryMajor: 'INTERIOR',
+    method: 'METHOD_4',
+    methodName: 'Method 4: AI Pre-Estimator & Catalog',
+    methodBadgeClass: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+    sourceFile: 'ProCPX Standard Pre-Estimate Catalog',
+    raiser: 'Priya Nair (Interior Architect)',
+    estBaseline: 285000,
+    targetDate: '2026-10-05',
+    site: '7th Floor Executive Suites, Cyber City, Bengaluru',
+    contact: 'Karan Mehta (+91 97110 55443)',
+    docCount: 1,
+    nominatedVendors: ['VND-001', 'VND-003', 'VND-007'],
+    items: [
+      {
+        code: 'INT-ACS-PANEL',
+        desc: 'Fabric Wrapped Acoustic Wall Panels 25mm',
+        uom: 'Sqm',
+        qty: 65.0,
+        rateCard: 2200,
+        benchmark: 2100,
+        bestHistoricalPrice: 2200,
+        prevPo: 'PO-2025-0622 (Tata Cyber City T1)',
+        mleo: { m: 1320, l: 450, e: 140, o: 190, conf: '98%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 2450, revisedRate: null },
+          'VND-003': { initialRate: 2600, revisedRate: null },
+          'VND-007': { initialRate: 2520, revisedRate: null }
+        }
+      },
+      {
+        code: 'INT-DR-FLUSH',
+        desc: 'Solid Core Flush Doors 45mm with Teak Veneer',
+        uom: 'Nos',
+        qty: 18.0,
+        rateCard: 7800,
+        benchmark: 7400,
+        bestHistoricalPrice: 7800,
+        prevPo: 'PO-2025-0622 (Tata Cyber City T1)',
+        mleo: { m: 4600, l: 1550, e: 450, o: 800, conf: '97%' },
+        vendorQuotes: {
+          'VND-001': { initialRate: 8600, revisedRate: null },
+          'VND-003': { initialRate: 9100, revisedRate: null },
+          'VND-007': { initialRate: 8850, revisedRate: null }
+        }
+      }
+    ]
+  }
+};
+
+export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
+  {
+    code: 'CNT-TOP-GRN20',
+    desc: '20mm thick Polished Jet Black Granite Countertop',
+    uom: 'Sqm',
+    qty: 12.5,
+    rateCard: 3400,
+    quotedRate: 3900,
+    benchmark: 3250,
+    mleo: { m: 1820, l: 580, e: 490, o: 360, conf: '98%' },
+    std: 3300
+  },
+  {
+    code: 'CNT-PLY-BWP18',
+    desc: '18mm Marine Grade BWP Plywood (IS 710)',
+    uom: 'Sqm',
+    qty: 38.0,
+    rateCard: 1450,
+    quotedRate: 1650,
+    benchmark: 1380,
+    mleo: { m: 820, l: 290, e: 120, o: 150, conf: '97%' },
+    std: 1400
+  },
+  {
+    code: 'CNT-LAM-1MM',
+    desc: '1.0mm Textured HPL Laminate Fascia',
+    uom: 'Sqm',
+    qty: 24.0,
+    rateCard: 850,
+    quotedRate: 980,
+    benchmark: 820,
+    mleo: { m: 480, l: 180, e: 60, o: 100, conf: '96%' },
+    std: 820
+  },
+  {
+    code: 'CNT-HDW-SOFT',
+    desc: 'Soft-Close Concealed Hinges & Telescopic Slides',
+    uom: 'Set',
+    qty: 14.0,
+    rateCard: 1750,
+    quotedRate: 2100,
+    benchmark: 1650,
+    mleo: { m: 1050, l: 280, e: 90, o: 230, conf: '95%' },
+    std: 1800
+  },
+  {
+    code: 'CNT-LED-PROF',
+    desc: '12V DC Warm White LED Strip in Profile',
+    uom: 'Rmt',
+    qty: 16.0,
+    rateCard: 380,
+    quotedRate: 450,
+    benchmark: 350,
+    mleo: { m: 210, l: 75, e: 20, o: 45, conf: '94%' },
+    std: 400
+  },
+  {
+    code: 'CNT-SKT-SS304',
+    desc: '100mm SS 304 Brushed Skirting',
+    uom: 'Rmt',
+    qty: 14.0,
+    rateCard: 720,
+    quotedRate: 740,
+    benchmark: 680,
+    mleo: { m: 420, l: 140, e: 35, o: 85, conf: '96%' },
+    std: 560
+  }
+];

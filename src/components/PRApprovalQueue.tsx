@@ -3,10 +3,7 @@
 import React from 'react';
 import { CheckSquare, ArrowRight, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-
-interface PRApprovalQueueProps {
-  onRouteToCategoryManager?: () => void;
-}
+import { PRApprovalQueueProps } from '@/types';
 
 export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCategoryManager }) => {
   const { prs, activeTenant, approvePRByProjectHead, setActiveRole } = useProcurement();

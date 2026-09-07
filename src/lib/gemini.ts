@@ -1,5 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from './logger';
+import { MLEOCostBreakdown, NegotiationParams, NegotiationTactic } from '@/types';
+import { DEFAULT_GEMINI_MODEL } from '@/constants';
+
+export type { MLEOCostBreakdown, NegotiationParams, NegotiationTactic };
 
 /**
  * Returns the Gemini model configured via environment variable GEMINI_MODEL.
@@ -8,7 +12,7 @@ import { logger } from './logger';
 export function getConfiguredModelName(): string {
   const envModel = process.env.GEMINI_MODEL?.trim();
   if (!envModel) {
-    return 'gemini-2.0-flash-lite';
+    return DEFAULT_GEMINI_MODEL;
   }
   return envModel;
 }
@@ -20,7 +24,7 @@ export function getConfiguredModelName(): string {
 export function resolveApiModelId(modelName: string): string {
   const clean = modelName.toLowerCase().replace(/[\s_]/g, '-');
   if (clean.includes('3.5') || clean.includes('flash-lite')) {
-    return 'gemini-2.0-flash-lite';
+    return DEFAULT_GEMINI_MODEL;
   }
   if (clean.includes('flash')) {
     return 'gemini-1.5-flash';
@@ -47,23 +51,6 @@ export function getGeminiModel() {
     displayModelName: rawModelName,
     apiModelId,
   };
-}
-
-export interface MLEOCostBreakdown {
-  itemName: string;
-  targetRate: number;
-  maxLimit: number;
-  currency: string;
-  pillars: {
-    material: { percentage: number; cost: number; description: string };
-    labour: { percentage: number; cost: number; description: string };
-    equipment: { percentage: number; cost: number; description: string };
-    overheads: { percentage: number; cost: number; description: string };
-  };
-  inflators: Array<{ title: string; description: string }>;
-  negotiationScripts: Array<{ title: string; argument: string }>;
-  modelUsed: string;
-  isLiveAi: boolean;
 }
 
 /**

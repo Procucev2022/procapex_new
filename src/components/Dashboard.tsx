@@ -12,10 +12,7 @@ import {
   RotateCcw 
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-
-interface DashboardProps {
-  onNavigate: (tab: string) => void;
-}
+import { DashboardProps } from '@/types';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { prs, pos, activeTenant, resetToSampleData } = useProcurement();

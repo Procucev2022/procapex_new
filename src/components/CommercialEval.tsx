@@ -3,81 +3,11 @@
 import React from 'react';
 import { Scale, ArrowLeft, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-
-interface CommercialEvalProps {
-  onNavigateToAICost: () => void;
-  onNavigateToPPO: () => void;
-}
+import { COMMERCIAL_COUNTER_ITEMS } from '@/constants';
+import { CommercialEvalProps } from '@/types';
 
 export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICost, onNavigateToPPO }) => {
-  const counterItems = [
-    {
-      code: 'CNT-TOP-GRN20',
-      desc: '20mm thick Polished Jet Black Granite Countertop',
-      uom: 'Sqm',
-      qty: 12.5,
-      rateCard: 3400,
-      quotedRate: 3900,
-      benchmark: 3250,
-      mleo: { m: 1820, l: 580, e: 490, o: 360, conf: '98%' },
-      std: 3300
-    },
-    {
-      code: 'CNT-PLY-BWP18',
-      desc: '18mm Marine Grade BWP Plywood (IS 710)',
-      uom: 'Sqm',
-      qty: 38.0,
-      rateCard: 1450,
-      quotedRate: 1650,
-      benchmark: 1380,
-      mleo: { m: 820, l: 290, e: 120, o: 150, conf: '97%' },
-      std: 1400
-    },
-    {
-      code: 'CNT-LAM-1MM',
-      desc: '1.0mm Textured HPL Laminate Fascia',
-      uom: 'Sqm',
-      qty: 24.0,
-      rateCard: 850,
-      quotedRate: 980,
-      benchmark: 820,
-      mleo: { m: 480, l: 180, e: 60, o: 100, conf: '96%' },
-      std: 820
-    },
-    {
-      code: 'CNT-HDW-SOFT',
-      desc: 'Soft-Close Concealed Hinges & Telescopic Slides',
-      uom: 'Set',
-      qty: 14.0,
-      rateCard: 1750,
-      quotedRate: 2100,
-      benchmark: 1650,
-      mleo: { m: 1050, l: 280, e: 90, o: 230, conf: '95%' },
-      std: 1800
-    },
-    {
-      code: 'CNT-LED-PROF',
-      desc: '12V DC Warm White LED Strip in Profile',
-      uom: 'Rmt',
-      qty: 16.0,
-      rateCard: 380,
-      quotedRate: 450,
-      benchmark: 350,
-      mleo: { m: 210, l: 75, e: 20, o: 45, conf: '94%' },
-      std: 400
-    },
-    {
-      code: 'CNT-SKT-SS304',
-      desc: '100mm SS 304 Brushed Skirting',
-      uom: 'Rmt',
-      qty: 14.0,
-      rateCard: 720,
-      quotedRate: 740,
-      benchmark: 680,
-      mleo: { m: 420, l: 140, e: 35, o: 85, conf: '96%' },
-      std: 560
-    }
-  ];
+  const counterItems = COMMERCIAL_COUNTER_ITEMS;
 
   let totalRateCard = 0;
   let totalQuoted = 0;

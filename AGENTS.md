@@ -57,6 +57,53 @@ import { logger } from '@/lib/logger';
 
 ---
 
+## 📦 Separate Constants Architecture & Standards
+
+All AI coding agents MUST strictly maintain all constant values, configuration dictionaries, lookup tables, and mock dataset definitions in dedicated constant files under `src/constants/`.
+
+1. **Mandatory Centralization**:
+   - Application components, contexts, API routes, and hooks MUST NOT define inline mock datasets, lookup tables, or magic constant values.
+   - All constants must be placed in modular files within `src/constants/`:
+     - `src/constants/tenants.ts`: Multi-tenant enterprise configurations and tenant rosters (`TENANTS`).
+     - `src/constants/procurement.ts`: Requisition, quotation, negotiation, PPO, PO, and audit trail constants.
+     - `src/constants/vendors.ts`: Vendor database, ratings, and quote items.
+     - `src/constants/boq.ts`: BOQ catalogues, drawing scopes, and commercial counter items.
+     - `src/constants/masters.ts`: Standard master rate cards and catalog benchmarks.
+     - `src/constants/navigation.ts`: Application navigation items and role routing definitions.
+     - `src/constants/ai.ts`: AI model defaults, MLEO ratios, inflators, and negotiation scripts.
+     - `src/constants/logging.ts`: Logging thresholds, severity mappings, retention limits.
+     - `src/constants/index.ts`: Central barrel exporting all constants.
+
+2. **Clean Imports**:
+   - Always import constants using the `@/constants` path alias:
+     ```typescript
+     import { TENANTS, COMMERCIAL_COUNTER_ITEMS, NAV_ITEMS } from '@/constants';
+     ```
+
+---
+
+## 🏷️ Separate Data Types & Interfaces Architecture & Standards
+
+All AI coding agents MUST strictly declare all TypeScript types, interfaces, enums, and type aliases in dedicated type definition files under `src/types/`.
+
+1. **Zero Inline Types/Interfaces**:
+   - No `interface` or `type` declarations may be defined inline inside components, hooks, contexts, or API routes.
+   - All data contracts must be declared in modular files within `src/types/`:
+     - `src/types/procurement.ts`: Domain models (`PurchaseRequest`, `BOQItem`, `PPOItem`, `PurchaseOrder`, `AuditLog`, `TenantConfig`, etc.).
+     - `src/types/context.ts`: State management context contracts (`ProcurementContextType`).
+     - `src/types/components.ts`: Component props and UI-specific data structures (`HeaderProps`, `DashboardProps`, `PRModuleProps`, etc.).
+     - `src/types/ai.ts`: AI service and cost breakdown interfaces (`MLEOCostBreakdown`, `NegotiationParams`, etc.).
+     - `src/types/logger.ts`: Logger domain types (`LogLevel`, `LogEntry`, `LoggerConfig`, etc.).
+     - `src/types/index.ts`: Central barrel re-exporting all types.
+
+2. **Clean Type Imports**:
+   - Always import types using the `@/types` path alias:
+     ```typescript
+     import { PurchaseRequest, HeaderProps, UserRole, TenantKey } from '@/types';
+     ```
+
+---
+
 ## ⚡ Quality Check & Verification Requirements
 
 ### Mandatory Quality Check Execution

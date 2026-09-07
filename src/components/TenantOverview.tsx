@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Building2, Check, Users, MapPin, Briefcase } from 'lucide-react';
-import { useProcurement, TENANTS } from '../context/ProcurementContext';
-import { TenantKey } from '../types';
+import { Building2, Check } from 'lucide-react';
+import { useProcurement } from '../context/ProcurementContext';
+import { TENANTS } from '@/constants';
+import { TenantKey } from '@/types';
 
 export const TenantOverview: React.FC = () => {
   const { activeTenantKey, changeTenant } = useProcurement();

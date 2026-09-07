@@ -1,40 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TenantOverview } from '@/components/TenantOverview';
-import { useProcurement, TENANTS } from '@/context/ProcurementContext';
+import { useProcurement } from '@/context/ProcurementContext';
+import { TENANTS } from '@/constants';
 
-jest.mock('@/context/ProcurementContext', () => {
-  const actualTenants = {
-    TNT_LNT: {
-      id: 'TNT-LNT-001',
-      name: 'Larsen & Toubro ECC',
-      short: 'L&T',
-      project: 'Noida International Airport Terminal 1',
-      team: {
-        PROJECT_TEAM: { name: 'Amitabh Sen', title: 'Senior Project Engineer' },
-        PROJECT_HEAD_PR: { name: 'Capt. R. K. Nair', title: 'Project Director' },
-        CATEGORY_MANAGER: { name: 'Divya Nair', title: 'Category Manager' },
-        FINANCE_HEAD: { name: 'K. Venkatraman', title: 'VP Commercial' },
-      },
-    },
-    TNT_TATA: {
-      id: 'TNT-TATA-002',
-      name: 'Tata Projects Global',
-      short: 'Tata',
-      project: 'Mumbai Coastal Road Project Package 2',
-      team: {
-        PROJECT_TEAM: { name: 'Rahul Joshi', title: 'Lead Site Engineer' },
-        PROJECT_HEAD_PR: { name: 'Sanjay Deshmukh', title: 'Chief Project Manager' },
-        CATEGORY_MANAGER: { name: 'Priya Sharma', title: 'Category Manager' },
-        FINANCE_HEAD: { name: 'Nilesh Parekh', title: 'Head of Finance' },
-      },
-    },
-  };
-  return {
-    useProcurement: jest.fn(),
-    TENANTS: actualTenants,
-  };
-});
+jest.mock('@/context/ProcurementContext', () => ({
+  useProcurement: jest.fn(),
+}));
 
 describe('TenantOverview Component', () => {
   const mockChangeTenant = jest.fn();
@@ -51,8 +23,8 @@ describe('TenantOverview Component', () => {
     render(<TenantOverview />);
 
     expect(screen.getByText('Multi-Tenancy Architecture & Corporate Roster')).toBeInTheDocument();
-    expect(screen.getByText('Larsen & Toubro ECC')).toBeInTheDocument();
-    expect(screen.getByText('Tata Projects Global')).toBeInTheDocument();
+    expect(screen.getByText(TENANTS.TNT_LNT.name)).toBeInTheDocument();
+    expect(screen.getByText(TENANTS.TNT_TATA.name)).toBeInTheDocument();
 
     expect(screen.getByText('Current Active Client')).toBeInTheDocument();
 
