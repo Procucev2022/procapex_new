@@ -62,7 +62,11 @@ describe('AICostStudio Component', () => {
     });
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to load AI status', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ui/AICostStudio]'),
+        'Failed to load AI status',
+        expect.anything()
+      );
     });
     consoleSpy.mockRestore();
   });
@@ -174,7 +178,11 @@ describe('AICostStudio Component', () => {
     });
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error running Gemini cost analysis:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ui/AICostStudio]'),
+        'Error running Gemini cost analysis',
+        expect.anything()
+      );
     });
     consoleSpy.mockRestore();
   });

@@ -6,6 +6,14 @@
 - Claude must proactively inspect and auto-update [.gitignore](file:///c:/Users/procu/Desktop/Code/work/procapex_new/.gitignore) whenever introducing new generated files, dependencies, build artifacts, certificates, secret files, or temporary caches.
 - Never commit `.env`, secrets, credentials, or generated files.
 
+### 📝 Structured Detailed Logging Standards
+- Claude must incorporate structured detailed logging using `import { logger } from '@/lib/logger'` across all API routes, state actions, services, and components.
+- Do not use raw `console.*` calls in application code.
+- Always include `module`, `message`, structured metadata (`data`), and `correlationId` where applicable.
+- Use appropriate log levels (`DEBUG`, `INFO`, `WARN`, `ERROR`).
+- Server logs are persisted to `logs/app.log` and `logs/error.log` with automatic 5MB rotation and automatic 7-day purging.
+- Logs can be searched or purged via `/api/logs`.
+
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:
 - **Fast iterations on changed files**:

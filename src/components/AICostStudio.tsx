@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sparkles, UserCheck, Send, Lightbulb, AlertCircle, RefreshCw, Cpu, CheckCircle2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface AICostStudioProps {
   onNavigateToNegotiation: () => void;
@@ -78,11 +79,17 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
   useEffect(() => {
     fetch('/api/ai/status')
       .then((res) => res.json())
-      .then((data) => setAiStatus(data))
-      .catch((err) => console.error('Failed to load AI status', err));
+      .then((data) => {
+        logger.debug('ui/AICostStudio', 'Loaded AI provider status', data);
+        setAiStatus(data);
+      })
+      .catch((err) => {
+        logger.error('ui/AICostStudio', 'Failed to load AI status', { error: err?.message });
+      });
   }, []);
 
   const handleSelectPreset = (preset: typeof PRESET_ITEMS[0]) => {
+    logger.debug('ui/AICostStudio', 'Selected item preset for analysis', { preset: preset.name });
     setSelectedItemName(preset.name);
     setCustomItem('');
     setQuantity(preset.qty);
@@ -93,6 +100,12 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
   const handleGenerateAnalysis = async () => {
     const itemToAnalyze = customItem.trim() || selectedItemName;
     setIsLoading(true);
+    logger.info('ui/AICostStudio', 'Initiating cost analysis from UI', {
+      itemToAnalyze,
+      quantity,
+      uom,
+      quotedRate,
+    });
     try {
       const res = await fetch('/api/ai/cost-analysis', {
         method: 'POST',
@@ -110,14 +123,20 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
       }
 
       const data = await res.json();
+      logger.info('ui/AICostStudio', 'Cost analysis received successfully in UI', {
+        targetRate: data.targetRate,
+        maxLimit: data.maxLimit,
+        modelUsed: data.modelUsed,
+      });
+
       if (data.targetRate) setTargetRate(data.targetRate);
       if (data.maxLimit) setMaxLimit(data.maxLimit);
       if (data.pillars) setPillars(data.pillars);
       if (data.inflators) setInflators(data.inflators);
       if (data.negotiationScripts) setScripts(data.negotiationScripts);
       if (data.modelUsed) setModelUsedNote(data.modelUsed);
-    } catch (err) {
-      console.error('Error running Gemini cost analysis:', err);
+    } catch (err: any) {
+      logger.error('ui/AICostStudio', 'Error running Gemini cost analysis', { error: err?.message });
     } finally {
       setIsLoading(false);
     }

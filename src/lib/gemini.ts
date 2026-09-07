@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logger } from './logger';
 
 /**
  * Returns the Gemini model configured via environment variable GEMINI_MODEL.
@@ -75,9 +76,22 @@ export async function generateCostAnalysis(
   currentQuote?: number
 ): Promise<MLEOCostBreakdown> {
   const gemini = getGeminiModel();
+  logger.info('lib/gemini', 'Initiating MLEO cost analysis', {
+    itemDescription,
+    quantity,
+    uom,
+    currentQuote,
+    hasApiKey: Boolean(gemini),
+  });
 
   if (gemini) {
+    const startTime = Date.now();
     try {
+      logger.debug('lib/gemini', 'Dispatching prompt to Gemini API', {
+        apiModelId: gemini.apiModelId,
+        itemDescription,
+      });
+
       const prompt = `You are an expert construction and industrial procurement cost engineer.
 Analyze the following item and perform a bottom-up MLEO (Material, Labour, Equipment, Overheads) cost deconstruction:
 Item: "${itemDescription}"
@@ -111,13 +125,23 @@ Respond ONLY with valid JSON in this exact structure without markdown backticks:
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
+      logger.info('lib/gemini', 'Gemini live AI cost analysis completed successfully', {
+        durationMs: Date.now() - startTime,
+        targetRate: parsed.targetRate,
+        maxLimit: parsed.maxLimit,
+        modelUsed: gemini.displayModelName,
+      });
+
       return {
         ...parsed,
         modelUsed: gemini.displayModelName,
         isLiveAi: true,
       };
-    } catch (err) {
-      console.warn('Gemini API call failed, falling back to intelligent estimation:', err);
+    } catch (err: any) {
+      logger.warn('lib/gemini', 'Gemini API call failed, falling back to intelligent heuristic calculation', {
+        error: err?.message,
+        durationMs: Date.now() - startTime,
+      });
     }
   }
 
@@ -127,6 +151,12 @@ Respond ONLY with valid JSON in this exact structure without markdown backticks:
   const labCost = Math.round(baseRate * 0.14);
   const eqCost = Math.round(baseRate * 0.18);
   const ovhCost = baseRate - matCost - labCost - eqCost;
+
+  logger.info('lib/gemini', 'Generated bottom-up heuristic cost estimation', {
+    itemDescription,
+    baseRate,
+    isLiveAi: false,
+  });
 
   return {
     itemName: itemDescription,
@@ -194,8 +224,23 @@ export async function generateCounterOffer(params: {
   const gemini = getGeminiModel();
   const { prTitle, itemName, vendorQuoteRate, targetBenchmark, currentRound, historySummary } = params;
 
+  logger.info('lib/gemini', 'Generating negotiation counter-offer', {
+    prTitle,
+    itemName,
+    vendorQuoteRate,
+    targetBenchmark,
+    currentRound,
+    hasApiKey: Boolean(gemini),
+  });
+
   if (gemini) {
+    const startTime = Date.now();
     try {
+      logger.debug('lib/gemini', 'Dispatching negotiation prompt to Gemini API', {
+        apiModelId: gemini.apiModelId,
+        currentRound,
+      });
+
       const prompt = `You are an expert commercial procurement negotiator for an enterprise EPC construction firm.
 We are negotiating on:
 PR: "${prTitle}"
@@ -217,13 +262,22 @@ Provide a tactical counter-offer. Respond ONLY with valid JSON in this structure
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
+      logger.info('lib/gemini', 'Gemini negotiation counter-offer generated', {
+        durationMs: Date.now() - startTime,
+        recommendedCounterRate: parsed.recommendedCounterRate,
+        modelUsed: gemini.displayModelName,
+      });
+
       return {
         ...parsed,
         modelUsed: gemini.displayModelName,
         isLiveAi: true,
       };
-    } catch (err) {
-      console.warn('Gemini counter-offer generation failed:', err);
+    } catch (err: any) {
+      logger.warn('lib/gemini', 'Gemini counter-offer generation failed, falling back to heuristic calculation', {
+        error: err?.message,
+        durationMs: Date.now() - startTime,
+      });
     }
   }
 
@@ -231,6 +285,12 @@ Provide a tactical counter-offer. Respond ONLY with valid JSON in this structure
   const gap = vendorQuoteRate - targetBenchmark;
   const concession = currentRound === 1 ? gap * 0.35 : gap * 0.55;
   const counterRate = Math.round(targetBenchmark + concession);
+
+  logger.info('lib/gemini', 'Generated heuristic counter-offer tactic', {
+    counterRate,
+    concession,
+    isLiveAi: false,
+  });
 
   return {
     recommendedCounterRate: counterRate,

@@ -4,6 +4,13 @@
 - Proactively inspect and auto-update `.gitignore` whenever introducing new files, dependencies, build outputs, certificates, secret files, or temporary caches.
 - Never commit `.env` or sensitive secret credentials.
 
+## 📝 Structured Detailed Logging Standards
+- Integrate structured detailed logging using `import { logger } from '@/lib/logger'` across all API routes, state actions, services, and components.
+- Do not use raw `console.*` calls in application code.
+- Always include `module`, `message`, structured metadata (`data`), and `correlationId`.
+- Server logs are persisted to `logs/app.log` and `logs/error.log` with automatic 5MB rotation and 7-day purging.
+- Logs can be searched or purged via `/api/logs`.
+
 ## ⚡ Quality Check Execution After Every Change
 - **Fast iterations on changed files**:
   `npm run check:fast`

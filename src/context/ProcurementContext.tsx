@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole, TenantKey, TenantConfig, PurchaseRequest, VendorQuote, NegotiationEvent, PPOItem, PurchaseOrder, AuditLog } from '../types';
+import { logger } from '../lib/logger';
 
 export const TENANTS: Record<TenantKey, TenantConfig> = {
   'TNT_LNT': {
@@ -291,10 +292,17 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   const activeTenant = TENANTS[activeTenantKey];
 
   const changeTenant = (key: TenantKey) => {
+    logger.info('context/procurement', 'Switching active procurement tenant', {
+      previousTenant: activeTenantKey,
+      newTenant: key,
+    });
     setActiveTenantKey(key);
   };
 
   const approveTier1 = () => {
+    logger.info('context/procurement', 'Approved Tier 1 sign-off for PPO-2026-0015', {
+      user: 'Rajesh Singhania (Category Manager 2)',
+    });
     setTier1Approved(true);
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -305,6 +313,9 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const approveTier2 = () => {
+    logger.info('context/procurement', 'Approved Tier 2 site budget clearance for PPO-2026-0015', {
+      user: 'Anil Kulkarni (Project Head)',
+    });
     setTier2Approved(true);
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -315,6 +326,11 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const approveTier3AndReleasePO = () => {
+    logger.info('context/procurement', 'PPO Tier 3 Approved & Purchase Order Released', {
+      user: 'Sunil Deshmukh (Finance Head)',
+      ppoId: 'PPO-2026-0015',
+      poId: 'PO-2026-0089',
+    });
     setTier3Approved(true);
     setPoReleased(true);
     setPpos(prev => prev.map(p => p.id === 'PPO-2026-0015' ? { ...p, status: 'APPROVED_PO_ISSUED' } : p));
@@ -327,6 +343,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const resetTiers = () => {
+    logger.debug('context/procurement', 'Reset approval tiers state');
     setTier1Approved(false);
     setTier2Approved(false);
     setTier3Approved(false);
@@ -340,6 +357,13 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       status: 'SUBMITTED',
       buyer: 'Unassigned'
     };
+    logger.info('context/procurement', 'Purchase Request created and submitted', {
+      prId: newPR.id,
+      title: newPR.title,
+      category: newPR.category,
+      costCentre: newPR.costCentre,
+      itemsCount: newPR.items.length,
+    });
     setPrs(prev => [newPR, ...prev]);
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -350,6 +374,12 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const updatePRStatus = (id: string, status: PurchaseRequest['status'], comments?: string) => {
+    logger.info('context/procurement', 'Updated PR status', {
+      prId: id,
+      newStatus: status,
+      role: activeRole,
+      comments,
+    });
     setPrs(prev => prev.map(p => p.id === id ? { ...p, status, buyer: status === 'ACCEPTED' ? 'Vikram Mehta (Category Mgr)' : p.buyer } : p));
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -360,15 +390,26 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const approvePRByProjectHead = (id: string) => {
+    logger.info('context/procurement', 'PR approved by Project Head', { prId: id });
     updatePRStatus(id, 'APPROVED_BY_PROJECT_HEAD', 'Project Head approved. Routed to Category Manager.');
   };
 
   const updateBOQItems = (prId: string, items: PurchaseRequest['items']) => {
+    logger.info('context/procurement', 'Updated BOQ line items for PR', {
+      prId,
+      itemsCount: items.length,
+    });
     setPrs(prev => prev.map(p => p.id === prId ? { ...p, items } : p));
   };
 
   const addNegotiationRound = (prId: string, rate: number, remarks: string, actionType: string) => {
     const roundNum = (negotiations[prId]?.length || 0) + 1;
+    logger.info('context/procurement', 'Recorded negotiation round event', {
+      prId,
+      round: roundNum,
+      rate,
+      actionType,
+    });
     const newEvent: NegotiationEvent = {
       round: roundNum,
       user: actionType === 'BUYER_COUNTER' ? 'Vikram Mehta (Category Mgr)' : 'Vendor Representative',
@@ -390,12 +431,23 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       status: 'PENDING_APPROVAL',
       createdDate: new Date().toISOString().split('T')[0]
     };
+    logger.info('context/procurement', 'Created Pending Purchase Order (PPO)', {
+      ppoId: newPPO.id,
+      prId: newPPO.prId,
+      vendor: newPPO.vendor,
+      grandTotal: newPPO.grandTotal,
+    });
     setPpos(prev => [newPPO, ...prev]);
   };
 
   const approvePPO = (ppoId: string) => {
-    setPpos(prev => prev.map(p => p.id === ppoId ? { ...p, status: 'APPROVED' } : p));
     const ppo = ppos.find(p => p.id === ppoId);
+    logger.info('context/procurement', 'Approved PPO and issuing official Purchase Order', {
+      ppoId,
+      vendor: ppo?.vendor,
+      amount: ppo?.grandTotal,
+    });
+    setPpos(prev => prev.map(p => p.id === ppoId ? { ...p, status: 'APPROVED' } : p));
     if (ppo) {
       const newPO: PurchaseOrder = {
         id: `PO-2026-000${pos.length + 1}`,
@@ -411,6 +463,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const resetToSampleData = () => {
+    logger.info('context/procurement', 'Reset procurement system data to sample state');
     setPrs(INITIAL_PRS);
     setQuotes(INITIAL_QUOTES);
     setNegotiations(INITIAL_NEGO);

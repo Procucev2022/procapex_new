@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Handshake, History, Send, RefreshCw, CheckCircle2, Sparkles } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
+import { logger } from '@/lib/logger';
 
 export const NegotiationHub: React.FC = () => {
   const { negotiations, addNegotiationRound } = useProcurement();
@@ -86,6 +87,10 @@ export const NegotiationHub: React.FC = () => {
               <button
                 type="button"
                 onClick={async () => {
+                  logger.info('ui/NegotiationHub', 'Triggered smart counter-offer generation', {
+                    selectedPRId,
+                    currentRound: activeRounds.length + 1,
+                  });
                   try {
                     const res = await fetch('/api/ai/negotiation', {
                       method: 'POST',
@@ -100,11 +105,14 @@ export const NegotiationHub: React.FC = () => {
                     });
                     if (res.ok) {
                       const data = await res.json();
+                      logger.info('ui/NegotiationHub', 'Smart counter-offer received in UI', {
+                        recommendedCounterRate: data.recommendedCounterRate,
+                      });
                       if (data.recommendedCounterRate) setRate(String(data.recommendedCounterRate));
                       if (data.counterRemarks) setRemarks(data.counterRemarks);
                     }
-                  } catch (e) {
-                    console.error('Failed to generate counter tactic', e);
+                  } catch (e: any) {
+                    logger.error('ui/NegotiationHub', 'Failed to generate counter tactic', { error: e?.message });
                   }
                 }}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-1.5 px-2 rounded-md shadow-xs flex items-center justify-center space-x-1"

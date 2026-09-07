@@ -161,7 +161,11 @@ describe('NegotiationHub Component', () => {
     fireEvent.click(geminiBtn);
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to generate counter tactic', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ui/NegotiationHub]'),
+        'Failed to generate counter tactic',
+        expect.anything()
+      );
     });
 
     consoleSpy.mockRestore();

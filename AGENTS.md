@@ -23,6 +23,38 @@ All AI coding agents MUST inspect and auto-update [.gitignore](file:///c:/Users/
    - **OS & IDE files**: `.DS_Store`, `Thumbs.db`, `.idea/`, `.vscode/*`
    - **Scratch & Agent Caches**: `tmp/`, `temp/`, `.agents/**/cache/`, `.agents/**/scratch/`
 
+# ==============================================================================
+# 📝 Structured Detailed Logging Standards
+# ==============================================================================
+
+### Mandatory Logging Across Application
+All AI coding agents MUST incorporate detailed, structured logging across all new or modified features, API routes, services, state transitions, and components using the centralized logger:
+```typescript
+import { logger } from '@/lib/logger';
+```
+
+1. **No Ad-Hoc `console.*` Calls**:
+   - Application code must never use raw `console.log`, `console.warn`, or `console.error`.
+   - Always route logs through `logger.info`, `logger.debug`, `logger.warn`, or `logger.error`.
+
+2. **Required Log Attributes**:
+   - **Module**: Clear path identifier (e.g. `'api/cost-analysis'`, `'lib/gemini'`, `'context/procurement'`).
+   - **Message**: Concise description of the event or milestone.
+   - **Data / Metadata**: Structured payload (e.g. request parameters, calculation results, timing `durationMs`, error objects).
+   - **Correlation ID**: Unique trace identifier for correlating API requests and downstream operations (`req-...`).
+
+3. **Log Severity Levels**:
+   - **`DEBUG`**: Granular internal state, prompt payloads, intermediate computations.
+   - **`INFO`**: Key business milestones, API requests, state changes, approvals, PO creations.
+   - **`WARN`**: Fallbacks, heuristic downgrades, non-critical validation rejections.
+   - **`ERROR`**: Caught exceptions and failures, always including error message and stack trace.
+
+4. **Local Persistence, Searchability & Automatic Purging**:
+   - When running locally or on server runtime, logs are persisted to `logs/app.log` and `logs/error.log`.
+   - Log files rotate automatically at 5MB.
+   - Automatic purging cleans up logs older than retention policy (default 7 days) to manage storage and compliance.
+   - Search, filter, and purge logs via `GET /api/logs` or `POST /api/logs`.
+
 ---
 
 ## ⚡ Quality Check & Verification Requirements
