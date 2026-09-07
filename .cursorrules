@@ -1,0 +1,9 @@
+# Cursor AI Rules - ProCPX Procurement System
+
+## Unit Test Coverage Guidelines
+- 90% Unit Test Code Coverage is strictly enforced per file across lines, statements, branches, and functions.
+- Whenever making code changes, ALWAYS run:
+  `npm run test:coverage`
+- Do not skip any file. Every file in `src/` must maintain 90%+ coverage.
+- Tests must use `--detectOpenHandles` to prevent unclosed resources.
+- Global test timeout is configured at 30 seconds.

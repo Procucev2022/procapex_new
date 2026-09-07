@@ -48,7 +48,7 @@ export const VendorPortal: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'quote1' | 'quote2' | 'final' | 'ppo'>('quote1');
   
   const [items, setItems] = useState<VendorQuoteItem[]>(INITIAL_ITEMS);
-  const [rfqAccepted, setRfqAccepted] = useState<boolean>(true);
+  const [rfqAccepted, setRfqAccepted] = useState<boolean>(false);
   const [ppoAccepted, setPpoAccepted] = useState<boolean>(false);
   const [quote1Submitted, setQuote1Submitted] = useState<boolean>(false);
   const [quote2Submitted, setQuote2Submitted] = useState<boolean>(false);

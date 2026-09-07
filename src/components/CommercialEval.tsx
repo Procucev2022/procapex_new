@@ -72,7 +72,7 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
       uom: 'Rmt',
       qty: 14.0,
       rateCard: 720,
-      quotedRate: 850,
+      quotedRate: 740,
       benchmark: 680,
       mleo: { m: 420, l: 140, e: 35, o: 85, conf: '96%' },
       std: 560

@@ -104,6 +104,12 @@ const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         benchmark: 53200,
         std: 53800,
         aiConf: '98%'
+      },
+      {
+        code: 'FND-FRM-PLY12',
+        desc: '12mm Shuttering Plywood Formwork for Raft Perimeter',
+        uom: 'Sqm',
+        qty: 120
       }
     ]
   }
