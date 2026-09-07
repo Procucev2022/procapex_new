@@ -1,9 +1,28 @@
 # Cursor AI Rules - ProCPX Procurement System
 
-## Unit Test Coverage Guidelines
+## 🛡️ Gitignore Auto-Update Policy
+- Proactively inspect and auto-update `.gitignore` whenever introducing new files, dependencies, build outputs, certificates, secret files, or temporary caches.
+- Never commit `.env` or sensitive secret credentials.
+
+## ⚡ Quality Check Execution After Every Change
+- **Fast iterations on changed files**:
+  `npm run check:fast`
+  (Checks only modified files: tsc --noEmit, jest --onlyChanged, fast lint, prisma validate).
+- **Before completing any task (Full Check)**:
+  `npm run check:all`
+  (Runs full quality check pipeline).
+- **Workspace-wide check**:
+  `npm run check:workspace`
+  (Global check across all workspace projects).
+
+## 🥇 Strict Check Order: Build & Coverage First
+1. Build Verification: `npm run build`
+2. Unit Test Coverage: `npm run test:coverage` (Strict 90% benchmark per file across lines, statements, branches, and functions)
+3. Typecheck: `npm run typecheck`
+4. Lint: `npm run lint`
+5. Database Schema & Migrations: `npm run db:validate` / `npm run db:migrate`
+
+## 🎯 90% Unit Test Code Coverage Benchmark
 - 90% Unit Test Code Coverage is strictly enforced per file across lines, statements, branches, and functions.
-- Whenever making code changes, ALWAYS run:
-  `npm run test:coverage`
-- Do not skip any file. Every file in `src/` must maintain 90%+ coverage.
-- Tests must use `--detectOpenHandles` to prevent unclosed resources.
-- Global test timeout is configured at 30 seconds.
+- Do not skip any file in `src/`.
+- Tests must use `--detectOpenHandles` and respect 30s timeout.

@@ -2328,7 +2328,7 @@ export const CategoryManagerHub: React.FC<{ onRouteToPPO: () => void }> = ({ onR
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
                       <span>Audited Non-L1 Commercial Exception Justification Note:</span>
                     </span>
-                    <p className="text-amber-900 pl-5"><strong>Category:</strong> {awardedPPO.justification.category} • <strong>Justification:</strong> "{awardedPPO.justification.text}"</p>
+                    <p className="text-amber-900 pl-5"><strong>Category:</strong> {awardedPPO.justification.category} • <strong>Justification:</strong> &ldquo;{awardedPPO.justification.text}&rdquo;</p>
                   </div>
                 )}
 
@@ -2393,7 +2393,7 @@ export const CategoryManagerHub: React.FC<{ onRouteToPPO: () => void }> = ({ onR
               <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-3">
                 <FileCheck2 className="w-10 h-10 text-slate-400 mx-auto" />
                 <h4 className="text-sm font-bold text-slate-700">No Vendor Finalized Yet for PPO Drafting</h4>
-                <p className="text-xs text-slate-500 max-w-md mx-auto">Please go to Sub-Tab 3 (4-Way Commercial Matrix) and click "Award & Generate PPO" on your preferred vendor to initialize the PPO proposal.</p>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">Please go to Sub-Tab 3 (4-Way Commercial Matrix) and click &ldquo;Award &amp; Generate PPO&rdquo; on your preferred vendor to initialize the PPO proposal.</p>
                 <button onClick={() => setActiveTab('commercial')} className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow">
                   Open 4-Way Commercial Matrix →
                 </button>

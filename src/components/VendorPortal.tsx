@@ -549,7 +549,7 @@ export const VendorPortal: React.FC = () => {
               <div className="space-y-1">
                 <span className="font-black text-sm text-white block">Ready to Submit 1st Round Formal Quotation?</span>
                 <p className="text-xs text-purple-200">
-                  Both your itemized commercial unit rates and quoted terms & conditions will be transmitted directly to Category Manager's 4-Way Commercial Matrix.
+                  Both your itemized commercial unit rates and quoted terms &amp; conditions will be transmitted directly to Category Manager&apos;s 4-Way Commercial Matrix.
                 </p>
               </div>
               <button
@@ -885,7 +885,7 @@ export const VendorPortal: React.FC = () => {
               <div className="space-y-1">
                 <span className="font-black text-sm text-white block">Ready to Submit Revised 2nd Quote (BAFO)?</span>
                 <p className="text-xs text-emerald-200">
-                  Submitting revised 2nd quote and terms will update Category Manager's Negotiation Hub and 4-Way CBA Matrix in real time.
+                  Submitting revised 2nd quote and terms will update Category Manager&apos;s Negotiation Hub and 4-Way CBA Matrix in real time.
                 </p>
               </div>
               <button

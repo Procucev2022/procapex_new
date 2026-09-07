@@ -1,21 +1,38 @@
 # CLAUDE.md - AI Coding Instructions for Claude
 
-## Testing & Code Quality Standards
+## Quality Check & Gitignore Standards
 
-### 90% Unit Test Code Coverage (Mandatory)
-- Every single file under `src/**/*.{ts,tsx}` must satisfy $\ge 90\%$ code coverage individually on:
-  - Lines ($\ge 90\%$)
-  - Statements ($\ge 90\%$)
-  - Branches ($\ge 90\%$)
-  - Functions ($\ge 90\%$)
-- If any file falls below 90% on any metric, Jest will fail.
-- Do not skip any file.
+### 🛡️ Gitignore Auto-Update Policy
+- Claude must proactively inspect and auto-update [.gitignore](file:///c:/Users/procu/Desktop/Code/work/procapex_new/.gitignore) whenever introducing new generated files, dependencies, build artifacts, certificates, secret files, or temporary caches.
+- Never commit `.env`, secrets, credentials, or generated files.
 
-### Commands to Run
-- `npm run test`: Run unit tests with `--detectOpenHandles --runInBand`.
-- `npm run test:coverage`: Run unit tests with coverage verification and `--detectOpenHandles`.
-- Always run `npm run test:coverage` after modifying or adding code to ensure 90% threshold compliance across all files.
+### ⚡ Mandatory Quality Checks After Every Change
+After every change, run the appropriate quality checks:
+- **Fast iterations on changed files**:
+  ```bash
+  npm run check:fast
+  ```
+  Runs incremental typecheck, tests only changed files (`jest --onlyChanged`), lints modified files, and validates Prisma schema.
+- **Before completing any task (Full Check)**:
+  ```bash
+  npm run check:all
+  ```
+  Runs the full pipeline in mandatory strict order.
 
-### Global Test Timeout
-- All tests run with a 30,000ms global timeout defined in `jest.config.js`.
-- Always mock external APIs (Prisma, Gemini, fetch) to keep tests deterministic and fast.
+### 🥇 Strict Quality Check Order
+1. **Build Verification**: `npm run build`
+2. **Unit Test Code Coverage**: `npm run test:coverage` (strict 90% benchmark per file across lines, statements, branches, and functions)
+3. **Typecheck**: `npm run typecheck` (`tsc --noEmit`)
+4. **Lint**: `npm run lint` (`next lint`)
+5. **Database Schema & Migrations**: `npm run db:validate` / apply pending migrations
+
+### 🎯 Mandatory 90% Unit Test Code Coverage
+- Every file in `src/**/*.{ts,tsx}` must satisfy $\ge 90\%$ code coverage individually on Lines, Statements, Branches, and Functions.
+- All tests must run with `--detectOpenHandles` and respect the 30s timeout.
+
+### 🌐 Multi-Project Workspace
+- In multi-project workspaces, use:
+  ```bash
+  npm run check:workspace
+  ```
+  to check all projects globally across the workspace.
