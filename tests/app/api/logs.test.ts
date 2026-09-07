@@ -88,6 +88,38 @@ describe('/api/logs API Route', () => {
       expect(json2.retentionDays).toBe(7);
     });
 
+    it('executes diagnose action and returns log analysis report', async () => {
+      logger.error('diagnose-test', 'PrismaClientInitializationError: Unable to connect');
+
+      const req = new NextRequest('http://localhost:3000/api/logs?action=diagnose');
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.action).toBe('diagnose');
+      expect(json.report).toBeDefined();
+      expect(typeof json.report.healthScore).toBe('number');
+      expect(Array.isArray(json.report.diagnosedBugs)).toBe(true);
+    });
+
+    it('executes auto-resolve action and attempts resolution on diagnosed bugs', async () => {
+      logger.error('autoresolve-test', 'ECONNREFUSED 127.0.0.1:5432');
+
+      const req = new NextRequest('http://localhost:3000/api/logs?action=auto-resolve');
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.action).toBe('auto-resolve');
+      expect(json.report).toBeDefined();
+      expect(json.resolution).toBeDefined();
+      expect(typeof json.resolution.attemptedCount).toBe('number');
+      expect(typeof json.resolution.resolvedCount).toBe('number');
+      expect(Array.isArray(json.resolution.actions)).toBe(true);
+    });
+
     it('handles unexpected errors gracefully and returns 500', async () => {
       jest.spyOn(logger, 'searchLogs').mockImplementationOnce(() => {
         throw new Error('Database search explosion');

@@ -16,3 +16,4 @@ export * from './logging';
 export * from './database';
 export * from './graphql';
 export * from './crypto';
+export * from './diagnostics';

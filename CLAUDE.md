@@ -43,6 +43,12 @@
 - Implement field-level encryption (`encryptFields()`) for sensitive financial/payment details and deterministic blind indexing (`generateBlindIndex()`) for searchable encrypted fields.
 - Never log plaintext secrets; trace operations via `logger.debug` with cryptographic metadata.
 
+### 🐛 Auto-Resolve Bugs & Errors in Logs
+- Continuously monitor and analyze application logs (`logs/error.log`, `logs/app.log`) and runtime error streams.
+- Automatically parse stack traces, error codes, and correlation IDs using `src/lib/log-analyzer.ts` or `npm run logs:analyze` to diagnose root causes.
+- Implement verified bug fixes targeting underlying defects, apply automated resolutions (`npm run logs:auto-resolve`), and add regression tests.
+- Validate all bug fixes through the mandatory quality check pipeline (`npm run check:all`: Build $\rightarrow$ Coverage $\ge 90\%$ $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation).
+
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:
 - **Fast iterations on changed files**:

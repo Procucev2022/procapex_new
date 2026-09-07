@@ -173,6 +173,33 @@ All AI coding agents MUST incorporate AES encryption algorithms to guarantee the
 
 ---
 
+## 🐛 Auto-Resolve Bugs & Errors in Logs Standards
+
+All AI coding agents MUST continuously monitor, analyze, and resolve application bugs and runtime errors captured in log files (`logs/error.log`, `logs/app.log`).
+
+1. **Automated Log Monitoring & Stack Trace Parsing**:
+   - Whenever test failures, API errors, or unhandled rejections occur, agents MUST inspect log files and parse runtime log outputs, stack traces, and error codes.
+   - Utilize the centralized diagnostics engine (`src/lib/log-analyzer.ts`) or run `npm run logs:analyze` to extract:
+     - Error category (`TYPE_ERROR`, `DATABASE_ERROR`, `GRAPHQL_ERROR`, `CRYPTO_ERROR`, etc.).
+     - Culprit file path and line number from parsed stack frames.
+     - Correlation ID (`req-...`, `gql-...`) to trace associated state and input payloads.
+
+2. **Root Cause Diagnosis & Verified Bug Resolution**:
+   - Trace underlying issues beyond surface symptoms (e.g. missing null guards, broken type contracts, stale cache entries, schema drift).
+   - Implement verified code fixes targeting the root cause to prevent recurring failures.
+   - Add dedicated regression test cases in `tests/` covering the failure condition.
+
+3. **Mandatory Quality Check Verification for All Bug Fixes**:
+   - Every bug fix MUST be validated through the full quality check pipeline:
+     - Production Build: `npm run build` with 0 errors.
+     - Unit Test Code Coverage: $\ge 90\%$ per file across all 4 parameters (`npm run test:coverage`).
+     - TypeScript: `npm run typecheck` (`tsc --noEmit`).
+     - Linting: `npm run lint` (`next lint`).
+     - Database: `npm run db:validate`.
+   - Never consider a bug resolved until all verification stages pass with 0 regressions.
+
+---
+
 ## ⚡ Quality Check & Verification Requirements
 
 ### Mandatory Quality Check Execution

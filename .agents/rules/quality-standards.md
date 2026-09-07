@@ -44,7 +44,13 @@
 - Enforce field-level encryption (`encryptFields()`) on sensitive financial and procurement data, and deterministic blind indexing (`generateBlindIndex()`) for searchable encrypted fields.
 - Strictly prohibit plaintext secret logging; audit events with metadata via `logger.debug`.
 
-### 8. Mandatory Quality Check Execution
+### 8. Auto-Resolve Bugs & Errors in Logs Standards
+- Continuously monitor runtime logs (`logs/error.log`, `logs/app.log`) for unhandled exceptions, query failures, and client errors.
+- Parse stack traces, error codes, and correlation IDs via `src/lib/log-analyzer.ts` or `npm run logs:analyze` to pinpoint culprit files and line numbers.
+- Implement verified bug fixes targeting root causes, execute automated remediations (`npm run logs:auto-resolve`), and prevent recurring failures with regression tests.
+- Validate every bug fix through the mandatory quality check pipeline (`npm run check:all`) to ensure zero regressions.
+
+### 9. Mandatory Quality Check Execution
 - AI coding agents must run quality checks after every change:
   - **Fast check for rapid development**:
     ```bash
@@ -61,7 +67,7 @@
     ```
     Recursively validates all projects in the workspace.
 
-### 9. Strict Check Order: Build & Coverage Checked First
+### 10. Strict Check Order: Build & Coverage Checked First
 Full quality checks must follow this mandatory sequence:
 1. **Build Verification**: `npm run build`
 2. **Unit Test Code Coverage**: `npm run test:coverage` (90% per-file benchmark across lines, statements, branches, and functions, `--detectOpenHandles`)
@@ -69,11 +75,11 @@ Full quality checks must follow this mandatory sequence:
 4. **Lint**: `npm run lint` (`next lint`)
 5. **Database Schema & Migrations**: `npm run db:validate` / apply pending migrations
 
-### 10. Zero Tolerance for Coverage Regressions
+### 11. Zero Tolerance for Coverage Regressions
 - No files may be skipped.
 - Per-file thresholds must strictly remain $\ge 90\%$ on all 4 metrics.
 
-### 11. CI/CD Pull Request Pipeline & Quality Reporting
+### 12. CI/CD Pull Request Pipeline & Quality Reporting
 - Pull requests trigger `.github/workflows/pull-request.yml` with a strict job timeout (`timeout-minutes: 20`).
 - Pipeline enforces Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 metrics) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
 - Generates and publishes an automated PR summary comment detailing test pass/fail counts and overall & per-file coverage statistics (`npm run ci:summary`).

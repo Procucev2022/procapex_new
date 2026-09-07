@@ -22,7 +22,9 @@
     "check:fast": "node scripts/quality-check.js --fast",
     "check:all": "node scripts/quality-check.js",
     "check:workspace": "node scripts/quality-check.js --workspace",
-    "ci:summary": "node scripts/generate-pr-summary.js"
+    "ci:summary": "node scripts/generate-pr-summary.js",
+    "logs:analyze": "node scripts/auto-resolve-logs.js --analyze",
+    "logs:auto-resolve": "node scripts/auto-resolve-logs.js --resolve"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

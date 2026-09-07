@@ -44,6 +44,10 @@ import {
   ENCRYPTION_SERIALIZATION_PREFIX,
   DEFAULT_ENCRYPTION_SECRET_FALLBACK,
   CRYPTO_ERROR_MESSAGES,
+  BUG_CATEGORIES,
+  COMMON_ERROR_PATTERNS,
+  DEFAULT_LOG_ANALYZER_CONFIG,
+  RESOLUTION_STRATEGIES,
 } from '@/constants';
 
 import * as tenantsModule from '@/constants/tenants';
@@ -57,6 +61,7 @@ import * as loggingModule from '@/constants/logging';
 import * as databaseModule from '@/constants/database';
 import * as graphqlModule from '@/constants/graphql';
 import * as cryptoModule from '@/constants/crypto';
+import * as diagnosticsModule from '@/constants/diagnostics';
 import * as indexModule from '@/constants/index';
 
 describe('Constants Architecture & Integrity Test Suite', () => {
@@ -302,6 +307,19 @@ describe('Constants Architecture & Integrity Test Suite', () => {
     });
   });
 
+  describe('Diagnostics Constants', () => {
+    it('should export log diagnostics categories, patterns, and resolution strategies', () => {
+      expect(diagnosticsModule.BUG_CATEGORIES.TYPE_ERROR).toBe('TYPE_ERROR');
+      expect(diagnosticsModule.BUG_CATEGORIES.DATABASE_ERROR).toBe('DATABASE_ERROR');
+      expect(diagnosticsModule.BUG_CATEGORIES.CRYPTO_ERROR).toBe('CRYPTO_ERROR');
+
+      expect(diagnosticsModule.COMMON_ERROR_PATTERNS.length).toBeGreaterThan(0);
+      expect(diagnosticsModule.DEFAULT_LOG_ANALYZER_CONFIG.maxLogLinesToScan).toBe(1000);
+      expect(diagnosticsModule.DEFAULT_LOG_ANALYZER_CONFIG.maxStackFrames).toBe(10);
+      expect(diagnosticsModule.RESOLUTION_STRATEGIES.CLEAR_DATABASE_CACHE_AND_VALIDATE_SCHEMA).toBeDefined();
+    });
+  });
+
   describe('Index Barrel Export', () => {
     it('should re-export all constants correctly from index', () => {
       expect(indexModule.TENANTS).toBe(tenantsModule.TENANTS);
@@ -316,6 +334,8 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(indexModule.GRAPHQL_COMPLEXITY_LIMITS).toBe(graphqlModule.GRAPHQL_COMPLEXITY_LIMITS);
       expect(indexModule.DEFAULT_AES_ALGORITHM).toBe(cryptoModule.DEFAULT_AES_ALGORITHM);
       expect(indexModule.PBKDF2_ITERATIONS).toBe(cryptoModule.PBKDF2_ITERATIONS);
+      expect(indexModule.BUG_CATEGORIES).toBe(diagnosticsModule.BUG_CATEGORIES);
+      expect(indexModule.RESOLUTION_STRATEGIES).toBe(diagnosticsModule.RESOLUTION_STRATEGIES);
     });
   });
 });

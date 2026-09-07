@@ -12,12 +12,12 @@
 - Logs can be searched or purged via `/api/logs`.
 
 ## 📦 Separate Constants Architecture & Standards
-- Keep all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`).
+- Keep all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`).
 - Never define inline mock datasets, configuration dictionaries, or constant lists in components, hooks, or context files.
 - Always import constants via the central `@/constants` alias.
 
 ## 🏷️ Separate Data Types & Interfaces Architecture & Standards
-- Declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`).
+- Declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`).
 - Never define inline `interface` or `type` declarations inside components or runtime files.
 - Always import types via the central `@/types` alias.
 
@@ -39,6 +39,12 @@
 - Require fresh nonces/IVs (12 bytes for GCM) and strictly verify 128-bit authentication tags on decryption.
 - Support field-level encryption (`encryptFields()`) and deterministic blind indexing (`generateBlindIndex()`) for searchable encrypted fields.
 - Never log plaintext secrets or keys in application logs; audit operations via `logger.debug`.
+
+## 🐛 Auto-Resolve Bugs & Errors in Logs Standards
+- Proactively monitor and analyze logs (`logs/error.log`, `logs/app.log`) to catch runtime defects.
+- Use `src/lib/log-analyzer.ts` or `npm run logs:analyze` to parse stack frames, error codes, and correlation IDs.
+- Execute verified bug fixes and auto-resolutions (`npm run logs:auto-resolve`) to prevent recurring failures.
+- Validate all bug fixes through the mandatory quality check pipeline (`npm run check:all`) to guarantee zero regressions.
 
 ## ⚡ Quality Check Execution After Every Change
 - **Fast iterations on changed files**:
