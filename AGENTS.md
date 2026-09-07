@@ -104,6 +104,51 @@ All AI coding agents MUST strictly declare all TypeScript types, interfaces, enu
 
 ---
 
+## ⚡ Database Optimization & Compute Minimization Standards
+
+All AI coding agents MUST audit database queries for efficiency and implement optimizations to minimize database compute hours, reduce resource usage, and maximize infrastructure efficiency.
+
+1. **Mandatory Query Auditing**:
+   - Every database interaction must be tracked through `dbAuditor` (`src/lib/db-auditor.ts`) and the Prisma query middleware.
+   - Queries executing $\ge 100\text{ms}$ (`slowQueryThresholdMs`) MUST be flagged as slow queries and logged with `logger.warn`.
+   - Regularly inspect database efficiency metrics via `dbAuditor.getMetrics()` or the `databaseAuditMetrics` GraphQL query.
+
+2. **Compute Hour Minimization via Intelligent Caching**:
+   - AI agents MUST use the centralized read-through query cache (`dbCache` in `src/lib/db-cache.ts`) for all read-heavy, low-churn datasets (e.g. `tenants`, `mastersRateCards`, `vendors`, active `purchaseRequests`).
+   - Read queries must declare appropriate cache tags (`CACHE_TAGS` from `@/constants`).
+   - Write and mutation operations MUST immediately invalidate the corresponding cache tags (`dbCache.invalidateByTag(tag)`) to guarantee read-after-write consistency while preventing redundant database compute hours.
+
+3. **Selective Field Projections & Zero N+1 Queries**:
+   - Prohibit unbounded queries and `SELECT *` patterns. Always specify explicit `select` fields in Prisma or explicit selection sets in GraphQL.
+   - Batch entity resolutions to prevent N+1 query waterfalls.
+
+4. **Connection Pooling & Resource Limits**:
+   - Enforce connection pool constraints and query timeouts.
+   - Never leave unclosed Prisma connections in tests or long-running tasks.
+
+---
+
+## 🌐 GraphQL Integration & Streamlined Data Fetching Standards
+
+All AI coding agents MUST utilize and maintain the centralized GraphQL layer at `/api/graphql` to streamline data fetching across the application.
+
+1. **Schema-First Data Fetching**:
+   - All GraphQL types, queries, and mutations must be declared in `src/graphql/schema.ts` and resolved in `src/graphql/resolvers.ts`.
+   - Prevent over-fetching and under-fetching by defining granular, reusable GraphQL types and selective field resolution.
+
+2. **Query Complexity & Security Bounds**:
+   - All incoming GraphQL operations must adhere to `GRAPHQL_COMPLEXITY_LIMITS` (maximum payload length, pagination limits).
+   - Reject malformed or excessively deep queries with structured error responses (`GRAPHQL_ERROR_CODES`).
+
+3. **Structured Operation Logging & Correlation**:
+   - Route handlers in `/api/graphql` MUST generate a unique `correlationId` (`gql-...`) and log operation execution time, error counts, and compute hours saved.
+
+4. **Cache-Aware Resolvers**:
+   - GraphQL query resolvers MUST leverage `dbCache.wrap()` to serve repeated reads from memory.
+   - GraphQL mutations MUST invoke `dbCache.invalidateByTag()` upon successful database writes.
+
+---
+
 ## ⚡ Quality Check & Verification Requirements
 
 ### Mandatory Quality Check Execution

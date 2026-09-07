@@ -20,9 +20,21 @@
 - Always import constants via the central `@/constants` alias.
 
 ### 🏷️ Separate Data Types & Interfaces Architecture & Standards
-- Claude must declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`).
+- Claude must declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`).
 - Never define inline `interface` or `type` declarations inside components or runtime files.
 - Always import types via the central `@/types` alias.
+
+### ⚡ Database Optimization & Compute Minimization Standards
+- Audit database queries using `dbAuditor` (`src/lib/db-auditor.ts`).
+- Queries $\ge 100\text{ms}$ must be flagged as slow queries and logged via `logger.warn`.
+- Use read-through caching (`dbCache` in `src/lib/db-cache.ts`) with tag-based invalidation to minimize database compute hours and avoid redundant roundtrips.
+- Enforce selective projections (avoid `SELECT *`) and eliminate N+1 queries through batching.
+
+### 🌐 GraphQL Integration & Streamlined Data Fetching
+- Maintain the unified GraphQL endpoint at `/api/graphql` with schema in `src/graphql/schema.ts` and resolvers in `src/graphql/resolvers.ts`.
+- Streamline client data fetching by requesting exact selection sets without over-fetching or under-fetching.
+- Enforce complexity limits (`GRAPHQL_COMPLEXITY_LIMITS`) and structured logging with correlation IDs on all operations.
+- Ensure GraphQL resolvers leverage `dbCache` for reads and invalidate tags on mutations.
 
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:

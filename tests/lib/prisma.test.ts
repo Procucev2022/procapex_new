@@ -39,4 +39,33 @@ describe('Prisma Client Singleton', () => {
     expect(mod.prisma).toBeDefined();
     expect(globalForPrisma.prisma).toBeUndefined();
   });
+
+  describe('Prisma Query Audit Middleware', () => {
+    it('should audit query execution with model and action', async () => {
+      const { prismaQueryAuditMiddleware } = await import('@/lib/prisma');
+      const next = jest.fn().mockResolvedValue([{ id: '1' }]);
+
+      const result = await prismaQueryAuditMiddleware(
+        { model: 'Tenant', action: 'findMany' },
+        next
+      );
+
+      expect(result).toEqual([{ id: '1' }]);
+      expect(next).toHaveBeenCalledWith({ model: 'Tenant', action: 'findMany' });
+    });
+
+    it('should audit raw queries when model and action are omitted', async () => {
+      const { prismaQueryAuditMiddleware } = await import('@/lib/prisma');
+      const next = jest.fn().mockResolvedValue('ok');
+
+      const result = await prismaQueryAuditMiddleware({}, next);
+      expect(result).toBe('ok');
+    });
+
+    it('should create PrismaClient instance using createPrismaClient', async () => {
+      const { createPrismaClient } = await import('@/lib/prisma');
+      const client = createPrismaClient();
+      expect(client).toBeDefined();
+    });
+  });
 });

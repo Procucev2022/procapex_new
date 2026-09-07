@@ -26,6 +26,12 @@ import {
   MAX_LOG_FILE_SIZE_BYTES,
   MAX_ROTATED_FILES,
   MAX_IN_MEMORY_LOGS,
+  DEFAULT_DB_OPTIMIZATION_CONFIG,
+  CACHE_TAGS,
+  DB_COMPUTE_METRICS,
+  GRAPHQL_COMPLEXITY_LIMITS,
+  GRAPHQL_ERROR_CODES,
+  DEFAULT_GRAPHQL_INTROSPECTION_QUERY,
 } from '@/constants';
 
 import * as tenantsModule from '@/constants/tenants';
@@ -36,6 +42,8 @@ import * as mastersModule from '@/constants/masters';
 import * as navigationModule from '@/constants/navigation';
 import * as aiModule from '@/constants/ai';
 import * as loggingModule from '@/constants/logging';
+import * as databaseModule from '@/constants/database';
+import * as graphqlModule from '@/constants/graphql';
 import * as indexModule from '@/constants/index';
 
 describe('Constants Architecture & Integrity Test Suite', () => {
@@ -238,6 +246,30 @@ describe('Constants Architecture & Integrity Test Suite', () => {
     });
   });
 
+  describe('Database Constants', () => {
+    it('should export database optimization and compute metric thresholds', () => {
+      expect(databaseModule.DEFAULT_DB_OPTIMIZATION_CONFIG).toBeDefined();
+      expect(DEFAULT_DB_OPTIMIZATION_CONFIG.defaultTtlMs).toBe(60000);
+      expect(DEFAULT_DB_OPTIMIZATION_CONFIG.slowQueryThresholdMs).toBe(100);
+      expect(DEFAULT_DB_OPTIMIZATION_CONFIG.maxEntries).toBe(500);
+
+      expect(CACHE_TAGS.TENANTS).toBe('tenant');
+      expect(CACHE_TAGS.PURCHASE_REQUESTS).toBe('pr');
+
+      expect(DB_COMPUTE_METRICS.MS_PER_HOUR).toBe(3600000);
+      expect(DB_COMPUTE_METRICS.MAX_SLOW_QUERIES_RETAINED).toBe(50);
+    });
+  });
+
+  describe('GraphQL Constants', () => {
+    it('should export GraphQL complexity limits and error codes', () => {
+      expect(graphqlModule.GRAPHQL_COMPLEXITY_LIMITS).toBeDefined();
+      expect(GRAPHQL_COMPLEXITY_LIMITS.maxQueryLength).toBe(5000);
+      expect(GRAPHQL_ERROR_CODES.BAD_USER_INPUT).toBe('BAD_USER_INPUT');
+      expect(DEFAULT_GRAPHQL_INTROSPECTION_QUERY).toContain('databaseAuditMetrics');
+    });
+  });
+
   describe('Index Barrel Export', () => {
     it('should re-export all constants correctly from index', () => {
       expect(indexModule.TENANTS).toBe(tenantsModule.TENANTS);
@@ -248,6 +280,8 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(indexModule.NAV_ITEMS).toBe(navigationModule.NAV_ITEMS);
       expect(indexModule.DEFAULT_GEMINI_MODEL).toBe(aiModule.DEFAULT_GEMINI_MODEL);
       expect(indexModule.LOG_LEVEL_SEVERITY).toBe(loggingModule.LOG_LEVEL_SEVERITY);
+      expect(indexModule.DEFAULT_DB_OPTIMIZATION_CONFIG).toBe(databaseModule.DEFAULT_DB_OPTIMIZATION_CONFIG);
+      expect(indexModule.GRAPHQL_COMPLEXITY_LIMITS).toBe(graphqlModule.GRAPHQL_COMPLEXITY_LIMITS);
     });
   });
 });
