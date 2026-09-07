@@ -62,6 +62,7 @@ import * as databaseModule from '@/constants/database';
 import * as graphqlModule from '@/constants/graphql';
 import * as cryptoModule from '@/constants/crypto';
 import * as diagnosticsModule from '@/constants/diagnostics';
+import * as validationModule from '@/constants/validation';
 import * as indexModule from '@/constants/index';
 
 describe('Constants Architecture & Integrity Test Suite', () => {
@@ -320,6 +321,29 @@ describe('Constants Architecture & Integrity Test Suite', () => {
     });
   });
 
+  describe('Validation Constants', () => {
+    it('should export all API and form validation schemas', () => {
+      expect(validationModule.API_COST_ANALYSIS_SCHEMA.itemDescription).toBeDefined();
+      expect(validationModule.API_COST_ANALYSIS_SCHEMA.itemDescription.required).toBe(true);
+
+      expect(validationModule.API_NEGOTIATION_SCHEMA.prTitle).toBeDefined();
+      expect(validationModule.API_NEGOTIATION_SCHEMA.itemName).toBeDefined();
+
+      expect(validationModule.API_GRAPHQL_SCHEMA.query).toBeDefined();
+      expect(validationModule.API_GRAPHQL_SCHEMA.query.required).toBe(true);
+
+      expect(validationModule.API_LOGS_QUERY_SCHEMA.limit).toBeDefined();
+      expect(validationModule.API_LOGS_INGEST_SCHEMA.message).toBeDefined();
+
+      expect(validationModule.PURCHASE_REQUEST_FORM_SCHEMA.title).toBeDefined();
+      expect(validationModule.BOQ_ITEM_FORM_SCHEMA.itemCode).toBeDefined();
+      expect(validationModule.VENDOR_QUOTE_FORM_SCHEMA.unitRate).toBeDefined();
+      expect(validationModule.PPO_CREATE_FORM_SCHEMA.prId).toBeDefined();
+      expect(validationModule.NEGOTIATION_ROUND_FORM_SCHEMA.rate).toBeDefined();
+      expect(validationModule.API_COMMON_HEADERS_SCHEMA.headers.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('Index Barrel Export', () => {
     it('should re-export all constants correctly from index', () => {
       expect(indexModule.TENANTS).toBe(tenantsModule.TENANTS);
@@ -336,6 +360,8 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(indexModule.PBKDF2_ITERATIONS).toBe(cryptoModule.PBKDF2_ITERATIONS);
       expect(indexModule.BUG_CATEGORIES).toBe(diagnosticsModule.BUG_CATEGORIES);
       expect(indexModule.RESOLUTION_STRATEGIES).toBe(diagnosticsModule.RESOLUTION_STRATEGIES);
+      expect(indexModule.API_COST_ANALYSIS_SCHEMA).toBe(validationModule.API_COST_ANALYSIS_SCHEMA);
+      expect(indexModule.PURCHASE_REQUEST_FORM_SCHEMA).toBe(validationModule.PURCHASE_REQUEST_FORM_SCHEMA);
     });
   });
 });

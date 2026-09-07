@@ -72,6 +72,7 @@ All AI coding agents MUST strictly maintain all constant values, configuration d
      - `src/constants/navigation.ts`: Application navigation items and role routing definitions.
      - `src/constants/ai.ts`: AI model defaults, MLEO ratios, inflators, and negotiation scripts.
      - `src/constants/logging.ts`: Logging thresholds, severity mappings, retention limits.
+     - `src/constants/validation.ts`: Reusable input validation schemas for frontend forms, API routes, query parameters, and headers.
      - `src/constants/index.ts`: Central barrel exporting all constants.
 
 2. **Clean Imports**:
@@ -94,6 +95,7 @@ All AI coding agents MUST strictly declare all TypeScript types, interfaces, enu
      - `src/types/components.ts`: Component props and UI-specific data structures (`HeaderProps`, `DashboardProps`, `PRModuleProps`, etc.).
      - `src/types/ai.ts`: AI service and cost breakdown interfaces (`MLEOCostBreakdown`, `NegotiationParams`, etc.).
      - `src/types/logger.ts`: Logger domain types (`LogLevel`, `LogEntry`, `LoggerConfig`, etc.).
+     - `src/types/validation.ts`: Validation schema interfaces, field rules, validation errors, and result contracts (`ValidationResult`, `ObjectSchema`, etc.).
      - `src/types/index.ts`: Central barrel re-exporting all types.
 
 2. **Clean Type Imports**:
@@ -197,6 +199,37 @@ All AI coding agents MUST continuously monitor, analyze, and resolve application
      - Linting: `npm run lint` (`next lint`).
      - Database: `npm run db:validate`.
    - Never consider a bug resolved until all verification stages pass with 0 regressions.
+
+---
+
+## 🛡️ Input Schema Validation Standards
+
+All AI coding agents MUST strictly enforce input schema validation across the entire application whenever any code change touches user or system inputs.
+
+1. **Mandatory Validation for All Inputs**:
+   - Every entry point accepting user or system data MUST validate the incoming payload against a schema before processing. This includes:
+     - **Frontend Forms**: Purchase request submission, BOQ item creation, vendor quotations, negotiation rounds, PPO creation, and payment term modifications.
+     - **API Routes**: All route handlers (`/api/**`) MUST validate request bodies, query parameters, and headers.
+     - **Controller & Service Methods**: Method arguments receiving external data must be validated.
+     - **Query Parameters**: Coerced and validated for expected types, bounds, and allowable values.
+     - **Headers**: Enforce presence and format of required headers (e.g., `content-type`, `authorization`, `x-correlation-id`).
+
+2. **Dedicated Constants Modules for All Schemas (Zero Inline Schemas)**:
+   - All validation schemas, rules, field constraints, range limits, and regex patterns MUST be defined in dedicated constants files (`src/constants/validation.ts`) and exported via `@/constants`.
+   - Application components, contexts, API routes, and hooks MUST NOT declare inline schemas or ad-hoc validation rules.
+   - All validation types and result contracts MUST be defined in `src/types/validation.ts` and exported via `@/types`.
+
+3. **Centralized Validator Engine**:
+   - Use the centralized validation engine (`src/lib/validator.ts`):
+     - `validateSchema(data, schema)`: Validates structured payloads and returns typed results `{ isValid, data, errors }`.
+     - `validateQueryParams(searchParams, schema)`: Coerces and validates URL query parameters.
+     - `validateHeaders(headers, schema)`: Validates case-insensitive HTTP request headers.
+   - On validation failure in API routes, immediately return HTTP 400 with structured validation error payloads (`{ error, details }`).
+   - On validation failure in state context or services, reject invalid mutations and log structured warnings via `logger.warn`.
+
+4. **Zero Regressions & Quality Assurance**:
+   - All validation schemas and engine utilities must maintain $\ge 90\%$ unit test coverage per file across all 4 metrics.
+   - Every input validation change must pass the full quality check pipeline (`npm run check:all`).
 
 ---
 

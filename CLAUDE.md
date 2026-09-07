@@ -15,12 +15,12 @@
 - Logs can be searched or purged via `/api/logs`.
 
 ### 📦 Separate Constants Architecture & Standards
-- Claude must maintain all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`).
+- Claude must maintain all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`, `validation.ts`).
 - Never define inline mock datasets, configuration dictionaries, or constant lists in components, hooks, or context files.
 - Always import constants via the central `@/constants` alias.
 
 ### 🏷️ Separate Data Types & Interfaces Architecture & Standards
-- Claude must declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`).
+- Claude must declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`, `validation.ts`).
 - Never define inline `interface` or `type` declarations inside components or runtime files.
 - Always import types via the central `@/types` alias.
 
@@ -48,6 +48,14 @@
 - Automatically parse stack traces, error codes, and correlation IDs using `src/lib/log-analyzer.ts` or `npm run logs:analyze` to diagnose root causes.
 - Implement verified bug fixes targeting underlying defects, apply automated resolutions (`npm run logs:auto-resolve`), and add regression tests.
 - Validate all bug fixes through the mandatory quality check pipeline (`npm run check:all`: Build $\rightarrow$ Coverage $\ge 90\%$ $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation).
+
+### 🛡️ Input Schema Validation Standards
+- Strictly enforce input schema validation across the entire application whenever any code change touches user or system inputs.
+- Every entry point accepting external data (frontend forms, API routes, controller bodies, query parameters, headers) MUST validate against a schema before processing.
+- All validation schemas, field rules, and constraints MUST be declared in dedicated constants modules under `src/constants/validation.ts` and exported via `@/constants`. Zero inline schemas allowed.
+- All validation types must be declared in `src/types/validation.ts` and exported via `@/types`.
+- Use the centralized validation engine (`src/lib/validator.ts`): `validateSchema()`, `validateQueryParams()`, `validateHeaders()`.
+- Return HTTP 400 on validation failure in API routes; log warnings and reject invalid mutations in state/services.
 
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:

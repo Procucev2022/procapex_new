@@ -28,6 +28,16 @@ describe('POST /api/ai/negotiation', () => {
     });
     const res2 = await POST(req2);
     expect(res2.status).toBe(400);
+
+    // When prTitle and itemName exist, but other fields fail schema validation (e.g. currentRound > 20)
+    const req3 = new NextRequest('http://localhost/api/ai/negotiation', {
+      method: 'POST',
+      body: JSON.stringify({ prTitle: 'PR-1', itemName: 'Concrete', currentRound: 99 }),
+    });
+    const res3 = await POST(req3);
+    expect(res3.status).toBe(400);
+    const json3 = await res3.json();
+    expect(json3.error).toContain('currentRound');
   });
 
   it('generates counter-offer with valid parameters', async () => {

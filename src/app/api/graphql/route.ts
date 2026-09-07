@@ -5,10 +5,12 @@ import { resolvers } from '@/graphql/resolvers';
 import { logger } from '@/lib/logger';
 import { dbCache } from '@/lib/db-cache';
 import { dbAuditor } from '@/lib/db-auditor';
+import { validateSchema } from '@/lib/validator';
 import {
   GRAPHQL_COMPLEXITY_LIMITS,
   GRAPHQL_ERROR_CODES,
   DEFAULT_GRAPHQL_INTROSPECTION_QUERY,
+  API_GRAPHQL_SCHEMA,
 } from '@/constants';
 import { GraphQLOperationPayload, GraphQLResponse } from '@/types';
 
@@ -17,11 +19,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
-    const body: GraphQLOperationPayload = await req.json();
-    const { query, variables, operationName } = body;
+    const body = await req.json();
+    const validation = validateSchema<GraphQLOperationPayload>(body, API_GRAPHQL_SCHEMA);
 
-    if (!query || typeof query !== 'string') {
+    if (!validation.isValid) {
       logger.warn('api/graphql', 'Rejected GraphQL request: missing or invalid query', {
+        errors: validation.errors,
         correlationId,
       });
       return NextResponse.json(
@@ -29,13 +32,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           errors: [
             {
               message: 'Must provide a valid GraphQL query string.',
-              extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT },
+              extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT, details: validation.errors },
             },
           ],
         },
         { status: 400 }
       );
     }
+
+    const { query, variables, operationName } = validation.data;
 
     // Complexity & Security Guard: prevent excessively large queries
     if (query.length > GRAPHQL_COMPLEXITY_LIMITS.maxQueryLength) {

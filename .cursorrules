@@ -12,12 +12,12 @@
 - Logs can be searched or purged via `/api/logs`.
 
 ## 📦 Separate Constants Architecture & Standards
-- Keep all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`).
+- Keep all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`, `validation.ts`).
 - Never define inline mock datasets, configuration dictionaries, or constant lists in components, hooks, or context files.
 - Always import constants via the central `@/constants` alias.
 
 ## 🏷️ Separate Data Types & Interfaces Architecture & Standards
-- Declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`).
+- Declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`, `validation.ts`).
 - Never define inline `interface` or `type` declarations inside components or runtime files.
 - Always import types via the central `@/types` alias.
 
@@ -45,6 +45,14 @@
 - Use `src/lib/log-analyzer.ts` or `npm run logs:analyze` to parse stack frames, error codes, and correlation IDs.
 - Execute verified bug fixes and auto-resolutions (`npm run logs:auto-resolve`) to prevent recurring failures.
 - Validate all bug fixes through the mandatory quality check pipeline (`npm run check:all`) to guarantee zero regressions.
+
+## 🛡️ Input Schema Validation Standards
+- Enforce strict input schema validation across the application whenever any code touches user or system inputs.
+- Validate all frontend forms, API route bodies, query parameters, controller arguments, and HTTP headers before processing.
+- All validation schemas must be defined in dedicated constants modules under `src/constants/validation.ts` (0 inline schemas).
+- All validation types must be declared in `src/types/validation.ts` (0 inline types).
+- Use `src/lib/validator.ts`: `validateSchema()`, `validateQueryParams()`, `validateHeaders()`.
+- Return structured 400 errors for API validation failures and prevent invalid state transitions.
 
 ## ⚡ Quality Check Execution After Every Change
 - **Fast iterations on changed files**:

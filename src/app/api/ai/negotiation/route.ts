@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCounterOffer } from '@/lib/gemini';
 import { logger } from '@/lib/logger';
+import { validateSchema } from '@/lib/validator';
+import { API_NEGOTIATION_SCHEMA } from '@/constants';
 
 export async function POST(req: NextRequest) {
   const correlationId = `req-nego-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -8,7 +10,23 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { prTitle, itemName, vendorQuoteRate, targetBenchmark, currentRound, historySummary } = body;
+
+    const validation = validateSchema(body, API_NEGOTIATION_SCHEMA);
+    if (!validation.isValid) {
+      logger.warn('api/negotiation', 'Validation failed: prTitle or itemName is missing', {
+        errors: validation.errors,
+      }, correlationId);
+      const isMissingTitleOrItem = validation.errors.some((e) => e.field === 'prTitle' || e.field === 'itemName');
+      return NextResponse.json(
+        {
+          error: isMissingTitleOrItem ? 'prTitle and itemName are required' : validation.errorSummary,
+          details: validation.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { prTitle, itemName, vendorQuoteRate, targetBenchmark, currentRound, historySummary } = validation.data;
 
     logger.info('api/negotiation', 'Received negotiation counter-offer request', {
       prTitle,
@@ -18,23 +36,12 @@ export async function POST(req: NextRequest) {
       currentRound,
     }, correlationId);
 
-    if (!prTitle || !itemName) {
-      logger.warn('api/negotiation', 'Validation failed: prTitle or itemName is missing', {
-        prTitle,
-        itemName,
-      }, correlationId);
-      return NextResponse.json(
-        { error: 'prTitle and itemName are required' },
-        { status: 400 }
-      );
-    }
-
     const tactic = await generateCounterOffer({
       prTitle,
       itemName,
-      vendorQuoteRate: Number(vendorQuoteRate) || 0,
-      targetBenchmark: Number(targetBenchmark) || 0,
-      currentRound: Number(currentRound) || 1,
+      vendorQuoteRate,
+      targetBenchmark,
+      currentRound,
       historySummary,
     });
 

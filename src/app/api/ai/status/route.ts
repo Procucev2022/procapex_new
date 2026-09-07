@@ -1,9 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getConfiguredModelName, isGeminiConfigured } from '@/lib/gemini';
 import { logger } from '@/lib/logger';
+import { validateQueryParams } from '@/lib/validator';
+import { API_AI_STATUS_QUERY_SCHEMA } from '@/constants';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const correlationId = `req-status-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  const { searchParams } = new URL(req.url);
+  const validation = validateQueryParams(searchParams, API_AI_STATUS_QUERY_SCHEMA);
+  if (!validation.isValid) {
+    return NextResponse.json(
+      { error: validation.errorSummary, details: validation.errors },
+      { status: 400 }
+    );
+  }
+
   const configured = isGeminiConfigured();
   const model = getConfiguredModelName();
 

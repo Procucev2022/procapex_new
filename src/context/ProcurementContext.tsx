@@ -21,8 +21,12 @@ import {
   INITIAL_PPOS,
   INITIAL_POS,
   INITIAL_AUDIT_LOGS,
+  PURCHASE_REQUEST_FORM_SCHEMA,
+  NEGOTIATION_ROUND_FORM_SCHEMA,
+  PPO_CREATE_FORM_SCHEMA,
 } from '@/constants';
 import { logger } from '../lib/logger';
+import { validateSchema } from '../lib/validator';
 
 export { TENANTS } from '@/constants';
 
@@ -106,6 +110,14 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const createPR = (prData: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'>) => {
+    const validation = validateSchema(prData, PURCHASE_REQUEST_FORM_SCHEMA);
+    if (!validation.isValid) {
+      logger.warn('context/procurement', 'Purchase request input validation failed, rejecting submission', {
+        errors: validation.errors,
+      });
+      return;
+    }
+
     const newPR: PurchaseRequest = {
       ...prData,
       id: `PR-2026-000${prs.length + 1}`,
@@ -150,6 +162,10 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const updateBOQItems = (prId: string, items: PurchaseRequest['items']) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      logger.warn('context/procurement', 'Invalid BOQ line items update: items must be a non-empty array', { prId });
+      return;
+    }
     logger.info('context/procurement', 'Updated BOQ line items for PR', {
       prId,
       itemsCount: items.length,
@@ -158,6 +174,14 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const addNegotiationRound = (prId: string, rate: number, remarks: string, actionType: string) => {
+    const validation = validateSchema({ rate, remarks, actionType }, NEGOTIATION_ROUND_FORM_SCHEMA);
+    if (!validation.isValid) {
+      logger.warn('context/procurement', 'Negotiation round input validation failed, rejecting submission', {
+        errors: validation.errors,
+      });
+      return;
+    }
+
     const roundNum = (negotiations[prId]?.length || 0) + 1;
     logger.info('context/procurement', 'Recorded negotiation round event', {
       prId,
@@ -180,6 +204,14 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const createPPO = (ppoData: Omit<PPOItem, 'id' | 'status' | 'createdDate'>) => {
+    const validation = validateSchema(ppoData, PPO_CREATE_FORM_SCHEMA);
+    if (!validation.isValid) {
+      logger.warn('context/procurement', 'PPO creation input validation failed, rejecting creation', {
+        errors: validation.errors,
+      });
+      return;
+    }
+
     const newPPO: PPOItem = {
       ...ppoData,
       id: `PPO-2026-00${ppos.length + 11}`,

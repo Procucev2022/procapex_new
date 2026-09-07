@@ -16,12 +16,12 @@
 - Query and purge operations are exposed via `/api/logs`.
 
 ### 3. Separate Constants Architecture & Standards
-- Keep all constant values, configuration dictionaries, lookup tables, and mock dataset definitions in dedicated files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`).
+- Keep all constant values, configuration dictionaries, lookup tables, and mock dataset definitions in dedicated files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`, `validation.ts`).
 - Never define inline mock datasets, configuration dictionaries, or constant lists in components, hooks, or context files.
 - Always import constants via the central `@/constants` alias.
 
 ### 4. Separate Data Types & Interfaces Architecture & Standards
-- Declare all TypeScript types, interfaces, enums, and type aliases in dedicated files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`).
+- Declare all TypeScript types, interfaces, enums, and type aliases in dedicated files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`, `diagnostics.ts`, `validation.ts`).
 - Never define inline `interface` or `type` declarations inside components or runtime files.
 - Always import types via the central `@/types` alias.
 
@@ -50,7 +50,15 @@
 - Implement verified bug fixes targeting root causes, execute automated remediations (`npm run logs:auto-resolve`), and prevent recurring failures with regression tests.
 - Validate every bug fix through the mandatory quality check pipeline (`npm run check:all`) to ensure zero regressions.
 
-### 9. Mandatory Quality Check Execution
+### 9. Input Schema Validation Standards
+- Strictly enforce input schema validation across the entire application whenever any code change touches user or system inputs.
+- Validate all frontend forms, API route bodies, query parameters, controller arguments, and HTTP headers before processing.
+- All validation schemas must be defined in dedicated constants modules under `src/constants/validation.ts` (0 inline schemas).
+- All validation types must be declared in `src/types/validation.ts` (0 inline types).
+- Use `src/lib/validator.ts`: `validateSchema()`, `validateQueryParams()`, `validateHeaders()`.
+- Return structured 400 errors for API validation failures and prevent invalid state transitions.
+
+### 10. Mandatory Quality Check Execution
 - AI coding agents must run quality checks after every change:
   - **Fast check for rapid development**:
     ```bash

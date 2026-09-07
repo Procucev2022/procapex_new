@@ -220,4 +220,49 @@ describe('ProcurementContext', () => {
     expect(result.current.pos.length).toBe(2);
     expect(result.current.tier1Approved).toBe(false);
   });
+
+  it('rejects invalid inputs using schema validation', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ProcurementProvider>{children}</ProcurementProvider>
+    );
+    const { result } = renderHook(() => useProcurement(), { wrapper });
+
+    const initialPrCount = result.current.prs.length;
+    // Invalid PR (title too short, items empty)
+    act(() => {
+      result.current.createPR({
+        title: 'X',
+        category: 'Civil',
+        costCentre: 'CC-1',
+        items: [],
+      } as any);
+    });
+    expect(result.current.prs.length).toBe(initialPrCount);
+
+    // Invalid BOQ update (empty items)
+    const existingPr = result.current.prs[0];
+    const originalItemsCount = existingPr.items.length;
+    act(() => {
+      result.current.updateBOQItems(existingPr.id, [] as any);
+    });
+    expect(result.current.prs[0].items.length).toBe(originalItemsCount);
+
+    // Invalid negotiation round (empty remarks, invalid rate)
+    const initialNegoCount = (result.current.negotiations['PR-2026-0005'] || []).length;
+    act(() => {
+      result.current.addNegotiationRound('PR-2026-0005', -100, '', 'BUYER_COUNTER');
+    });
+    expect((result.current.negotiations['PR-2026-0005'] || []).length).toBe(initialNegoCount);
+
+    // Invalid PPO creation (missing vendor and negative grandTotal)
+    const initialPpoCount = result.current.ppos.length;
+    act(() => {
+      result.current.createPPO({
+        prId: 'PR-2026-0005',
+        vendor: '',
+        grandTotal: -500,
+      } as any);
+    });
+    expect(result.current.ppos.length).toBe(initialPpoCount);
+  });
 });

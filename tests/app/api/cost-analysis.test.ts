@@ -32,6 +32,18 @@ describe('POST /api/ai/cost-analysis', () => {
     expect(resNumber.status).toBe(400);
   });
 
+  it('returns 400 with details when schema validation fails for other fields', async () => {
+    const req = new NextRequest('http://localhost/api/ai/cost-analysis', {
+      method: 'POST',
+      body: JSON.stringify({ itemDescription: 'Concrete M30', quantity: -5 }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain('quantity');
+    expect(json.details).toBeDefined();
+  });
+
   it('generates cost analysis with all parameters provided', async () => {
     const mockAnalysis = {
       itemName: 'Concrete M30',
