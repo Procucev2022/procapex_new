@@ -1,19 +1,101 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserRole, PurchaseRequest, VendorQuote, NegotiationEvent, PPOItem, PurchaseOrder, AuditLog } from '../types';
+import { UserRole, TenantKey, TenantConfig, PurchaseRequest, VendorQuote, NegotiationEvent, PPOItem, PurchaseOrder, AuditLog } from '../types';
 
-interface ProcurementContextType {
+export const TENANTS: Record<TenantKey, TenantConfig> = {
+  'TNT_LNT': {
+    id: 'TNT-LNT-001',
+    name: 'L&T Infra & Construction Ltd',
+    short: 'LT',
+    project: 'Metro Line 4 Underground & Stations',
+    vendor: 'DesignCraft Millworks & Interiors Pvt Ltd',
+    team: {
+      'PROJECT_TEAM': { name: 'Rahul Verma', title: 'Senior Project Engineer (Site Lead)' },
+      'PROJECT_HEAD_PR': { name: 'Anil Kulkarni', title: 'Vice President (Projects)' },
+      'CATEGORY_MANAGER': { name: 'Vikram Mehta', title: 'Lead Category Manager (Interior & Fitouts)' },
+      'CATEGORY_MANAGER_2': { name: 'Rajesh Singhania', title: 'Head of Strategic Sourcing' },
+      'PROJECT_HEAD_PPO': { name: 'Anil Kulkarni', title: 'Vice President (Projects)' },
+      'FINANCE_HEAD': { name: 'Sunil Deshmukh', title: 'Chief Financial Officer' },
+      'VENDOR': { name: 'DesignCraft Millworks Pvt Ltd', title: 'Approved Tier-1 Joinery Contractor' }
+    }
+  },
+  'TNT_TATA': {
+    id: 'TNT-TATA-002',
+    name: 'Tata Projects Global',
+    short: 'TP',
+    project: 'Noida International Airport Terminal 1',
+    vendor: 'Tata Steel & BlueStar Chiller Div',
+    team: {
+      'PROJECT_TEAM': { name: 'Siddharth Rao', title: 'Package Lead Engineer' },
+      'PROJECT_HEAD_PR': { name: 'Capt. R. K. Nair', title: 'Project Director' },
+      'CATEGORY_MANAGER': { name: 'Megha Sen', title: 'Senior Procurement Manager' },
+      'CATEGORY_MANAGER_2': { name: 'Arunav Roy', title: 'Chief Procurement Officer' },
+      'PROJECT_HEAD_PPO': { name: 'Capt. R. K. Nair', title: 'Project Director' },
+      'FINANCE_HEAD': { name: 'G. Swaminathan', title: 'VP - Commercial & Finance' },
+      'VENDOR': { name: 'Tata Steel & BlueStar Chiller Div', title: 'OEM Strategic Partner' }
+    }
+  },
+  'TNT_GODREJ': {
+    id: 'TNT-GODREJ-003',
+    name: 'Godrej Properties & Living',
+    short: 'GP',
+    project: 'Godrej Sky Terraces Luxury Highrise',
+    vendor: 'Godrej Interio Enterprise',
+    team: {
+      'PROJECT_TEAM': { name: 'Karan Joshi', title: 'Site In-charge (Architecture)' },
+      'PROJECT_HEAD_PR': { name: 'Rohan Godrej', title: 'Regional Projects Head' },
+      'CATEGORY_MANAGER': { name: 'Divya Nair', title: 'Category Manager (Interior Works)' },
+      'CATEGORY_MANAGER_2': { name: 'Pradeep Khurana', title: 'Head - Central Procurement' },
+      'PROJECT_HEAD_PPO': { name: 'Rohan Godrej', title: 'Regional Projects Head' },
+      'FINANCE_HEAD': { name: 'Deepak Varma', title: 'Financial Controller' },
+      'VENDOR': { name: 'Godrej Interio Enterprise', title: 'Approved Millwork Vendor' }
+    }
+  },
+  'TNT_SHAPOORJI': {
+    id: 'TNT-SHAPOORJI-004',
+    name: 'Shapoorji Pallonji Real Estate',
+    short: 'SP',
+    project: 'Parkwest Tech Park Phase 3',
+    vendor: 'SP Fabricators & Interior Solutions',
+    team: {
+      'PROJECT_TEAM': { name: 'Tanmay Saxena', title: 'Senior Construction Manager' },
+      'PROJECT_HEAD_PR': { name: 'Farokh Mistry', title: 'Executive VP - Infra' },
+      'CATEGORY_MANAGER': { name: 'Cyrus Broacha', title: 'Procurement Specialist' },
+      'CATEGORY_MANAGER_2': { name: 'Neville Tata', title: 'Head of Global Procurement' },
+      'PROJECT_HEAD_PPO': { name: 'Farokh Mistry', title: 'Executive VP - Infra' },
+      'FINANCE_HEAD': { name: 'Ratan Mehta', title: 'Director of Finance' },
+      'VENDOR': { name: 'SP Fabricators & Interior Solutions', title: 'Registered Contractor' }
+    }
+  }
+};
+
+export interface ProcurementContextType {
   activeRole: UserRole;
   setActiveRole: (role: UserRole) => void;
+  activeTenantKey: TenantKey;
+  activeTenant: TenantConfig;
+  changeTenant: (key: TenantKey) => void;
+  tenants: Record<TenantKey, TenantConfig>;
   prs: PurchaseRequest[];
   quotes: Record<string, VendorQuote[]>;
   negotiations: Record<string, NegotiationEvent[]>;
   ppos: PPOItem[];
   pos: PurchaseOrder[];
   auditLogs: AuditLog[];
+  // PPO 3-Tier Workflow
+  tier1Approved: boolean;
+  tier2Approved: boolean;
+  tier3Approved: boolean;
+  poReleased: boolean;
+  approveTier1: () => void;
+  approveTier2: () => void;
+  approveTier3AndReleasePO: () => void;
+  resetTiers: () => void;
+  // Actions
   createPR: (pr: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'>) => void;
   updatePRStatus: (id: string, status: PurchaseRequest['status'], comments?: string) => void;
+  approvePRByProjectHead: (id: string) => void;
   updateBOQItems: (prId: string, items: PurchaseRequest['items']) => void;
   addNegotiationRound: (prId: string, rate: number, remarks: string, actionType: string) => void;
   createPPO: (ppo: Omit<PPOItem, 'id' | 'status' | 'createdDate'>) => void;
@@ -22,6 +104,26 @@ interface ProcurementContextType {
 }
 
 const INITIAL_PRS: PurchaseRequest[] = [
+  {
+    id: 'PR-2026-0005',
+    title: 'Fabrication & Installation of Reception Counter (Counter Elevation D)',
+    projectName: 'Metro Line 4 Underground & Stations',
+    costCentre: 'CC-104 (Finishing, Interior & Millwork)',
+    category: 'Interior & Fitouts',
+    requester: 'Rahul Verma (Site Lead)',
+    reqDate: '2026-09-25',
+    status: 'SUBMITTED',
+    buyer: 'Vikram Mehta (Category Manager)',
+    remarks: 'Reception Counter & Lobby Joinery Package (PKG-2026-INT-001). 6 items, 4 drawings attached.',
+    items: [
+      { code: 'CNT-TOP-GRN20', desc: '20mm thick Polished Jet Black Granite Countertop with bullnose profiling', uom: 'Sqm', qty: 12.5, rateCard: 3550, benchmark: 3450, std: 3500, aiConf: '98%' },
+      { code: 'CNT-PLY-BWP18', desc: 'Marine Grade Boiling Water Proof (BWP) Plywood 18mm IS 710', uom: 'Sqm', qty: 38.0, rateCard: 1520, benchmark: 1480, std: 1500, aiConf: '97%' },
+      { code: 'CNT-LAM-1MM', desc: '1.0mm thick High Pressure Textured Decorative Laminate', uom: 'Sqm', qty: 24.0, rateCard: 890, benchmark: 850, std: 880, aiConf: '96%' },
+      { code: 'CNT-HDW-SOFT', desc: 'Joinery & Hardware Package: Soft-close hinges & slides', uom: 'Set', qty: 14.0, rateCard: 1780, benchmark: 1720, std: 1750, aiConf: '95%' },
+      { code: 'CNT-LED-PROF', desc: '12V DC Warm White LED Strip Light in recessed channel', uom: 'Rmt', qty: 16.0, rateCard: 420, benchmark: 400, std: 410, aiConf: '93%' },
+      { code: 'CNT-SKT-SS304', desc: '100mm high Stainless Steel Grade 304 Brushed Skirting', uom: 'Rmt', qty: 14.0, rateCard: 780, benchmark: 750, std: 770, aiConf: '94%' }
+    ]
+  },
   {
     id: 'PR-2026-0001',
     title: 'Foundation TMT Rebar Fe500D Supply',
@@ -108,6 +210,22 @@ const INITIAL_NEGO: Record<string, NegotiationEvent[]> = {
 
 const INITIAL_PPOS: PPOItem[] = [
   {
+    id: 'PPO-2026-0015',
+    prId: 'PR-2026-0005',
+    vendor: 'DesignCraft Millworks & Interiors Pvt Ltd',
+    itemDesc: 'Reception Counter & Lobby Joinery Package (PKG-2026-INT-001)',
+    unitRate: 148500,
+    qty: 1,
+    totalVal: 148500,
+    taxRate: 18,
+    taxAmount: 26730,
+    grandTotal: 175230,
+    paymentTerms: '30 Days Net from delivery & QC signoff',
+    leadTime: '12 Calendar Days',
+    status: 'TIER_1_PENDING',
+    createdDate: '2026-09-06'
+  },
+  {
     id: 'PPO-2026-0012',
     prId: 'PR-2026-0002',
     vendor: 'Vertex Infratech Pvt Ltd',
@@ -127,12 +245,23 @@ const INITIAL_PPOS: PPOItem[] = [
 
 const INITIAL_POS: PurchaseOrder[] = [
   {
+    id: 'PO-2026-0089',
+    ppoRef: 'PPO-2026-0015',
+    prRef: 'PR-2026-0005',
+    vendor: 'DesignCraft Millworks & Interiors Pvt Ltd',
+    amount: 175230,
+    issueDate: '2026-09-06',
+    deliveryDate: '2026-09-25',
+    status: 'ISSUED'
+  },
+  {
     id: 'PO-2026-0001',
     ppoRef: 'PPO-2026-0011',
     prRef: 'PR-2026-0001',
     vendor: 'Apex Steel Traders Ltd',
     amount: 14519900,
     issueDate: '2026-08-24',
+    deliveryDate: '2026-09-10',
     status: 'ISSUED'
   }
 ];
@@ -140,16 +269,69 @@ const INITIAL_POS: PurchaseOrder[] = [
 const ProcurementContext = createContext<ProcurementContextType | undefined>(undefined);
 
 export function ProcurementProvider({ children }: { children: React.ReactNode }) {
-  const [activeRole, setActiveRole] = useState<UserRole>('BUYER');
+  const [activeTenantKey, setActiveTenantKey] = useState<TenantKey>('TNT_LNT');
+  const [activeRole, setActiveRole] = useState<UserRole>('PROJECT_TEAM');
   const [prs, setPrs] = useState<PurchaseRequest[]>(INITIAL_PRS);
   const [quotes, setQuotes] = useState<Record<string, VendorQuote[]>>(INITIAL_QUOTES);
   const [negotiations, setNegotiations] = useState<Record<string, NegotiationEvent[]>>(INITIAL_NEGO);
   const [ppos, setPpos] = useState<PPOItem[]>(INITIAL_PPOS);
   const [pos, setPos] = useState<PurchaseOrder[]>(INITIAL_POS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
-    { time: '2026-08-25 10:12', user: 'Vikram Mehta (Buyer)', action: 'PPO Generated', detail: 'Created PPO-2026-0012 for Vertex Infratech.' },
-    { time: '2026-08-24 14:30', user: 'Vikram Mehta (Buyer)', action: 'AI Cost Analysis Invoked', detail: 'Deconstructed M30 concrete into MLEO cost pillars.' }
+    { time: '2026-09-06 14:45', user: 'Vikram Mehta (Category Mgr)', action: 'PPO Generated', detail: 'Created PPO-2026-0015 for DesignCraft Millworks.' },
+    { time: '2026-09-06 11:20', user: 'Vikram Mehta (Category Mgr)', action: 'AI Cost Analysis Invoked', detail: 'Deconstructed Reception Counter into MLEO cost pillars.' },
+    { time: '2026-08-25 10:12', user: 'Vikram Mehta (Buyer)', action: 'PPO Generated', detail: 'Created PPO-2026-0012 for Vertex Infratech.' }
   ]);
+
+  // PPO 3-Tier Multi-Role Approval State
+  const [tier1Approved, setTier1Approved] = useState<boolean>(false);
+  const [tier2Approved, setTier2Approved] = useState<boolean>(false);
+  const [tier3Approved, setTier3Approved] = useState<boolean>(false);
+  const [poReleased, setPoReleased] = useState<boolean>(false);
+
+  const activeTenant = TENANTS[activeTenantKey];
+
+  const changeTenant = (key: TenantKey) => {
+    setActiveTenantKey(key);
+  };
+
+  const approveTier1 = () => {
+    setTier1Approved(true);
+    setAuditLogs(prev => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: 'Rajesh Singhania (Category Manager 2)',
+      action: 'PPO Tier 1 Signed-off',
+      detail: 'Approved commercial savings & compliance for PPO-2026-0015.'
+    }, ...prev]);
+  };
+
+  const approveTier2 = () => {
+    setTier2Approved(true);
+    setAuditLogs(prev => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: 'Anil Kulkarni (Project Head)',
+      action: 'PPO Tier 2 Signed-off',
+      detail: 'Site budget clearance given for PPO-2026-0015.'
+    }, ...prev]);
+  };
+
+  const approveTier3AndReleasePO = () => {
+    setTier3Approved(true);
+    setPoReleased(true);
+    setPpos(prev => prev.map(p => p.id === 'PPO-2026-0015' ? { ...p, status: 'APPROVED_PO_ISSUED' } : p));
+    setAuditLogs(prev => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: 'Sunil Deshmukh (Finance Head)',
+      action: 'PPO Tier 3 Signed & PO Released',
+      detail: 'Official PO-2026-0089 released to DesignCraft Millworks.'
+    }, ...prev]);
+  };
+
+  const resetTiers = () => {
+    setTier1Approved(false);
+    setTier2Approved(false);
+    setTier3Approved(false);
+    setPoReleased(false);
+  };
 
   const createPR = (prData: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'>) => {
     const newPR: PurchaseRequest = {
@@ -168,13 +350,17 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const updatePRStatus = (id: string, status: PurchaseRequest['status'], comments?: string) => {
-    setPrs(prev => prev.map(p => p.id === id ? { ...p, status, buyer: status === 'ACCEPTED' ? 'Vikram Mehta (Buyer)' : p.buyer } : p));
+    setPrs(prev => prev.map(p => p.id === id ? { ...p, status, buyer: status === 'ACCEPTED' ? 'Vikram Mehta (Category Mgr)' : p.buyer } : p));
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: `${activeRole} (User)`,
       action: `PR Status Changed to ${status}`,
       detail: `PR ${id} updated to ${status}. Notes: ${comments || 'None'}`
     }, ...prev]);
+  };
+
+  const approvePRByProjectHead = (id: string) => {
+    updatePRStatus(id, 'APPROVED_BY_PROJECT_HEAD', 'Project Head approved. Routed to Category Manager.');
   };
 
   const updateBOQItems = (prId: string, items: PurchaseRequest['items']) => {
@@ -185,7 +371,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     const roundNum = (negotiations[prId]?.length || 0) + 1;
     const newEvent: NegotiationEvent = {
       round: roundNum,
-      user: actionType === 'BUYER_COUNTER' ? 'Vikram Mehta (Buyer)' : 'Vendor Representative',
+      user: actionType === 'BUYER_COUNTER' ? 'Vikram Mehta (Category Mgr)' : 'Vendor Representative',
       type: actionType.replace('_', ' '),
       rate,
       remarks,
@@ -230,20 +416,34 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setNegotiations(INITIAL_NEGO);
     setPpos(INITIAL_PPOS);
     setPos(INITIAL_POS);
+    resetTiers();
   };
 
   return (
     <ProcurementContext.Provider value={{
       activeRole,
       setActiveRole,
+      activeTenantKey,
+      activeTenant,
+      changeTenant,
+      tenants: TENANTS,
       prs,
       quotes,
       negotiations,
       ppos,
       pos,
       auditLogs,
+      tier1Approved,
+      tier2Approved,
+      tier3Approved,
+      poReleased,
+      approveTier1,
+      approveTier2,
+      approveTier3AndReleasePO,
+      resetTiers,
       createPR,
       updatePRStatus,
+      approvePRByProjectHead,
       updateBOQItems,
       addNegotiationRound,
       createPPO,

@@ -10,7 +10,8 @@ export interface TenantConfig {
   name: string;
   short: string;
   project: string;
-  team: Record<UserRole, TenantUser>;
+  vendor?: string;
+  team: Record<string, TenantUser>;
 }
 
 export type UserRole = 

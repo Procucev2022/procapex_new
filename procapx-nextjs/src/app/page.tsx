@@ -4,19 +4,19 @@ import React, { useState } from 'react';
 import { Header } from '../components/Header';
 import { Dashboard } from '../components/Dashboard';
 import { PRModule } from '../components/PRModule';
-import { BOQStudio } from '../components/BOQStudio';
-import { CommercialEval } from '../components/CommercialEval';
-import { AICostStudio } from '../components/AICostStudio';
-import { NegotiationHub } from '../components/NegotiationHub';
+import { PRApprovalQueue } from '../components/PRApprovalQueue';
+import { CategoryManagerHub } from '../components/CategoryManagerHub';
 import { PPOModule } from '../components/PPOModule';
+import { VendorPortal } from '../components/VendorPortal';
+import { TenantOverview } from '../components/TenantOverview';
 import { MastersAudit } from '../components/MastersAudit';
-import { PlusCircle, X, Check } from 'lucide-react';
+import { PlusCircle, X } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 
 export default function Home() {
   const { createPR, createPPO, prs } = useProcurement();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [selectedPRForBOQ, setSelectedPRForBOQ] = useState<string>('PR-2026-0002');
+  const [selectedPRForBOQ, setSelectedPRForBOQ] = useState<string>('PR-2026-0005');
   
   // Modals state
   const [isNewPRModalOpen, setIsNewPRModalOpen] = useState<boolean>(false);
@@ -25,41 +25,41 @@ export default function Home() {
   // Form states
   const [prTitle, setPrTitle] = useState<string>('');
   const [prProject, setPrProject] = useState<string>('');
-  const [prCostCentre, setPrCostCentre] = useState<string>('CC-101 (Civil & Concrete)');
-  const [prCategory, setPrCategory] = useState<string>('Civil Materials');
+  const [prCostCentre, setPrCostCentre] = useState<string>('CC-104 (Finishing, Interior & Millwork)');
+  const [prCategory, setPrCategory] = useState<string>('Interior & Fitouts');
   const [prDate, setPrDate] = useState<string>(new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]);
   const [prRemarks, setPrRemarks] = useState<string>('');
 
-  const [ppoTargetPR, setPpoTargetPR] = useState<string>('PR-2026-0002');
-  const [ppoVendor, setPpoVendor] = useState<string>('Vertex Infratech Pvt Ltd');
-  const [ppoUnitRate, setPpoUnitRate] = useState<number>(4400);
+  const [ppoTargetPR, setPpoTargetPR] = useState<string>('PR-2026-0005');
+  const [ppoVendor, setPpoVendor] = useState<string>('DesignCraft Millworks & Interiors Pvt Ltd');
+  const [ppoUnitRate, setPpoUnitRate] = useState<number>(148500);
   const [ppoTaxRate, setPpoTaxRate] = useState<number>(18);
   const [ppoPaymentTerms, setPpoPaymentTerms] = useState<string>('30 Days Net from delivery & QC signoff');
-  const [ppoLeadTime, setPpoLeadTime] = useState<string>('3 Days from PO issuance');
+  const [ppoLeadTime, setPpoLeadTime] = useState<string>('12 Calendar Days');
 
   const handleNewPRSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createPR({
-      title: prTitle,
-      projectName: prProject,
+      title: prTitle || 'New Requisition Package',
+      projectName: prProject || 'Metro Line 4 Underground',
       costCentre: prCostCentre,
       category: prCategory,
       requester: 'Site Procurement Engineer',
       reqDate: prDate,
       remarks: prRemarks,
       items: [
-        { code: 'GEN-ITEM-001', desc: prTitle, uom: 'Nos', qty: 100, rateCard: 1000, benchmark: 950, std: 980, aiConf: '92%' }
+        { code: 'GEN-ITEM-001', desc: prTitle || 'Custom Scope Item', uom: 'Nos', qty: 100, rateCard: 1000, benchmark: 950, std: 980, aiConf: '92%' }
       ]
     });
     setIsNewPRModalOpen(false);
     setPrTitle('');
     setPrProject('');
-    setCurrentTab('prs');
+    setCurrentTab('pr_approval_queue');
   };
 
   const handleCreatePPOSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const qty = 450;
+    const qty = 1;
     const totalVal = ppoUnitRate * qty;
     const taxAmount = (totalVal * ppoTaxRate) / 100;
     const grandTotal = totalVal + taxAmount;
@@ -78,11 +78,11 @@ export default function Home() {
       leadTime: ppoLeadTime
     });
     setIsNewPPOModalOpen(false);
-    setCurrentTab('ppo');
+    setCurrentTab('ppo_workorders');
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased selection:bg-sky-500 selection:text-white">
       <Header
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
@@ -90,40 +90,64 @@ export default function Home() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-        {currentTab === 'dashboard' && <Dashboard onNavigate={(tab) => setCurrentTab(tab)} />}
-        {currentTab === 'prs' && (
+        {/* VIEW 0: DASHBOARD */}
+        {currentTab === 'dashboard' && (
+          <Dashboard 
+            onNavigate={(tab) => {
+              if (tab === 'prs') setCurrentTab('boq_raiser_studio');
+              else if (tab === 'commercial' || tab === 'ai-cost' || tab === 'negotiation') setCurrentTab('category_manager_hub');
+              else if (tab === 'ppo') setCurrentTab('ppo_workorders');
+              else setCurrentTab(tab);
+            }} 
+          />
+        )}
+
+        {/* VIEW 1: BOQ STUDIO & PR REQUISITIONS (PR RAISER SCOPE) */}
+        {(currentTab === 'boq_raiser_studio' || currentTab === 'prs' || currentTab === 'boq') && (
           <PRModule
             onNavigateToBOQ={(prId: string) => {
               setSelectedPRForBOQ(prId);
-              setCurrentTab('boq');
+              setCurrentTab('pr_approval_queue');
             }}
             onOpenNewPRModal={() => setIsNewPRModalOpen(true)}
           />
         )}
-        {currentTab === 'boq' && (
-          <BOQStudio
-            selectedPRId={selectedPRForBOQ}
-            onNavigateToCommercial={() => setCurrentTab('commercial')}
+
+        {/* VIEW 2: PR APPROVALS (PROJECT HEAD) */}
+        {currentTab === 'pr_approval_queue' && (
+          <PRApprovalQueue
+            onRouteToCategoryManager={() => setCurrentTab('category_manager_hub')}
           />
         )}
-        {currentTab === 'commercial' && (
-          <CommercialEval
-            onNavigateToAICost={() => setCurrentTab('ai-cost')}
-            onNavigateToPPO={() => setCurrentTab('ppo')}
+
+        {/* VIEW 3: FULL CATEGORY MANAGER SOURCING COMMAND CENTER */}
+        {(currentTab === 'category_manager_hub' || currentTab === 'commercial' || currentTab === 'ai-cost' || currentTab === 'negotiation') && (
+          <CategoryManagerHub
+            onRouteToPPO={() => setCurrentTab('ppo_workorders')}
           />
         )}
-        {currentTab === 'ai-cost' && (
-          <AICostStudio
-            onNavigateToNegotiation={() => setCurrentTab('negotiation')}
-          />
-        )}
-        {currentTab === 'negotiation' && <NegotiationHub />}
-        {currentTab === 'ppo' && (
+
+        {/* VIEW 4-6: PPO APPROVAL & PO RELEASE */}
+        {(currentTab === 'ppo_workorders' || currentTab === 'ppo') && (
           <PPOModule
             onOpenCreatePPO={() => setIsNewPPOModalOpen(true)}
           />
         )}
-        {currentTab === 'masters' && <MastersAudit />}
+
+        {/* VIEW 7: VENDOR PORTAL */}
+        {currentTab === 'vendor_portal' && (
+          <VendorPortal />
+        )}
+
+        {/* VIEW 8: TENANT HIERARCHY */}
+        {currentTab === 'tenant_overview' && (
+          <TenantOverview />
+        )}
+
+        {/* MASTERS & AUDIT TRAIL */}
+        {currentTab === 'masters' && (
+          <MastersAudit />
+        )}
       </main>
 
       {/* Modal: New PR */}
@@ -133,7 +157,7 @@ export default function Home() {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h3 className="text-base font-bold text-slate-900 flex items-center">
                 <PlusCircle className="w-5 h-5 text-sky-600 mr-2" />
-                Create New Purchase Request (PR)
+                <span>Create New Purchase Request (PR)</span>
               </h3>
               <button onClick={() => setIsNewPRModalOpen(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
@@ -141,95 +165,94 @@ export default function Home() {
             </div>
 
             <form onSubmit={handleNewPRSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Project Name *</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">PR Title / Package Name</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Metro Line 4 - Pier Caps"
-                    value={prProject}
-                    onChange={(e) => setPrProject(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5"
+                    placeholder="e.g., Supply of Ready Mix Concrete M30"
+                    value={prTitle}
+                    onChange={(e) => setPrTitle(e.target.value)}
+                    className="w-full border rounded-lg p-2.5 bg-slate-50 focus:bg-white"
                   />
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Cost Centre *</label>
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">Project Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Metro Line 4 Station"
+                    value={prProject}
+                    onChange={(e) => setPrProject(e.target.value)}
+                    className="w-full border rounded-lg p-2.5 bg-slate-50 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">Cost Centre</label>
                   <select
                     value={prCostCentre}
                     onChange={(e) => setPrCostCentre(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white"
+                    className="w-full border rounded-lg p-2.5 bg-slate-50 font-semibold"
                   >
-                    <option value="CC-101 (Civil & Concrete)">CC-101 | Civil & Concrete</option>
-                    <option value="CC-102 (Structural Steel)">CC-102 | Structural Steel</option>
-                    <option value="CC-103 (MEP & HVAC)">CC-103 | MEP & HVAC</option>
-                    <option value="CC-104 (Finishing & Interior)">CC-104 | Finishing & Interior</option>
+                    <option value="CC-101 (Civil & Concrete)">CC-101 (Civil & Concrete)</option>
+                    <option value="CC-102 (Structural Steel)">CC-102 (Structural Steel)</option>
+                    <option value="CC-103 (MEP & HVAC)">CC-103 (MEP & HVAC)</option>
+                    <option value="CC-104 (Finishing, Interior & Millwork)">CC-104 (Finishing, Interior & Millwork)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Category *</label>
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">Procurement Category</label>
                   <select
                     value={prCategory}
                     onChange={(e) => setPrCategory(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white"
+                    className="w-full border rounded-lg p-2.5 bg-slate-50 font-semibold"
                   >
+                    <option value="Interior & Fitouts">Interior & Fitouts</option>
                     <option value="Civil Materials">Civil Materials</option>
                     <option value="Structural Steel">Structural Steel</option>
                     <option value="MEP Equipment">MEP Equipment</option>
-                    <option value="Finishing Services">Finishing Services</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Required Delivery Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={prDate}
-                    onChange={(e) => setPrDate(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5"
-                  />
-                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Scope Description *</label>
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700">Required By Date</label>
                 <input
-                  type="text"
-                  required
-                  placeholder="e.g. Supply of TMT Fe500D Reinforcement Steel Bars"
-                  value={prTitle}
-                  onChange={(e) => setPrTitle(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-2.5"
+                  type="date"
+                  value={prDate}
+                  onChange={(e) => setPrDate(e.target.value)}
+                  className="w-full border rounded-lg p-2.5 bg-slate-50"
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Remarks & Specifications</label>
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700">Technical Scope Remarks</label>
                 <textarea
-                  rows={2}
-                  placeholder="Include test certificates as per IS standard..."
+                  rows={3}
+                  placeholder="Additional specifications or urgency notes..."
                   value={prRemarks}
                   onChange={(e) => setPrRemarks(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-2.5"
+                  className="w-full border rounded-lg p-2.5 bg-slate-50"
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+              <div className="pt-3 border-t flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsNewPRModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-4 py-2 border rounded-lg text-slate-600 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg shadow-sm"
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-bold shadow"
                 >
-                  Submit Purchase Request
+                  Submit PR Requisition
                 </button>
               </div>
             </form>
@@ -240,105 +263,93 @@ export default function Home() {
       {/* Modal: New PPO */}
       {isNewPPOModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center">
-                <Check className="w-5 h-5 text-emerald-600 mr-2" />
-                Draft Purchase Price Offer (PPO)
-              </h3>
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-bold text-slate-900">Create Purchase Price Offer (PPO)</h3>
               <button onClick={() => setIsNewPPOModalOpen(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreatePPOSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Target PR *</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">Target PR</label>
                   <select
                     value={ppoTargetPR}
                     onChange={(e) => setPpoTargetPR(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white"
+                    className="w-full border rounded-lg p-2 bg-slate-50 font-mono"
                   >
                     {prs.map(p => (
-                      <option key={p.id} value={p.id}>{p.id} | {p.title}</option>
+                      <option key={p.id} value={p.id}>{p.id} - {p.title.substring(0, 25)}...</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Selected Vendor *</label>
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">Awarded Vendor</label>
                   <input
                     type="text"
-                    required
                     value={ppoVendor}
                     onChange={(e) => setPpoVendor(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5"
+                    className="w-full border rounded-lg p-2 bg-slate-50 font-bold"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Final Negotiated Unit Rate (₹) *</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">Final Unit Rate (INR)</label>
                   <input
                     type="number"
-                    required
                     value={ppoUnitRate}
-                    onChange={(e) => setPpoUnitRate(parseFloat(e.target.value))}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 font-bold font-mono"
+                    onChange={(e) => setPpoUnitRate(parseFloat(e.target.value) || 0)}
+                    className="w-full border rounded-lg p-2 bg-slate-50 font-mono font-bold"
                   />
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">GST Tax Rate (%) *</label>
-                  <select
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700">GST Rate (%)</label>
+                  <input
+                    type="number"
                     value={ppoTaxRate}
-                    onChange={(e) => setPpoTaxRate(parseFloat(e.target.value))}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white"
-                  >
-                    <option value={18}>18% GST (Standard)</option>
-                    <option value={12}>12% GST</option>
-                    <option value={5}>5% GST</option>
-                    <option value={0}>0% (Exempted)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Payment Terms *</label>
-                  <input
-                    type="text"
-                    required
-                    value={ppoPaymentTerms}
-                    onChange={(e) => setPpoPaymentTerms(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Delivery Lead Time *</label>
-                  <input
-                    type="text"
-                    required
-                    value={ppoLeadTime}
-                    onChange={(e) => setPpoLeadTime(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5"
+                    onChange={(e) => setPpoTaxRate(parseFloat(e.target.value) || 0)}
+                    className="w-full border rounded-lg p-2 bg-slate-50 font-mono"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700">Payment Terms</label>
+                <input
+                  type="text"
+                  value={ppoPaymentTerms}
+                  onChange={(e) => setPpoPaymentTerms(e.target.value)}
+                  className="w-full border rounded-lg p-2 bg-slate-50"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700">Committed Delivery Lead Time</label>
+                <input
+                  type="text"
+                  value={ppoLeadTime}
+                  onChange={(e) => setPpoLeadTime(e.target.value)}
+                  className="w-full border rounded-lg p-2 bg-slate-50"
+                />
+              </div>
+
+              <div className="pt-3 border-t flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsNewPPOModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-4 py-2 border rounded-lg text-slate-600 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow"
                 >
-                  Submit PPO for Approval
+                  Issue PPO to Approval Queue
                 </button>
               </div>
             </form>
