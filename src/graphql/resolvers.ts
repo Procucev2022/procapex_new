@@ -8,6 +8,8 @@ import {
   INITIAL_POS,
   INITIAL_AUDIT_LOGS,
   CACHE_TAGS,
+  ENCRYPTION_SERIALIZATION_PREFIX,
+  DEFAULT_AES_ALGORITHM,
 } from '@/constants';
 import {
   PurchaseRequest,
@@ -16,10 +18,12 @@ import {
   TenantConfig,
   TenantKey,
   ClearCacheInput,
+  AESAlgorithm,
 } from '@/types';
 import { dbCache } from '@/lib/db-cache';
 import { dbAuditor } from '@/lib/db-auditor';
 import { logger } from '@/lib/logger';
+import { encrypt, decrypt, serializeBundle } from '@/lib/crypto';
 
 // In-memory runtime state for mutations
 let purchaseRequestsState: PurchaseRequest[] = [...INITIAL_PRS];
@@ -354,4 +358,80 @@ export const resolvers = {
     dbCache.invalidateAll();
     return true;
   },
+
+  // Query: Encrypt Data using AES
+  encryptData: async ({
+    input,
+  }: {
+    input: { data: string; algorithm?: AESAlgorithm; aad?: string };
+  }) => {
+    return dbAuditor.auditAsync('Crypto', 'ENCRYPT', 'graphql.query.encryptData', async () => {
+      const bundle = encrypt(input.data, {
+        algorithm: input.algorithm,
+        aad: input.aad,
+      });
+      const serialized = serializeBundle(bundle);
+      return {
+        ...bundle,
+        serialized,
+      };
+    });
+  },
+
+  // Query: Decrypt Data using AES
+  decryptData: async ({
+    input,
+  }: {
+    input: {
+      serializedOrCiphertext: string;
+      tag?: string;
+      iv?: string;
+      salt?: string;
+      algorithm?: AESAlgorithm;
+      aad?: string;
+    };
+  }) => {
+    return dbAuditor.auditAsync('Crypto', 'DECRYPT', 'graphql.query.decryptData', async () => {
+      if (input.serializedOrCiphertext.startsWith(ENCRYPTION_SERIALIZATION_PREFIX)) {
+        return decrypt(input.serializedOrCiphertext, { aad: input.aad });
+      }
+      return decrypt(
+        {
+          algorithm: input.algorithm || DEFAULT_AES_ALGORITHM,
+          iv: input.iv || '',
+          tag: input.tag,
+          salt: input.salt || '',
+          ciphertext: input.serializedOrCiphertext,
+          aad: input.aad,
+        },
+        { aad: input.aad }
+      );
+    });
+  },
+
+  // Mutation: Securely encrypt and update PPO payment terms
+  secureUpdatePPOPaymentTerms: async ({
+    ppoId,
+    paymentTerms,
+  }: {
+    ppoId: string;
+    paymentTerms: string;
+  }) => {
+    return dbAuditor.auditAsync('PPO', 'UPDATE', `graphql.mutation.secureUpdatePPOPaymentTerms(${ppoId})`, async () => {
+      const ppo = pposState.find((p) => p.id === ppoId);
+      if (!ppo) {
+        throw new Error(`PPO not found: ${ppoId}`);
+      }
+      const encryptedBundle = encrypt(paymentTerms, { aad: ppoId });
+      const serialized = serializeBundle(encryptedBundle);
+      ppo.paymentTerms = serialized;
+      dbCache.invalidateByTag(CACHE_TAGS.PPOS);
+      logger.info('graphql/resolvers', `Updated PPO payment terms with AES encryption: ${ppoId}`, {
+        ppoId,
+        algorithm: encryptedBundle.algorithm,
+      });
+      return ppo;
+    });
+  },
 };
+

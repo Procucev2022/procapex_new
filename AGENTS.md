@@ -149,6 +149,30 @@ All AI coding agents MUST utilize and maintain the centralized GraphQL layer at 
 
 ---
 
+## 🔐 AES Encryption & Data Protection Standards
+
+All AI coding agents MUST incorporate AES encryption algorithms to guarantee the protection, integrity, and secure processing of sensitive enterprise data.
+
+1. **Standard Cryptographic Algorithms**:
+   - **Default Algorithm**: **AES-256-GCM** (`DEFAULT_AES_ALGORITHM` from `@/constants`), providing Authenticated Encryption with Associated Data (AEAD) to prevent tampering, bit-flipping, and padding oracle attacks.
+   - **Supported Fallbacks**: **AES-256-CBC** (`'aes-256-cbc'`) for legacy interop.
+   - **Zero Custom Ciphers**: Always use Node.js native `crypto` module via the centralized utility `src/lib/crypto.ts`.
+
+2. **Nonce/IV, Salt & Key Derivation Requirements**:
+   - **Key Derivation**: Cryptographic keys MUST be derived using **PBKDF2** with HMAC-SHA256, 100,000 iterations (`PBKDF2_ITERATIONS`), and a unique 16-byte random salt (`AES_SALT_LENGTH_BYTES`).
+   - **Unique Initialization Vectors**: Every encryption operation MUST generate a fresh, cryptographically random IV (12 bytes for GCM, 16 bytes for CBC). Nonces must NEVER be reused across encryptions.
+   - **128-bit Authentication Tag**: In AES-GCM mode, the 16-byte authentication tag MUST be verified during decryption. If tag verification fails, decryption must immediately abort.
+
+3. **Field-Level Encryption & Blind Indexing**:
+   - Sensitive business data (payment terms, vendor quotes, financial details, audit trails) must be encrypted using `encryptFields()` or `encrypt()`.
+   - Searchable encrypted fields MUST utilize deterministic blind indexing (`generateBlindIndex()`) with HMAC-SHA256 to allow lookups without decrypting.
+
+4. **Zero Plaintext & Secret Leakage in Logs**:
+   - Never log raw plaintext, sensitive secrets, or encryption keys in application logs.
+   - Route cryptographic event tracking through `logger.debug` with metadata (algorithm, durationMs, bytesProcessed).
+
+---
+
 ## ⚡ Quality Check & Verification Requirements
 
 ### Mandatory Quality Check Execution

@@ -185,6 +185,30 @@ export const schema = buildSchema(`
     leadTime: String!
   }
 
+  type EncryptedDataResult {
+    algorithm: String!
+    iv: String!
+    tag: String
+    salt: String!
+    ciphertext: String!
+    serialized: String!
+  }
+
+  input EncryptDataInput {
+    data: String!
+    algorithm: String
+    aad: String
+  }
+
+  input DecryptDataInput {
+    serializedOrCiphertext: String!
+    tag: String
+    iv: String
+    salt: String
+    algorithm: String
+    aad: String
+  }
+
   type Query {
     tenants: [Tenant!]!
     tenant(id: String, key: String): Tenant
@@ -196,6 +220,8 @@ export const schema = buildSchema(`
     pos(status: String): [PurchaseOrder!]!
     auditLogs(limit: Int): [AuditLog!]!
     databaseAuditMetrics: DatabaseAuditMetrics!
+    encryptData(input: EncryptDataInput!): EncryptedDataResult!
+    decryptData(input: DecryptDataInput!): String!
   }
 
   type Mutation {
@@ -204,5 +230,6 @@ export const schema = buildSchema(`
     createPPO(input: CreatePPOInput!): PPOItem!
     releasePO(ppoId: String!): PurchaseOrder!
     clearDatabaseCache(tag: String, clearAll: Boolean): Boolean!
+    secureUpdatePPOPaymentTerms(ppoId: String!, paymentTerms: String!): PPOItem!
   }
 `);

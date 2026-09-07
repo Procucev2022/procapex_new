@@ -12,12 +12,12 @@
 - Logs can be searched or purged via `/api/logs`.
 
 ## 📦 Separate Constants Architecture & Standards
-- Keep all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`).
+- Keep all constants, lookup tables, and mock datasets in separate files under `src/constants/` (`tenants.ts`, `procurement.ts`, `vendors.ts`, `boq.ts`, `masters.ts`, `navigation.ts`, `ai.ts`, `logging.ts`, `database.ts`, `graphql.ts`, `crypto.ts`).
 - Never define inline mock datasets, configuration dictionaries, or constant lists in components, hooks, or context files.
 - Always import constants via the central `@/constants` alias.
 
 ## 🏷️ Separate Data Types & Interfaces Architecture & Standards
-- Declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`).
+- Declare all TypeScript types, interfaces, enums, and type aliases in separate files under `src/types/` (`procurement.ts`, `context.ts`, `components.ts`, `ai.ts`, `logger.ts`, `database.ts`, `graphql.ts`, `crypto.ts`).
 - Never define inline `interface` or `type` declarations inside components or runtime files.
 - Always import types via the central `@/types` alias.
 
@@ -32,6 +32,13 @@
 - Streamline client queries by fetching exact selection sets without over/under-fetching.
 - Apply complexity and size bounds (`GRAPHQL_COMPLEXITY_LIMITS`).
 - Connect resolvers to `dbCache` and invalidate tags on mutations.
+
+## 🔐 AES Encryption & Data Protection Standards
+- Use **AES-256-GCM** authenticated encryption (`DEFAULT_AES_ALGORITHM`) as the default cryptographic standard.
+- Derive keys via **PBKDF2** with HMAC-SHA256, 100,000 iterations, and unique 16-byte random salts.
+- Require fresh nonces/IVs (12 bytes for GCM) and strictly verify 128-bit authentication tags on decryption.
+- Support field-level encryption (`encryptFields()`) and deterministic blind indexing (`generateBlindIndex()`) for searchable encrypted fields.
+- Never log plaintext secrets or keys in application logs; audit operations via `logger.debug`.
 
 ## ⚡ Quality Check Execution After Every Change
 - **Fast iterations on changed files**:

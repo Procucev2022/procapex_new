@@ -523,6 +523,131 @@ describe('GraphQL API & Resolvers Suite (/api/graphql)', () => {
     });
   });
 
+  describe('AES Encryption & Secure Data Processing Operations', () => {
+    it('should encrypt sensitive string data via encryptData query', async () => {
+      const query = `
+        query EncryptTest {
+          encryptData(input: { data: "Sensitive Banking IFSC: HDFC0001234", aad: "bank-context" }) {
+            algorithm
+            iv
+            tag
+            salt
+            ciphertext
+            serialized
+          }
+        }
+      `;
+
+      const res = await POST(createRequest({ query }));
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.data.encryptData).toBeDefined();
+      expect(json.data.encryptData.algorithm).toBe('aes-256-gcm');
+      expect(json.data.encryptData.serialized).toMatch(/^enc:v1:aes-256-gcm:/);
+    });
+
+    it('should decrypt encrypted data using serialized format and individual bundle fields', async () => {
+      // 1. Encrypt first
+      const encryptQuery = `
+        query {
+          encryptData(input: { data: "Target Negotiation Limit: 500000" }) {
+            serialized
+            ciphertext
+            iv
+            salt
+            tag
+            algorithm
+          }
+        }
+      `;
+      const encRes = await POST(createRequest({ query: encryptQuery }));
+      const encJson = await encRes.json();
+      const encData = encJson.data.encryptData;
+
+      // 2. Decrypt with serialized string
+      const decryptSerializedQuery = `
+        query {
+          decryptData(input: { serializedOrCiphertext: "${encData.serialized}" })
+        }
+      `;
+      const decRes1 = await POST(createRequest({ query: decryptSerializedQuery }));
+      const decJson1 = await decRes1.json();
+      expect(decJson1.data.decryptData).toBe('Target Negotiation Limit: 500000');
+
+      // 3. Decrypt with individual bundle fields
+      const decryptFieldsQuery = `
+        query {
+          decryptData(input: {
+            serializedOrCiphertext: "${encData.ciphertext}"
+            iv: "${encData.iv}"
+            salt: "${encData.salt}"
+            tag: "${encData.tag}"
+            algorithm: "${encData.algorithm}"
+          })
+        }
+      `;
+      const decRes2 = await POST(createRequest({ query: decryptFieldsQuery }));
+      const decJson2 = await decRes2.json();
+      expect(decJson2.data.decryptData).toBe('Target Negotiation Limit: 500000');
+    });
+
+    it('should securely encrypt and update PPO payment terms via mutation', async () => {
+      // Create PPO first
+      const ppoMutation = `
+        mutation {
+          createPPO(input: {
+            prId: "PR-2026-0005"
+            vendor: "Secure Logistics Corp"
+            itemDesc: "Armored Transport"
+            unitRate: 50000
+            qty: 2
+            taxRate: 18
+            paymentTerms: "Plaintext Pre-Update"
+            leadTime: "3 Days"
+          }) {
+            id
+          }
+        }
+      `;
+      const ppoRes = await POST(createRequest({ query: ppoMutation }));
+      const ppoJson = await ppoRes.json();
+      const ppoId = ppoJson.data.createPPO.id;
+
+      // Secure update with AES encryption
+      const secureUpdateMutation = `
+        mutation SecureUpdate($id: String!) {
+          secureUpdatePPOPaymentTerms(ppoId: $id, paymentTerms: "Confidential: 100% LC at sight") {
+            id
+            paymentTerms
+          }
+        }
+      `;
+      const updateRes = await POST(
+        createRequest({ query: secureUpdateMutation, variables: { id: ppoId } })
+      );
+      const updateJson = await updateRes.json();
+
+      expect(updateJson.data.secureUpdatePPOPaymentTerms.id).toBe(ppoId);
+      expect(updateJson.data.secureUpdatePPOPaymentTerms.paymentTerms).toMatch(/^enc:v1:aes-256-gcm:/);
+    });
+
+    it('should return error when attempting secureUpdatePPOPaymentTerms on non-existent PPO', async () => {
+      const secureUpdateMutation = `
+        mutation {
+          secureUpdatePPOPaymentTerms(ppoId: "PPO-NON-EXISTENT", paymentTerms: "Terms") {
+            id
+          }
+        }
+      `;
+      const updateRes = await POST(createRequest({ query: secureUpdateMutation }));
+      const updateJson = await updateRes.json();
+
+      expect(updateJson.errors).toBeDefined();
+      expect(updateJson.errors[0].message).toContain('PPO not found');
+    });
+  });
+
   describe('Validation & Error Scenarios', () => {
     it('should reject request missing query field with 400', async () => {
       const req = createRequest({ invalidPayload: true });

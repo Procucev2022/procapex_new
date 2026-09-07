@@ -36,6 +36,13 @@
 - Enforce complexity limits (`GRAPHQL_COMPLEXITY_LIMITS`) and structured logging with correlation IDs on all operations.
 - Ensure GraphQL resolvers leverage `dbCache` for reads and invalidate tags on mutations.
 
+### 🔐 AES Encryption & Data Protection Standards
+- Use **AES-256-GCM** authenticated encryption (`DEFAULT_AES_ALGORITHM` from `@/constants`) as the default standard for securing sensitive data.
+- Derive keys via **PBKDF2** with HMAC-SHA256, 100,000 iterations, and a unique 16-byte random salt per operation.
+- Use unique nonces/IVs (12 bytes for GCM) and strictly verify 128-bit authentication tags on decryption.
+- Implement field-level encryption (`encryptFields()`) for sensitive financial/payment details and deterministic blind indexing (`generateBlindIndex()`) for searchable encrypted fields.
+- Never log plaintext secrets; trace operations via `logger.debug` with cryptographic metadata.
+
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:
 - **Fast iterations on changed files**:

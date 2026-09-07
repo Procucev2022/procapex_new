@@ -37,7 +37,14 @@
 - Apply complexity and payload bounds (`GRAPHQL_COMPLEXITY_LIMITS`).
 - Connect resolvers to `dbCache` for reads and invalidate tags on mutations.
 
-### 7. Mandatory Quality Check Execution
+### 7. AES Encryption & Data Protection Standards
+- Standardize on **AES-256-GCM** (`DEFAULT_AES_ALGORITHM`) authenticated encryption with 128-bit authentication tags to prevent data tampering.
+- Cryptographic keys must be derived via **PBKDF2** with HMAC-SHA256, 100,000 iterations, and unique 16-byte random salts.
+- Require fresh nonces/IVs (12 bytes for GCM) on every operation; never reuse nonces.
+- Enforce field-level encryption (`encryptFields()`) on sensitive financial and procurement data, and deterministic blind indexing (`generateBlindIndex()`) for searchable encrypted fields.
+- Strictly prohibit plaintext secret logging; audit events with metadata via `logger.debug`.
+
+### 8. Mandatory Quality Check Execution
 - AI coding agents must run quality checks after every change:
   - **Fast check for rapid development**:
     ```bash
@@ -54,7 +61,7 @@
     ```
     Recursively validates all projects in the workspace.
 
-### 8. Strict Check Order: Build & Coverage Checked First
+### 9. Strict Check Order: Build & Coverage Checked First
 Full quality checks must follow this mandatory sequence:
 1. **Build Verification**: `npm run build`
 2. **Unit Test Code Coverage**: `npm run test:coverage` (90% per-file benchmark across lines, statements, branches, and functions, `--detectOpenHandles`)
@@ -62,11 +69,11 @@ Full quality checks must follow this mandatory sequence:
 4. **Lint**: `npm run lint` (`next lint`)
 5. **Database Schema & Migrations**: `npm run db:validate` / apply pending migrations
 
-### 9. Zero Tolerance for Coverage Regressions
+### 10. Zero Tolerance for Coverage Regressions
 - No files may be skipped.
 - Per-file thresholds must strictly remain $\ge 90\%$ on all 4 metrics.
 
-### 10. CI/CD Pull Request Pipeline & Quality Reporting
+### 11. CI/CD Pull Request Pipeline & Quality Reporting
 - Pull requests trigger `.github/workflows/pull-request.yml` with a strict job timeout (`timeout-minutes: 20`).
 - Pipeline enforces Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 metrics) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
 - Generates and publishes an automated PR summary comment detailing test pass/fail counts and overall & per-file coverage statistics (`npm run ci:summary`).

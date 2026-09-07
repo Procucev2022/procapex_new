@@ -32,6 +32,18 @@ import {
   GRAPHQL_COMPLEXITY_LIMITS,
   GRAPHQL_ERROR_CODES,
   DEFAULT_GRAPHQL_INTROSPECTION_QUERY,
+  DEFAULT_AES_ALGORITHM,
+  SUPPORTED_AES_ALGORITHMS,
+  AES_KEY_LENGTH_BYTES,
+  AES_GCM_IV_LENGTH_BYTES,
+  AES_CBC_IV_LENGTH_BYTES,
+  AES_TAG_LENGTH_BYTES,
+  AES_SALT_LENGTH_BYTES,
+  PBKDF2_ITERATIONS,
+  PBKDF2_DIGEST,
+  ENCRYPTION_SERIALIZATION_PREFIX,
+  DEFAULT_ENCRYPTION_SECRET_FALLBACK,
+  CRYPTO_ERROR_MESSAGES,
 } from '@/constants';
 
 import * as tenantsModule from '@/constants/tenants';
@@ -44,6 +56,7 @@ import * as aiModule from '@/constants/ai';
 import * as loggingModule from '@/constants/logging';
 import * as databaseModule from '@/constants/database';
 import * as graphqlModule from '@/constants/graphql';
+import * as cryptoModule from '@/constants/crypto';
 import * as indexModule from '@/constants/index';
 
 describe('Constants Architecture & Integrity Test Suite', () => {
@@ -270,6 +283,25 @@ describe('Constants Architecture & Integrity Test Suite', () => {
     });
   });
 
+  describe('Crypto Constants', () => {
+    it('should export AES cryptographic algorithm specifications and parameters', () => {
+      expect(cryptoModule.DEFAULT_AES_ALGORITHM).toBe('aes-256-gcm');
+      expect(cryptoModule.SUPPORTED_AES_ALGORITHMS).toContain('aes-256-gcm');
+      expect(cryptoModule.SUPPORTED_AES_ALGORITHMS).toContain('aes-256-cbc');
+
+      expect(AES_KEY_LENGTH_BYTES).toBe(32);
+      expect(AES_GCM_IV_LENGTH_BYTES).toBe(12);
+      expect(AES_CBC_IV_LENGTH_BYTES).toBe(16);
+      expect(AES_TAG_LENGTH_BYTES).toBe(16);
+      expect(AES_SALT_LENGTH_BYTES).toBe(16);
+      expect(PBKDF2_ITERATIONS).toBe(100000);
+      expect(PBKDF2_DIGEST).toBe('sha256');
+      expect(ENCRYPTION_SERIALIZATION_PREFIX).toBe('enc:v1:');
+      expect(DEFAULT_ENCRYPTION_SECRET_FALLBACK).toBeDefined();
+      expect(CRYPTO_ERROR_MESSAGES.CORRUPTED_CIPHERTEXT).toBeDefined();
+    });
+  });
+
   describe('Index Barrel Export', () => {
     it('should re-export all constants correctly from index', () => {
       expect(indexModule.TENANTS).toBe(tenantsModule.TENANTS);
@@ -282,6 +314,8 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(indexModule.LOG_LEVEL_SEVERITY).toBe(loggingModule.LOG_LEVEL_SEVERITY);
       expect(indexModule.DEFAULT_DB_OPTIMIZATION_CONFIG).toBe(databaseModule.DEFAULT_DB_OPTIMIZATION_CONFIG);
       expect(indexModule.GRAPHQL_COMPLEXITY_LIMITS).toBe(graphqlModule.GRAPHQL_COMPLEXITY_LIMITS);
+      expect(indexModule.DEFAULT_AES_ALGORITHM).toBe(cryptoModule.DEFAULT_AES_ALGORITHM);
+      expect(indexModule.PBKDF2_ITERATIONS).toBe(cryptoModule.PBKDF2_ITERATIONS);
     });
   });
 });

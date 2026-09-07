@@ -20,7 +20,17 @@ export interface QueryAuditEntry {
   id: string;
   querySignature: string;
   model: string;
-  operation: 'FIND_UNIQUE' | 'FIND_FIRST' | 'FIND_MANY' | 'CREATE' | 'UPDATE' | 'DELETE' | 'RAW' | 'GRAPHQL_QUERY';
+  operation:
+    | 'FIND_UNIQUE'
+    | 'FIND_FIRST'
+    | 'FIND_MANY'
+    | 'CREATE'
+    | 'UPDATE'
+    | 'DELETE'
+    | 'RAW'
+    | 'GRAPHQL_QUERY'
+    | 'ENCRYPT'
+    | 'DECRYPT';
   durationMs: number;
   timestamp: string;
   isSlowQuery: boolean;
