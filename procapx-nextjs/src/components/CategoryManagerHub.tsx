@@ -2131,7 +2131,7 @@ export const CategoryManagerHub: React.FC<{ onRouteToPPO: () => void }> = ({ onR
                             <button 
                               onClick={() => {
                                 setSelectedMLEOItem(it);
-                                setShowMLEOModal(true);
+                                setIsMLEOModalOpen(true);
                               }}
                               className="mt-1 px-2 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 rounded-md text-[10px] font-bold shadow-xs inline-flex items-center space-x-1 transition-all"
                             >
@@ -2144,9 +2144,9 @@ export const CategoryManagerHub: React.FC<{ onRouteToPPO: () => void }> = ({ onR
                             const q = (it.vendorQuotes && it.vendorQuotes[v.id]) ? it.vendorQuotes[v.id] : { initialRate: Math.round(it.benchmark * 1.15), revisedRate: null };
                             const initRate = q.initialRate;
                             const initAmt = it.qty * initRate;
-                            const isRevised = q.revisedRate !== null && q.revisedRate !== undefined;
-                            const revisedRate = isRevised ? q.revisedRate : null;
-                            const revisedAmt = isRevised ? it.qty * (revisedRate || 0) : null;
+                            const revisedRateVal = q.revisedRate;
+                            const isRevised = typeof revisedRateVal === 'number';
+                            const revisedAmt = isRevised && revisedRateVal !== null && revisedRateVal !== undefined ? it.qty * revisedRateVal : null;
 
                             return (
                               <React.Fragment key={v.id}>
@@ -2155,12 +2155,12 @@ export const CategoryManagerHub: React.FC<{ onRouteToPPO: () => void }> = ({ onR
                                   <div className="text-[10px] text-rose-700 font-semibold">Amt: ₹ {Math.round(initAmt).toLocaleString()}</div>
                                 </td>
                                 <td className="p-3 text-right bg-emerald-50/30 font-mono border-r border-slate-200">
-                                  {isRevised && revisedRate !== null && revisedAmt !== null ? (
+                                  {isRevised && revisedRateVal !== null && revisedRateVal !== undefined && revisedAmt !== null ? (
                                     <>
-                                      <div className="font-black text-emerald-800 text-xs">₹ {revisedRate.toLocaleString()}</div>
+                                      <div className="font-black text-emerald-800 text-xs">₹ {revisedRateVal.toLocaleString()}</div>
                                       <div className="text-[10px] text-emerald-900 font-bold">Amt: ₹ {Math.round(revisedAmt).toLocaleString()}</div>
                                       <span className="inline-block px-1 py-0.2 rounded text-[8px] font-extrabold bg-emerald-200 text-emerald-900">
-                                        (-{(((initRate - revisedRate) / initRate) * 100).toFixed(1)}%)
+                                        (-{(((initRate - revisedRateVal) / initRate) * 100).toFixed(1)}%)
                                       </span>
                                     </>
                                   ) : (

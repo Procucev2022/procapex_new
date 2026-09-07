@@ -93,7 +93,7 @@ export default function Home() {
         {currentTab === 'dashboard' && <Dashboard onNavigate={(tab) => setCurrentTab(tab)} />}
         {currentTab === 'prs' && (
           <PRModule
-            onNavigateToBOQ={(prId) => {
+            onNavigateToBOQ={(prId: string) => {
               setSelectedPRForBOQ(prId);
               setCurrentTab('boq');
             }}

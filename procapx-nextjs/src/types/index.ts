@@ -20,7 +20,12 @@ export type UserRole =
   | 'CATEGORY_MANAGER_2'    // 4. Category Manager 2 (Procurement Head Approver / PPO Approver)
   | 'PROJECT_HEAD_PPO'      // 5. Project Head (PPO Approver)
   | 'FINANCE_HEAD'          // 6. Finance Head (PPO Approver & PO Release)
-  | 'VENDOR';               // 7. Vendor (Supplier Portal)
+  | 'VENDOR'                // 7. Vendor (Supplier Portal)
+  | 'BUYER'
+  | 'REQUESTER'
+  | 'ESTIMATOR'
+  | 'APPROVER'
+  | 'ADMIN';
 
 export type PRStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED_BY_PROJECT_HEAD' | 'ACCEPTED_BY_CATEGORY_MGR' | 'CANCELLED';
 
@@ -144,27 +149,35 @@ export interface PPOItem {
   grandTotal: number;
   status: string;
   createdDate?: string;
+  paymentTerms?: string;
+  leadTime?: string;
   isNonL1?: boolean;
   nonL1Justification?: NonL1Justification;
 }
 
 export interface PurchaseOrder {
   id: string;
-  ppoId: string;
-  prId: string;
+  ppoId?: string;
+  ppoRef?: string;
+  prId?: string;
+  prRef?: string;
   vendor: string;
-  issuedDate: string;
-  deliveryDate: string;
-  grandTotal: number;
+  issuedDate?: string;
+  issueDate?: string;
+  deliveryDate?: string;
+  grandTotal?: number;
+  amount?: number;
   status: 'ISSUED' | 'DISPATCHED' | 'DELIVERED';
 }
 
 export interface AuditLog {
-  id: string;
-  timestamp: string;
+  id?: string;
+  timestamp?: string;
+  time?: string;
   user: string;
-  role: string;
+  role?: string;
   action: string;
-  targetId: string;
-  details: string;
+  targetId?: string;
+  details?: string;
+  detail?: string;
 }

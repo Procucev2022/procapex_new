@@ -32,7 +32,9 @@ import {
 import { useProcurement } from '../context/ProcurementContext';
 
 interface PRModuleProps {
-  onSelectPRForBOQ: (prId: string) => void;
+  onSelectPRForBOQ?: (prId: string) => void;
+  onNavigateToBOQ?: (prId: string) => void;
+  onOpenNewPRModal?: () => void;
 }
 
 interface RequesterBOQItem {
@@ -399,7 +401,7 @@ const VENDOR_DATABASE: VendorItem[] = [
   }
 ];
 
-export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ }) => {
+export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigateToBOQ, onOpenNewPRModal }) => {
   const { prs, createPR } = useProcurement();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [activeMethod, setActiveMethod] = useState<number>(3);
@@ -633,7 +635,11 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ }) => {
       }))
     };
     createPR(newPR);
-    onSelectPRForBOQ('PR-2026-0005');
+    if (onSelectPRForBOQ) {
+      onSelectPRForBOQ('PR-2026-0005');
+    } else if (onNavigateToBOQ) {
+      onNavigateToBOQ('PR-2026-0005');
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -853,7 +859,6 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ }) => {
                     className="w-full bg-white text-slate-900 font-semibold border border-slate-300 rounded-lg px-3.5 py-2 focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
-              </div>
               </div>
 
             </div>

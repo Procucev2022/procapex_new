@@ -59,7 +59,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       body: [
         ['1', ppo ? ppo.itemDesc : 'Supply of Construction Materials as per BOQ', 'Cum', '450', '4,400.00', '18% GST', '19,80,000.00'],
         ['', 'Applicable GST / Taxes (18%)', '', '', '', '', '3,56,400.00'],
-        ['', 'GRAND TOTAL (INC. TAXES)', '', '', '', '', `INR ${po.amount.toLocaleString()}`]
+        ['', 'GRAND TOTAL (INC. TAXES)', '', '', '', '', `INR ${(po.amount ?? po.grandTotal ?? 0).toLocaleString()}`]
       ],
       theme: 'striped',
       headStyles: { fillColor: [3, 105, 161], textColor: 255, fontSize: 8 },
@@ -212,7 +212,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                     <td className="p-3 font-mono font-bold text-emerald-700">{po.id}</td>
                     <td className="p-3 font-mono text-slate-600">{po.ppoRef}</td>
                     <td className="p-3 font-bold text-slate-800">{po.vendor}</td>
-                    <td className="p-3 text-right font-bold text-emerald-950 font-mono">₹ {po.amount.toLocaleString()}</td>
+                    <td className="p-3 text-right font-bold text-emerald-950 font-mono">₹ {(po.amount ?? po.grandTotal ?? 0).toLocaleString()}</td>
                     <td className="p-3 text-slate-600">{po.issueDate}</td>
                     <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">{po.status}</span></td>
                     <td className="p-3 text-right">

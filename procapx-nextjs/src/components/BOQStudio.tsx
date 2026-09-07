@@ -124,7 +124,7 @@ export const BOQStudio: React.FC<{ selectedPRId: string; onNavigateToCommercial:
     }
   };
 
-  const packageTotal = activeDwg.items.reduce((acc, it) => acc + it.qty * it.rateCard, 0);
+  const packageTotal = activeDwg.items.reduce((acc, it) => acc + it.qty * (it.rateCard ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -221,7 +221,7 @@ export const BOQStudio: React.FC<{ selectedPRId: string; onNavigateToCommercial:
             </thead>
             <tbody className="divide-y divide-slate-200">
               {activeDwg.items.map((item, idx) => {
-                const total = item.qty * item.rateCard;
+                const total = item.qty * (item.rateCard ?? 0);
                 return (
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="p-3 text-slate-400 font-mono">{idx + 1}</td>
@@ -229,7 +229,7 @@ export const BOQStudio: React.FC<{ selectedPRId: string; onNavigateToCommercial:
                     <td className="p-3 font-medium text-slate-900">{item.desc}</td>
                     <td className="p-3 font-bold font-mono text-slate-700">{item.uom}</td>
                     <td className="p-3 text-right font-bold font-mono text-slate-900">{item.qty.toLocaleString()}</td>
-                    <td className="p-3 text-right font-mono font-bold text-blue-900">₹ {item.rateCard.toLocaleString()}</td>
+                    <td className="p-3 text-right font-mono font-bold text-blue-900">₹ {(item.rateCard ?? 0).toLocaleString()}</td>
                     <td className="p-3 text-right font-mono font-bold text-emerald-950">₹ {total.toLocaleString()}</td>
                     <td className="p-3 text-center">
                       <button
@@ -257,9 +257,9 @@ export const BOQStudio: React.FC<{ selectedPRId: string; onNavigateToCommercial:
             </tbody>
             <tfoot className="bg-slate-50 font-bold border-t border-slate-200">
               <tr>
-                <td colspan="6" class="p-3 text-right text-slate-700">Drawing Scope Package Total:</td>
-                <td class="p-3 text-right font-mono text-sm text-blue-950">₹ {packageTotal.toLocaleString()}</td>
-                <td colspan="2"></td>
+                <td colSpan={6} className="p-3 text-right text-slate-700">Drawing Scope Package Total:</td>
+                <td className="p-3 text-right font-mono text-sm text-blue-950">₹ {packageTotal.toLocaleString()}</td>
+                <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>
@@ -279,7 +279,7 @@ export const BOQStudio: React.FC<{ selectedPRId: string; onNavigateToCommercial:
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t">
                 <div><span className="text-slate-500">Unit (UOM):</span> <strong>{selectedItemSpecs.uom}</strong></div>
                 <div><span className="text-slate-500">Drawing Quantity:</span> <strong>{selectedItemSpecs.qty} {selectedItemSpecs.uom}</strong></div>
-                <div><span className="text-slate-500">Master Rate:</span> <strong className="text-blue-700">₹ {selectedItemSpecs.rateCard.toLocaleString()}</strong></div>
+                <div><span className="text-slate-500">Master Rate:</span> <strong className="text-blue-700">₹ {(selectedItemSpecs.rateCard ?? 0).toLocaleString()}</strong></div>
               </div>
             </div>
             <div className="flex justify-end pt-2 border-t">
