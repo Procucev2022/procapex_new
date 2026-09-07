@@ -18,7 +18,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { prs, pos, resetToSampleData } = useProcurement();
+  const { prs, pos, activeTenant, resetToSampleData } = useProcurement();
 
   return (
     <div className="space-y-6">
@@ -28,11 +28,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs uppercase font-bold text-sky-400 tracking-wider">
-                Operational Overview
+                Enterprise Dashboard
               </span>
-              <h1 className="text-2xl font-bold mt-1">Procurement & AI Cost Intelligence Hub</h1>
+              <h1 className="text-2xl font-bold mt-1">
+                {activeTenant ? `${activeTenant.name} – Sourcing Command` : 'Procurement & AI Cost Intelligence Hub'}
+              </h1>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-                Managing end-to-end source-to-award workflows with AI-powered BOQ extraction, rate reasonableness benchmarks, and automated PO generation.
+                Active Project: <strong className="text-white font-semibold">{activeTenant?.project}</strong> • Real-time pipeline across BOQ Studio, Technical Approvals, 4-Way Commercial Matrix, Multi-Tier PPO sign-offs, and Vendor Awards.
               </p>
             </div>
             <div className="hidden md:flex items-center space-x-3 bg-[#031726]/40 p-3 rounded-xl border border-[#0c4a6e]/50 backdrop-blur-sm">
