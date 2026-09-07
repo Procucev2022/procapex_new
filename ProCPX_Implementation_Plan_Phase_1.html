@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProCPX Phase 1 - Technical Implementation Plan</title>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-dark: #1e3a8a;
+      --secondary: #0f766e;
+      --accent: #3b82f6;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 48px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border);
+    }
+    h1 {
+      color: var(--primary-dark);
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 16px;
+    }
+    .badge {
+      display: inline-block;
+      background: #eff6ff;
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    h2 {
+      color: var(--primary);
+      margin-top: 36px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    h3 {
+      color: var(--secondary);
+      margin-top: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      text-align: left;
+    }
+    th {
+      background-color: #f1f5f9;
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .workflow-box {
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 24px;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.4;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin: 16px 0;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .checklist {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .check-icon {
+      color: var(--success);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ProCPX Platform – Implementation Plan</h1>
+    <div class="badge">Phase 1 Baseline (Source-to-Award & AI Cost Intelligence)</div>
+    
+    <p><strong>Document Reference:</strong> <code>ProCPX_Functional_Requirement_Document_Phase_1.pdf</code><br>
+    <strong>Core Objective:</strong> End-to-end procurement digitization starting from Purchase Request (PR) through BOQ generation, multi-tier commercial evaluation, AI-assisted cost breakdowns, structured vendor negotiations, PPO approvals, and Work Order / PO issuance.</p>
+
+    <h2>1. End-to-End Workflow Flowchart</h2>
+    <div class="workflow-box">
+  [1. Purchase Request] 
+          │
+          ▼
+  [2. Cost Centre & Category Mapping]
+          │
+          ▼
+  [3. BOQ Creation] ───► (Route A: AI GFC Extraction | Route B: Standard Template | Route C: Excel Upload)
+          │
+          ▼
+  [4. PR Approval Workflow]
+          │
+          ▼
+  [5. PR Buyer Acceptance & Assignment]
+          │
+          ▼
+  [6. Commercial Price Check] ───► (Rate Card + Vendor Quotes + Market Benchmark + Internal Standard)
+          │
+          ▼
+  [7. Price Comparison Matrix]
+          │
+          ├───► Price Acceptable? (YES) ──────────────────────────┐
+          │                                                       │
+          └───► Price Acceptable? (NO)                            │
+                    │                                             │
+                    ▼                                             │
+        [8. AI Cost Analysis & MLEO Break-up]                     │
+                    │                                             │
+                    ▼                                             │
+        [9. Multi-Round Vendor Negotiation]                       │
+                    │                                             │
+                    ▼                                             │
+  [10. Final Commercial Comparison & Recommendation] ◄────────────┘
+          │
+          ▼
+  [11. PPO Creation & Commercial Drafting]
+          │
+          ▼
+  [12. PPO Approval Matrix]
+          │
+          ▼
+  [13. Work Order / PO Issuance & PDF Generation]
+    </div>
+
+    <h2>2. Recommended Technology Stack</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Technology</th>
+          <th>Purpose & Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Frontend</strong></td>
+          <td>Next.js 14 / React 18, TypeScript, Tailwind CSS</td>
+          <td>High performance responsive enterprise UI, dynamic data tables, interactive cost charts.</td>
+        </tr>
+        <tr>
+          <td><strong>Backend API</strong></td>
+          <td>FastAPI (Python 3.11+)</td>
+          <td>High-speed async API service, native typing, AI/ML integrations, and PDF report builders.</td>
+        </tr>
+        <tr>
+          <td><strong>Database</strong></td>
+          <td>PostgreSQL / SQLite with SQLAlchemy & Alembic</td>
+          <td>Relational integrity, JSONB support for dynamic line-items, quotation revisions, and audit trails.</td>
+        </tr>
+        <tr>
+          <td><strong>AI Engine</strong></td>
+          <td>Gemini AI Integration (Structured JSON Mode)</td>
+          <td>Automated GFC document parsing, bottom-up MLEO cost modeling, and negotiation intelligence.</td>
+        </tr>
+        <tr>
+          <td><strong>PDF Generation</strong></td>
+          <td>ReportLab / WeasyPrint</td>
+          <td>Corporate-grade Work Order & Purchase Order PDF generation with digital stamps.</td>
+        </tr>
+        <tr>
+          <td><strong>Auth & Security</strong></td>
+          <td>JWT + Role-Based Access Control (RBAC)</td>
+          <td>Granular permissions across Requester, Buyer, Estimator, Approver, Admin, and Vendor.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. User Roles & Access Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>PR Create</th>
+          <th>BOQ Prep / AI Validation</th>
+          <th>PR Approve</th>
+          <th>Commercial & AI Cost</th>
+          <th>Negotiation</th>
+          <th>PPO Create</th>
+          <th>PPO Approve</th>
+          <th>Issue PO</th>
+          <th>Master Admin</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Requester</strong></td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Estimator</strong></td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Approver</strong></td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Buyer</strong></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Buyer Admin</strong></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td><strong>Vendor</strong></td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>Submit Quote</td>
+          <td>Submit Counter</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>View PO</td>
+          <td>❌</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. Acceptance Criteria Checklist (Phase 1 Baseline)</h2>
+    <ul class="checklist">
+      <li><span class="check-icon">✓</span> <strong>PR Creation:</strong> Submit PR without mandatory budget upload or budget checks.</li>
+      <li><span class="check-icon">✓</span> <strong>Tri-Route BOQ:</strong> GFC → BOQ (AI-assisted), Standard Templates, and Excel Upload.</li>
+      <li><span class="check-icon">✓</span> <strong>Full Auditability:</strong> PR approval, buyer assignment, price revisions, and approvals logged.</li>
+      <li><span class="check-icon">✓</span> <strong>Commercial Check:</strong> Normalized 4-way comparison across Rate Card, Vendor Quotes, Benchmarks, and Standards.</li>
+      <li><span class="check-icon">✓</span> <strong>AI Cost Intelligence:</strong> Material, Labour, Equipment, Overheads (MLEO) break-up with human-in-the-loop override.</li>
+      <li><span class="check-icon">✓</span> <strong>Vendor Negotiation Hub:</strong> Logs counter-offers, revised quotes, target prices, and justifications.</li>
+      <li><span class="check-icon">✓</span> <strong>PPO & Work Order / PO:</strong> Digital PPO approval triggers Work Order / PO generation with PDF download.</li>
+      <li><span class="check-icon">✓</span> <strong>Strict Scope Guard:</strong> Excludes project budget uploads, shortfall requests, billing checks, and execution certification.</li>
+    </ul>
+  </div>
+</body>
+</html>
