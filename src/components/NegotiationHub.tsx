@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Handshake, History, Send, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Handshake, History, Send, RefreshCw, CheckCircle2, Sparkles } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 
 export const NegotiationHub: React.FC = () => {
@@ -73,6 +73,45 @@ export const NegotiationHub: React.FC = () => {
               <div className="flex justify-between"><span className="text-slate-500">Vendor:</span> <span className="font-bold text-slate-800">Vendor 1 (VND-001)</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Original Quote (Round 1):</span> <span className="font-bold text-rose-700 font-mono">₹ 1,62,260</span></div>
               <div className="flex justify-between"><span className="text-slate-500">AI Target Rate:</span> <span className="font-bold text-emerald-700 font-mono">₹ 1,35,420</span></div>
+            </div>
+
+            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-purple-900 flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  Gemini Tactical Assistant
+                </span>
+                <span className="text-[10px] text-purple-600 font-mono">GEMINI_MODEL</span>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/ai/negotiation', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        prTitle: selectedPRId,
+                        itemName: 'Procurement Package',
+                        vendorQuoteRate: 162260,
+                        targetBenchmark: 135420,
+                        currentRound: activeRounds.length + 1,
+                      }),
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      if (data.recommendedCounterRate) setRate(String(data.recommendedCounterRate));
+                      if (data.counterRemarks) setRemarks(data.counterRemarks);
+                    }
+                  } catch (e) {
+                    console.error('Failed to generate counter tactic', e);
+                  }
+                }}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-1.5 px-2 rounded-md shadow-xs flex items-center justify-center space-x-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>Draft Smart Counter-Offer</span>
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">

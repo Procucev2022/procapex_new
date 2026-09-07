@@ -1,22 +1,136 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, UserCheck, Send, Lightbulb, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, UserCheck, Send, Lightbulb, AlertCircle, RefreshCw, Cpu, CheckCircle2 } from 'lucide-react';
 
 interface AICostStudioProps {
   onNavigateToNegotiation: () => void;
 }
 
+interface MLEOPillars {
+  material: { percentage: number; cost: number; description: string };
+  labour: { percentage: number; cost: number; description: string };
+  equipment: { percentage: number; cost: number; description: string };
+  overheads: { percentage: number; cost: number; description: string };
+}
+
+interface CostInflator {
+  title: string;
+  description: string;
+}
+
+interface NegotiationScript {
+  title: string;
+  argument: string;
+}
+
+const PRESET_ITEMS = [
+  { name: 'Design Mix Concrete M30 with Fly Ash', qty: 450, uom: 'Cum', quote: 4200 },
+  { name: 'TMT Reinforcement Steel Bars Fe500D 25mm', qty: 150, uom: 'Ton', quote: 54000 },
+  { name: '20mm Polished Jet Black Granite Countertop', qty: 12.5, uom: 'Sqm', quote: 3550 },
+  { name: 'Water Cooled Screw Chiller Unit 200 TR', qty: 2, uom: 'Nos', quote: 3800000 },
+];
+
 export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiation }) => {
+  const [selectedItemName, setSelectedItemName] = useState<string>(PRESET_ITEMS[0].name);
+  const [customItem, setCustomItem] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(450);
+  const [uom, setUom] = useState<string>('Cum');
+  const [quotedRate, setQuotedRate] = useState<number>(4200);
+
   const [targetRate, setTargetRate] = useState<number>(4350);
   const [maxLimit, setMaxLimit] = useState<number>(4500);
+  const [pillars, setPillars] = useState<MLEOPillars>({
+    material: { percentage: 56, cost: 2436, description: 'Cement, aggregate, sand, fly ash' },
+    labour: { percentage: 14, cost: 609, description: 'Batching & transit mixing crew' },
+    equipment: { percentage: 18, cost: 783, description: 'Transit mixers, diesel & pump wear' },
+    overheads: { percentage: 12, cost: 522, description: 'QC testing & standard contractor margin' },
+  });
+  const [inflators, setInflators] = useState<CostInflator[]>([
+    {
+      title: 'Aggregate Transit Surcharge',
+      description: 'Vendor added +₹250/Cum transport markup vs local quarry index.',
+    },
+    {
+      title: 'Excess Contractor Margin',
+      description: 'Quoted margin is 22% vs regional benchmark of 12-14%.',
+    },
+  ]);
+  const [scripts, setScripts] = useState<NegotiationScript[]>([
+    {
+      title: 'Argument 1: Raw Material Deflation',
+      argument: 'OPC 53 cement wholesale index dropped 4.2% locally this month. Your material cost should be ₹2,436/Cum.',
+    },
+    {
+      title: 'Argument 2: Volume Amortization',
+      argument: 'For a committed bulk volume of 450 Cum, plant setup overhead amortizes below ₹120/Cum. We counter at ₹4,350/Cum.',
+    },
+  ]);
+
+  const [aiStatus, setAiStatus] = useState<{ model: string; isConfigured: boolean; message: string }>({
+    model: 'gemini 3.5 flash lite',
+    isConfigured: false,
+    message: 'Loading AI configuration...',
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [modelUsedNote, setModelUsedNote] = useState<string>('');
+
+  useEffect(() => {
+    fetch('/api/ai/status')
+      .then((res) => res.json())
+      .then((data) => setAiStatus(data))
+      .catch((err) => console.error('Failed to load AI status', err));
+  }, []);
+
+  const handleSelectPreset = (preset: typeof PRESET_ITEMS[0]) => {
+    setSelectedItemName(preset.name);
+    setCustomItem('');
+    setQuantity(preset.qty);
+    setUom(preset.uom);
+    setQuotedRate(preset.quote);
+  };
+
+  const handleGenerateAnalysis = async () => {
+    const itemToAnalyze = customItem.trim() || selectedItemName;
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/ai/cost-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemDescription: itemToAnalyze,
+          quantity,
+          uom,
+          currentQuote: quotedRate,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.targetRate) setTargetRate(data.targetRate);
+      if (data.maxLimit) setMaxLimit(data.maxLimit);
+      if (data.pillars) setPillars(data.pillars);
+      if (data.inflators) setInflators(data.inflators);
+      if (data.negotiationScripts) setScripts(data.negotiationScripts);
+      if (data.modelUsed) setModelUsedNote(data.modelUsed);
+    } catch (err) {
+      console.error('Error running Gemini cost analysis:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header & Model Badge */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="bg-purple-100 text-purple-700 text-[10px] font-bold uppercase px-2 py-0.5 rounded-md">
+            <span className="bg-purple-100 text-purple-700 text-[10px] font-bold uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
+              <Cpu className="w-3 h-3" />
               AI Cost Intelligence (FR-08, FR-09)
             </span>
             <h2 className="text-xl font-bold text-slate-900">Bottom-Up MLEO Cost Analysis</h2>
@@ -25,43 +139,160 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
             Deconstruct outlier rates into Material, Labour, Equipment, and Overheads (MLEO) to establish scientific negotiation leverage.
           </p>
         </div>
+
+        {/* Dynamic Gemini Status Pill */}
+        <div className="flex items-center space-x-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-xs self-start md:self-auto">
+          <Sparkles className="w-4 h-4 text-purple-600 animate-pulse" />
+          <div className="text-slate-700">
+            <span className="font-semibold text-purple-900">Model: </span>
+            <span className="font-mono text-purple-800 font-bold">{aiStatus.model}</span>
+            <span className="text-[10px] text-slate-500 block">Configurable via env (GEMINI_MODEL)</span>
+          </div>
+        </div>
       </div>
 
+      {/* Item Selector & Gemini Prompt Bar */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+            Analyze Procurement Item with Gemini
+          </span>
+          <span className="text-[11px] text-slate-400">Quick Presets or Custom Input</span>
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex flex-wrap gap-2">
+          {PRESET_ITEMS.map((item) => (
+            <button
+              key={item.name}
+              type="button"
+              onClick={() => handleSelectPreset(item)}
+              className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                selectedItemName === item.name && !customItem
+                  ? 'bg-purple-600 text-white border-purple-600 font-semibold'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              {item.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom or Selected Item Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
+          <div className="md:col-span-6">
+            <label className="text-[11px] font-semibold text-slate-600 block mb-1">Item Description / Specification:</label>
+            <input
+              type="text"
+              value={customItem || selectedItemName}
+              onChange={(e) => {
+                setCustomItem(e.target.value);
+                setSelectedItemName('');
+              }}
+              placeholder="e.g. Design Mix Concrete M30 with Fly Ash"
+              className="w-full text-xs border border-slate-300 rounded-lg p-2 font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="text-[11px] font-semibold text-slate-600 block mb-1">Quantity & UOM:</label>
+            <div className="flex space-x-1">
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                className="w-2/3 text-xs border border-slate-300 rounded-lg p-2 font-medium text-slate-800"
+              />
+              <input
+                type="text"
+                value={uom}
+                onChange={(e) => setUom(e.target.value)}
+                className="w-1/3 text-xs border border-slate-300 rounded-lg p-2 font-medium text-slate-800 text-center"
+              />
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="text-[11px] font-semibold text-slate-600 block mb-1">Quoted Rate (₹):</label>
+            <input
+              type="number"
+              value={quotedRate}
+              onChange={(e) => setQuotedRate(parseFloat(e.target.value) || 0)}
+              className="w-full text-xs border border-slate-300 rounded-lg p-2 font-medium text-slate-800 font-mono"
+            />
+          </div>
+
+          <div className="md:col-span-2 flex items-end">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={handleGenerateAnalysis}
+              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center space-x-1.5 transition-all"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Run Gemini AI</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {modelUsedNote && (
+          <div className="text-[11px] text-purple-700 bg-purple-50/70 p-2 rounded-md border border-purple-200 flex items-center justify-between">
+            <span>
+              <strong>Active AI Engine:</strong> {modelUsedNote}
+            </span>
+            <span className="text-[10px] text-slate-500">Live Cost Deconstruction Complete</span>
+          </div>
+        )}
+      </div>
+
+      {/* MLEO Results */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: MLEO Structure */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2 space-y-5">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
-              <span className="text-[10px] font-bold uppercase text-purple-600">Cost Composition Engine</span>
-              <h3 className="text-base font-bold text-slate-800">Design Mix Concrete M30 with Fly Ash</h3>
+              <span className="text-[10px] font-bold uppercase text-purple-600">Cost Composition Engine (MLEO)</span>
+              <h3 className="text-base font-bold text-slate-800">{customItem || selectedItemName}</h3>
             </div>
             <div className="text-right">
               <span className="text-xs text-slate-400">Target Fair Rate</span>
-              <p className="text-lg font-bold text-purple-700 font-mono">₹ 4,350 / Cum</p>
+              <p className="text-lg font-bold text-purple-700 font-mono">
+                ₹ {targetRate.toLocaleString('en-IN')} / {uom}
+              </p>
             </div>
           </div>
 
           {/* 4 Pillars */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <span className="text-[10px] font-bold uppercase text-blue-700">1. Material (56%)</span>
-              <p className="text-base font-extrabold text-blue-950 mt-1 font-mono">₹ 2,436</p>
-              <p className="text-[10px] text-blue-600 mt-0.5">Cement, aggregate, sand, fly ash</p>
+              <span className="text-[10px] font-bold uppercase text-blue-700">1. Material ({pillars.material.percentage}%)</span>
+              <p className="text-base font-extrabold text-blue-950 mt-1 font-mono">₹ {pillars.material.cost.toLocaleString('en-IN')}</p>
+              <p className="text-[10px] text-blue-600 mt-0.5 line-clamp-2">{pillars.material.description}</p>
             </div>
             <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-              <span className="text-[10px] font-bold uppercase text-amber-700">2. Labour (14%)</span>
-              <p className="text-base font-extrabold text-amber-950 mt-1 font-mono">₹ 609</p>
-              <p className="text-[10px] text-amber-600 mt-0.5">Batching & transit mixing crew</p>
+              <span className="text-[10px] font-bold uppercase text-amber-700">2. Labour ({pillars.labour.percentage}%)</span>
+              <p className="text-base font-extrabold text-amber-950 mt-1 font-mono">₹ {pillars.labour.cost.toLocaleString('en-IN')}</p>
+              <p className="text-[10px] text-amber-600 mt-0.5 line-clamp-2">{pillars.labour.description}</p>
             </div>
             <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-              <span className="text-[10px] font-bold uppercase text-emerald-700">3. Equipment (18%)</span>
-              <p className="text-base font-extrabold text-emerald-950 mt-1 font-mono">₹ 783</p>
-              <p className="text-[10px] text-emerald-600 mt-0.5">Transit mixers, diesel & pump wear</p>
+              <span className="text-[10px] font-bold uppercase text-emerald-700">3. Equipment ({pillars.equipment.percentage}%)</span>
+              <p className="text-base font-extrabold text-emerald-950 mt-1 font-mono">₹ {pillars.equipment.cost.toLocaleString('en-IN')}</p>
+              <p className="text-[10px] text-emerald-600 mt-0.5 line-clamp-2">{pillars.equipment.description}</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <span className="text-[10px] font-bold uppercase text-purple-700">4. Overheads (12%)</span>
-              <p className="text-base font-extrabold text-purple-950 mt-1 font-mono">₹ 522</p>
-              <p className="text-[10px] text-purple-600 mt-0.5">QC testing & standard contractor margin</p>
+              <span className="text-[10px] font-bold uppercase text-purple-700">4. Overheads ({pillars.overheads.percentage}%)</span>
+              <p className="text-base font-extrabold text-purple-950 mt-1 font-mono">₹ {pillars.overheads.cost.toLocaleString('en-IN')}</p>
+              <p className="text-[10px] text-purple-600 mt-0.5 line-clamp-2">{pillars.overheads.description}</p>
             </div>
           </div>
 
@@ -69,20 +300,15 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
           <div className="space-y-2 pt-2">
             <h4 className="text-xs font-bold text-slate-700">AI Identified Cost Inflators vs Market Benchmark:</h4>
             <div className="space-y-2 text-xs">
-              <div className="p-3 rounded-lg bg-rose-50/70 border border-rose-200 flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-rose-900">Aggregate Transit Surcharge: </span>
-                  <span className="text-rose-800">Vendor added +₹250/Cum transport markup vs local quarry index.</span>
+              {inflators.map((inf, idx) => (
+                <div key={idx} className="p-3 rounded-lg bg-rose-50/70 border border-rose-200 flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-rose-900">{inf.title}: </span>
+                    <span className="text-rose-800">{inf.description}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="p-3 rounded-lg bg-rose-50/70 border border-rose-200 flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-rose-900">Excess Contractor Margin: </span>
-                  <span className="text-rose-800">Quoted margin is 22% vs regional benchmark of 12-14%.</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -116,6 +342,7 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
               </div>
               <div className="flex items-end">
                 <button
+                  type="button"
                   onClick={onNavigateToNegotiation}
                   className="w-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center space-x-1.5"
                 >
@@ -136,18 +363,20 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
           <p className="text-xs text-slate-500">Auto-generated arguments based on market indices to use during vendor calls.</p>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 bg-purple-50/70 rounded-lg border border-purple-200">
-              <p className="font-bold text-purple-900">Argument 1: Raw Material Deflation</p>
-              <p className="text-purple-800 mt-1">
-                &ldquo;OPC 53 cement wholesale index dropped 4.2% locally this month. Your material cost should be ₹2,436/Cum.&rdquo;
-              </p>
-            </div>
-            <div className="p-3 bg-purple-50/70 rounded-lg border border-purple-200">
-              <p className="font-bold text-purple-900">Argument 2: Volume Amortization</p>
-              <p className="text-purple-800 mt-1">
-                &ldquo;For a committed bulk volume of 450 Cum, plant setup overhead amortizes below ₹120/Cum. We counter at ₹4,350/Cum.&rdquo;
-              </p>
-            </div>
+            {scripts.map((sc, idx) => (
+              <div key={idx} className="p-3 bg-purple-50/70 rounded-lg border border-purple-200">
+                <p className="font-bold text-purple-900">{sc.title}</p>
+                <p className="text-purple-800 mt-1">&ldquo;{sc.argument}&rdquo;</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Indices verified
+            </span>
+            <span>Gemini Intelligence</span>
           </div>
         </div>
       </div>
