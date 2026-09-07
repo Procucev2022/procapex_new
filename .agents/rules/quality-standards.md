@@ -43,3 +43,9 @@ Full quality checks must follow this mandatory sequence:
 ### 5. Zero Tolerance for Coverage Regressions
 - No files may be skipped.
 - Per-file thresholds must strictly remain $\ge 90\%$ on all 4 metrics.
+
+### 6. CI/CD Pull Request Pipeline & Quality Reporting
+- Pull requests trigger `.github/workflows/pull-request.yml` with a strict job timeout (`timeout-minutes: 20`).
+- Pipeline enforces Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 metrics) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
+- Generates and publishes an automated PR summary comment detailing test pass/fail counts and overall & per-file coverage statistics (`npm run ci:summary`).
+

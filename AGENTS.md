@@ -122,3 +122,31 @@ In case of multiple projects in the workspace:
 - Mock external network APIs (`fetch`, Google Gemini API) and database calls (`PrismaClient`).
 - Test both sunny-day (success paths) and rainy-day (errors, edge cases, missing parameters) scenarios to maximize branch and statement coverage.
 - Always cleanly unmount components and clear mock calls between tests (`jest.clearAllMocks()`).
+
+---
+
+## 🔄 CI/CD Pull Request Workflow & PR Quality Comments
+
+### GitHub Actions Pull Request Pipeline
+Every pull request to `main`, `master`, or `develop` triggers the automated CI/CD workflow ([`.github/workflows/pull-request.yml`](file:///c:/Users/procu/Desktop/Code/work/procapex_new/.github/workflows/pull-request.yml)).
+
+1. **Pipeline Timeout Enforced**:
+   - Every CI/CD job MUST configure a hard execution timeout (`timeout-minutes: 20`) to prevent hanging jobs and resource exhaustion.
+
+2. **Quality Requirements Enforced**:
+   - **Production Build (`npm run build`)**: Must compile with 0 errors.
+   - **Unit Test Coverage Benchmark (`npm run test:coverage`)**: Strict $\ge 90\%$ benchmark per file across lines, statements, branches, and functions with `--detectOpenHandles`.
+   - **TypeScript Typecheck (`npm run typecheck`)**: 0 type errors.
+   - **ESLint Code Quality (`npm run lint`)**: 0 warnings or errors.
+   - **Database Schema Validation (`npm run db:validate`)**: Valid Prisma models.
+
+3. **Automated PR Test & Coverage Summary Comments**:
+   - The workflow executes `scripts/generate-pr-summary.js` (or `npm run ci:summary`) on every run (using `if: always()`).
+   - Posts or updates an idempotent Markdown comment on the pull request (tagged `<!-- procpx-ci-report -->`).
+   - Summary includes:
+     - Overall Pipeline Status badge (✅ PASSED / ❌ FAILED).
+     - Test execution metrics (passed, failed, skipped test suites and individual tests, runtime duration).
+     - Clean open handles verification.
+     - Code coverage metrics (Statements %, Branches %, Functions %, Lines %).
+     - Per-file benchmark compliance table highlighting any files below 90%.
+

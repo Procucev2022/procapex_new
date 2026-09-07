@@ -44,3 +44,9 @@ After every change, run the appropriate quality checks:
   npm run check:workspace
   ```
   to check all projects globally across the workspace.
+
+### 🔄 CI/CD Pull Request Workflow & PR Comments
+- All PRs trigger `.github/workflows/pull-request.yml` with a hard timeout (`timeout-minutes: 20`).
+- Pipeline sequentially validates: Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across lines, statements, branches, and functions, `--detectOpenHandles`) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
+- Automatically generates and posts/updates PR summary comments (`npm run ci:summary`) displaying unit test results (pass/fail/skipped), execution time, and overall & per-file coverage statistics.
+

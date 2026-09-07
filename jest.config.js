@@ -19,7 +19,7 @@ const customJestConfig = {
     '!src/**/*.d.ts',
     '!src/types/**',
   ],
-  coverageReporters: ['text', 'text-summary', 'lcov', 'clover', 'html', 'json'],
+  coverageReporters: ['text', 'text-summary', 'lcov', 'clover', 'html', 'json', 'json-summary'],
   coverageThreshold: {
     global: {
       statements: 90,

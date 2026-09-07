@@ -33,3 +33,9 @@
 - 90% Unit Test Code Coverage is strictly enforced per file across lines, statements, branches, and functions.
 - Do not skip any file in `src/`.
 - Tests must use `--detectOpenHandles` and respect 30s timeout.
+
+## 🔄 CI/CD Pull Request Pipeline & PR Comments
+- Every PR triggers `.github/workflows/pull-request.yml` with a hard timeout of 20 minutes (`timeout-minutes: 20`).
+- Validates: Production Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 parameters) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
+- Automatically publishes/updates an idempotent PR comment with test pass/fail metrics and overall & per-file coverage breakdown (`npm run ci:summary`).
+
