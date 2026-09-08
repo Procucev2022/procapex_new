@@ -1,4 +1,4 @@
-import {
+import type {
   RequesterBOQItem,
   AttachedDoc,
   DrawingScope,
@@ -12,14 +12,14 @@ export const DEFAULT_COUNTER_ITEMS: RequesterBOQItem[] = [
   { code: 'CNT-LAM-1MM', desc: '1.0mm thick High Pressure Textured / Suede Finish Decorative Laminate on visible external fascias and drawers of Counter Elevation D', uom: 'Sqm', qty: 24.0 },
   { code: 'CNT-HDW-SOFT', desc: 'Joinery & Hardware Package: Soft-close 3D adjustable concealed hinges, 45kg telescopic slides, and SS 304 profile handles', uom: 'Set', qty: 14.0 },
   { code: 'CNT-LED-PROF', desc: '12V DC Warm White (3000K) High-CRI LED Strip Light in recessed slim aluminium channel with frosted diffuser under counter apron', uom: 'Rmt', qty: 16.0 },
-  { code: 'CNT-SKT-SS304', desc: '100mm high Stainless Steel Grade 304 Brushed Finish Toe-Kick Skirting / Plinth Protection with waterproof silicone sealing', uom: 'Rmt', qty: 14.0 }
+  { code: 'CNT-SKT-SS304', desc: '100mm high Stainless Steel Grade 304 Brushed Finish Toe-Kick Skirting / Plinth Protection with waterproof silicone sealing', uom: 'Rmt', qty: 14.0 },
 ];
 
 export const INITIAL_DOCS: AttachedDoc[] = [
   { name: 'Counter_Elevation_D_Approved_Drawing.pdf', type: 'Architectural Drawing (.pdf)', size: '2.4 MB', date: '2026-09-06', status: 'Attached' },
   { name: 'IS_710_BWP_Plywood_Tech_Specs.pdf', type: 'Technical Specification (.pdf)', size: '1.1 MB', date: '2026-09-06', status: 'Attached' },
   { name: 'Site_Dimension_Survey_Report.docx', type: 'Site Survey Report (.docx)', size: '850 KB', date: '2026-09-05', status: 'Attached' },
-  { name: 'Site_Readiness_Photo.jpg', type: 'Site Readiness Photo (.jpg)', size: '3.2 MB', date: '2026-09-05', status: 'Attached' }
+  { name: 'Site_Readiness_Photo.jpg', type: 'Site Readiness Photo (.jpg)', size: '3.2 MB', date: '2026-09-05', status: 'Attached' },
 ];
 
 export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
@@ -36,7 +36,7 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 3400,
         benchmark: 3250,
         std: 3300,
-        aiConf: '99%'
+        aiConf: '99%',
       },
       {
         code: 'CNT-PLY-BWP18',
@@ -46,7 +46,7 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 1450,
         benchmark: 1380,
         std: 1400,
-        aiConf: '99%'
+        aiConf: '99%',
       },
       {
         code: 'CNT-LAM-1MM',
@@ -56,7 +56,7 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 850,
         benchmark: 800,
         std: 820,
-        aiConf: '98%'
+        aiConf: '98%',
       },
       {
         code: 'CNT-HDW-SOFT',
@@ -66,7 +66,7 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 1850,
         benchmark: 1750,
         std: 1800,
-        aiConf: '97%'
+        aiConf: '97%',
       },
       {
         code: 'CNT-LED-PROF',
@@ -76,7 +76,7 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 420,
         benchmark: 390,
         std: 400,
-        aiConf: '96%'
+        aiConf: '96%',
       },
       {
         code: 'CNT-SKT-SS304',
@@ -86,9 +86,9 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 580,
         benchmark: 540,
         std: 560,
-        aiConf: '98%'
-      }
-    ]
+        aiConf: '98%',
+      },
+    ],
   },
   'FOUNDATION_RAFT': {
     title: 'Foundation Raft & Footing Reinforcement Drawing (DWG-STR-FND-01)',
@@ -103,7 +103,7 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 4200,
         benchmark: 4350,
         std: 4150,
-        aiConf: '99%'
+        aiConf: '99%',
       },
       {
         code: 'FND-REB-25MM',
@@ -113,16 +113,16 @@ export const DRAWING_NAME_CATALOG: Record<string, DrawingScope> = {
         rateCard: 54000,
         benchmark: 53200,
         std: 53800,
-        aiConf: '98%'
+        aiConf: '98%',
       },
       {
         code: 'FND-FRM-PLY12',
         desc: '12mm Shuttering Plywood Formwork for Raft Perimeter',
         uom: 'Sqm',
-        qty: 120
-      }
-    ]
-  }
+        qty: 120,
+      },
+    ],
+  },
 };
 
 export const INITIAL_PRS_DATA: Record<string, PRData> = {
@@ -158,8 +158,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 3900, revisedRate: null },
           'VND-002': { initialRate: 4100, revisedRate: null },
-          'VND-005': { initialRate: 4050, revisedRate: null }
-        }
+          'VND-005': { initialRate: 4050, revisedRate: null },
+        },
       },
       {
         code: 'CNT-PLY-BWP18',
@@ -174,8 +174,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 1650, revisedRate: null },
           'VND-002': { initialRate: 1780, revisedRate: null },
-          'VND-005': { initialRate: 1720, revisedRate: null }
-        }
+          'VND-005': { initialRate: 1720, revisedRate: null },
+        },
       },
       {
         code: 'CNT-LAM-1MM',
@@ -190,8 +190,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 980, revisedRate: null },
           'VND-002': { initialRate: 1050, revisedRate: null },
-          'VND-005': { initialRate: 1020, revisedRate: null }
-        }
+          'VND-005': { initialRate: 1020, revisedRate: null },
+        },
       },
       {
         code: 'CNT-HDW-SOFT',
@@ -206,8 +206,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 2100, revisedRate: null },
           'VND-002': { initialRate: 2250, revisedRate: null },
-          'VND-005': { initialRate: 2180, revisedRate: null }
-        }
+          'VND-005': { initialRate: 2180, revisedRate: null },
+        },
       },
       {
         code: 'CNT-LED-PROF',
@@ -222,8 +222,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 450, revisedRate: null },
           'VND-002': { initialRate: 490, revisedRate: null },
-          'VND-005': { initialRate: 470, revisedRate: null }
-        }
+          'VND-005': { initialRate: 470, revisedRate: null },
+        },
       },
       {
         code: 'CNT-SKT-SS304',
@@ -238,10 +238,10 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 850, revisedRate: null },
           'VND-002': { initialRate: 920, revisedRate: null },
-          'VND-005': { initialRate: 890, revisedRate: null }
-        }
-      }
-    ]
+          'VND-005': { initialRate: 890, revisedRate: null },
+        },
+      },
+    ],
   },
   'PR-2026-0003': {
     id: 'PR-2026-0003',
@@ -274,12 +274,12 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         mleo: { m: 38000, l: 12500, e: 6000, o: 5500, conf: '99%' },
         vendorRateCards: {
           'VND-014': 65000,
-          'VND-015': 68500
+          'VND-015': 68500,
         },
         vendorQuotes: {
           'VND-014': { initialRate: 72000, revisedRate: null },
-          'VND-015': { initialRate: 76000, revisedRate: null }
-        }
+          'VND-015': { initialRate: 76000, revisedRate: null },
+        },
       },
       {
         code: 'MEP-HVAC-DUCT',
@@ -293,12 +293,12 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         mleo: { m: 390, l: 140, e: 45, o: 65, conf: '98%' },
         vendorRateCards: {
           'VND-014': 680,
-          'VND-015': 650
+          'VND-015': 650,
         },
         vendorQuotes: {
           'VND-014': { initialRate: 780, revisedRate: null },
-          'VND-015': { initialRate: 820, revisedRate: null }
-        }
+          'VND-015': { initialRate: 820, revisedRate: null },
+        },
       },
       {
         code: 'MEP-HVAC-VAV',
@@ -312,12 +312,12 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         mleo: { m: 5100, l: 1600, e: 600, o: 800, conf: '97%' },
         vendorRateCards: {
           'VND-014': 8500,
-          'VND-015': 8900
+          'VND-015': 8900,
         },
         vendorQuotes: {
           'VND-014': { initialRate: 9400, revisedRate: null },
-          'VND-015': { initialRate: 9900, revisedRate: null }
-        }
+          'VND-015': { initialRate: 9900, revisedRate: null },
+        },
       },
       {
         code: 'MEP-HVAC-GRIL',
@@ -331,14 +331,14 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         mleo: { m: 560, l: 190, e: 60, o: 90, conf: '95%' },
         vendorRateCards: {
           'VND-014': 950,
-          'VND-015': 920
+          'VND-015': 920,
         },
         vendorQuotes: {
           'VND-014': { initialRate: 1080, revisedRate: null },
-          'VND-015': { initialRate: 1150, revisedRate: null }
-        }
-      }
-    ]
+          'VND-015': { initialRate: 1150, revisedRate: null },
+        },
+      },
+    ],
   },
   'PR-2026-0002': {
     id: 'PR-2026-0002',
@@ -371,8 +371,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         mleo: { m: 2650, l: 680, e: 450, o: 420, conf: '99%' },
         vendorQuotes: {
           'VND-011': { initialRate: 4850, revisedRate: null },
-          'VND-012': { initialRate: 5100, revisedRate: null }
-        }
+          'VND-012': { initialRate: 5100, revisedRate: null },
+        },
       },
       {
         code: 'CIV-FRM-PLY12',
@@ -386,10 +386,10 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         mleo: { m: 270, l: 90, e: 25, o: 45, conf: '97%' },
         vendorQuotes: {
           'VND-011': { initialRate: 520, revisedRate: null },
-          'VND-012': { initialRate: 550, revisedRate: null }
-        }
-      }
-    ]
+          'VND-012': { initialRate: 550, revisedRate: null },
+        },
+      },
+    ],
   },
   'PR-2026-0004': {
     id: 'PR-2026-0004',
@@ -423,8 +423,8 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 2450, revisedRate: null },
           'VND-003': { initialRate: 2600, revisedRate: null },
-          'VND-007': { initialRate: 2520, revisedRate: null }
-        }
+          'VND-007': { initialRate: 2520, revisedRate: null },
+        },
       },
       {
         code: 'INT-DR-FLUSH',
@@ -439,11 +439,11 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
         vendorQuotes: {
           'VND-001': { initialRate: 8600, revisedRate: null },
           'VND-003': { initialRate: 9100, revisedRate: null },
-          'VND-007': { initialRate: 8850, revisedRate: null }
-        }
-      }
-    ]
-  }
+          'VND-007': { initialRate: 8850, revisedRate: null },
+        },
+      },
+    ],
+  },
 };
 
 export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
@@ -456,7 +456,7 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     quotedRate: 3900,
     benchmark: 3250,
     mleo: { m: 1820, l: 580, e: 490, o: 360, conf: '98%' },
-    std: 3300
+    std: 3300,
   },
   {
     code: 'CNT-PLY-BWP18',
@@ -467,7 +467,7 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     quotedRate: 1650,
     benchmark: 1380,
     mleo: { m: 820, l: 290, e: 120, o: 150, conf: '97%' },
-    std: 1400
+    std: 1400,
   },
   {
     code: 'CNT-LAM-1MM',
@@ -478,7 +478,7 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     quotedRate: 980,
     benchmark: 820,
     mleo: { m: 480, l: 180, e: 60, o: 100, conf: '96%' },
-    std: 820
+    std: 820,
   },
   {
     code: 'CNT-HDW-SOFT',
@@ -489,7 +489,7 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     quotedRate: 2100,
     benchmark: 1650,
     mleo: { m: 1050, l: 280, e: 90, o: 230, conf: '95%' },
-    std: 1800
+    std: 1800,
   },
   {
     code: 'CNT-LED-PROF',
@@ -500,7 +500,7 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     quotedRate: 450,
     benchmark: 350,
     mleo: { m: 210, l: 75, e: 20, o: 45, conf: '94%' },
-    std: 400
+    std: 400,
   },
   {
     code: 'CNT-SKT-SS304',
@@ -511,6 +511,6 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     quotedRate: 740,
     benchmark: 680,
     mleo: { m: 420, l: 140, e: 35, o: 85, conf: '96%' },
-    std: 560
-  }
+    std: 560,
+  },
 ];

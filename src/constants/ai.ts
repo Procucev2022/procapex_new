@@ -1,4 +1,4 @@
-import { PresetItem, CostInflator, NegotiationScript } from '@/types';
+import type { PresetItem, CostInflator, NegotiationScript } from '@/types';
 
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash-lite';
 
@@ -21,21 +21,21 @@ export const DEFAULT_MLEO_RATIOS = {
 export const DEFAULT_COST_INFLATORS: CostInflator[] = [
   {
     title: 'Supplier Risk Premium',
-    description: 'Vendor has loaded a 10-14% cushion against spot price spikes and extended payment cycles.'
+    description: 'Vendor has loaded a 10-14% cushion against spot price spikes and extended payment cycles.',
   },
   {
     title: 'Unoptimized Fabrication Log',
-    description: 'Standard shop-drawings show 6% scrap allowance vs industry benchmark of 2.8% for automated CNC processing.'
-  }
+    description: 'Standard shop-drawings show 6% scrap allowance vs industry benchmark of 2.8% for automated CNC processing.',
+  },
 ];
 
 export const DEFAULT_NEGOTIATION_SCRIPTS: NegotiationScript[] = [
   {
     title: 'MLEO Cost Realignment Tactic',
-    argument: 'Reference corporate schedule rate and historical PO data. Emphasize off-peak dispatch and guaranteed 30-day payment.'
+    argument: 'Reference corporate schedule rate and historical PO data. Emphasize off-peak dispatch and guaranteed 30-day payment.',
   },
   {
     title: 'Volume Commitment Counter',
-    argument: 'Bundle future phase requisitions in exchange for immediate 6-8% concession on current item unit rate.'
-  }
+    argument: 'Bundle future phase requisitions in exchange for immediate 6-8% concession on current item unit rate.',
+  },
 ];

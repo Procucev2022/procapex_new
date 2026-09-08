@@ -1,35 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Send, CreditCard, Scale, Sparkles, MessageSquareDiff, FileCheck2, Users, AlertTriangle, CheckCircle2, RefreshCw, Handshake, History, FileText, ChevronDown, Check, ArrowRight, Truck, ShieldCheck } from 'lucide-react';
-import { useProcurement } from '../context/ProcurementContext';
-import {
-  MLEOBreakdown,
-  VendorQuoteDetail,
+import { Send, CreditCard, Scale, Sparkles, MessageSquareDiff, FileCheck2, Users, AlertTriangle, CheckCircle2, RefreshCw, FileText, ChevronDown, Check, Truck, ShieldCheck } from 'lucide-react';
+import type {
   NonL1Justification,
   BOQItemWithMLEO,
   PRData,
   CategoryManagerHubProps,
+  VendorCommercialTerms,
 } from '@/types';
 import { INITIAL_PRS_DATA, MASTER_VENDORS, UI_STRINGS } from '@/constants';
 
-function getVendorCommercialTerms(vendorId: string, prId?: string) {
-  const TERMS_MAP: Record<string, {
-    paymentTerms: string;
-    advancePct: string;
-    retentionPct: string;
-    creditDays: string;
-    paymentBadge: string;
-    paymentBadgeClass: string;
-    leadTime: string;
-    deliveryDate: string;
-    deliveryBadge: string;
-    deliveryBadgeClass: string;
-    complianceStatus: string;
-    complianceBadge: string;
-    complianceClass: string;
-    complianceNote: string;
-  }> = {
+function getVendorCommercialTerms(vendorId: string, _prId?: string): VendorCommercialTerms {
+  const TERMS_MAP: Record<string, VendorCommercialTerms> = {
     'VND-001': {
       paymentTerms: '10% Adv | 70% Progress RA | 10% Handover | 10% DLP (30D Credit)',
       advancePct: '10%',
@@ -44,7 +27,7 @@ function getVendorCommercialTerms(vendorId: string, prId?: string) {
       complianceStatus: 'COMPLIANT',
       complianceBadge: '✓ 100% Commercial Compliant',
       complianceClass: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-      complianceNote: 'Fully compliant with Requisition Payment & Delivery Terms'
+      complianceNote: 'Fully compliant with Requisition Payment & Delivery Terms',
     },
     'VND-002': {
       paymentTerms: '15% Adv | 75% Progress RA | 10% DLP (30D Credit)',
@@ -60,7 +43,7 @@ function getVendorCommercialTerms(vendorId: string, prId?: string) {
       complianceStatus: 'VARIANCE_ADVANCE',
       complianceBadge: '⚠ Commercial Variance (Advance)',
       complianceClass: 'bg-amber-100 text-amber-900 border-amber-300',
-      complianceNote: 'Requires 15% Advance (PR Baseline: 10%), offers 3-day faster delivery'
+      complianceNote: 'Requires 15% Advance (PR Baseline: 10%), offers 3-day faster delivery',
     },
     'VND-005': {
       paymentTerms: '30 Days Net Credit from GRN (0% Adv, 5% Retention)',
@@ -76,7 +59,7 @@ function getVendorCommercialTerms(vendorId: string, prId?: string) {
       complianceStatus: 'VARIANCE_DELIVERY',
       complianceBadge: '⚠ Delivery Variance (+5D)',
       complianceClass: 'bg-rose-100 text-rose-900 border border-rose-300',
-      complianceNote: 'Beneficial 0% advance terms, but lead time exceeds target by 5 days'
+      complianceNote: 'Beneficial 0% advance terms, but lead time exceeds target by 5 days',
     },
     'VND-014': {
       paymentTerms: '10% Adv | 80% Supply & Erection | 10% Retention (30D Credit)',
@@ -92,7 +75,7 @@ function getVendorCommercialTerms(vendorId: string, prId?: string) {
       complianceStatus: 'COMPLIANT',
       complianceBadge: '✓ 100% Rate Card Standard',
       complianceClass: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
-      complianceNote: 'Contractually bound to corporate master rate card terms'
+      complianceNote: 'Contractually bound to corporate master rate card terms',
     },
     'VND-015': {
       paymentTerms: '30 Days Net Credit from Site Delivery & Joint Inspection',
@@ -108,8 +91,8 @@ function getVendorCommercialTerms(vendorId: string, prId?: string) {
       complianceStatus: 'COMPLIANT',
       complianceBadge: '✓ Compliant Standard Terms',
       complianceClass: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
-      complianceNote: 'Standard credit terms, 2 days faster factory dispatch'
-    }
+      complianceNote: 'Standard credit terms, 2 days faster factory dispatch',
+    },
   };
 
   return TERMS_MAP[vendorId] ?? {
@@ -126,7 +109,25 @@ function getVendorCommercialTerms(vendorId: string, prId?: string) {
     complianceStatus: 'COMPLIANT',
     complianceBadge: '✓ Standard Empanelled Terms',
     complianceClass: 'bg-slate-100 text-slate-800 border-slate-300',
-    complianceNote: 'Standard vendor empanelment commercial conditions'
+    complianceNote: 'Standard vendor empanelment commercial conditions',
+  };
+}
+
+export function getMasterVendor(vid: string): (typeof MASTER_VENDORS)[number] {
+  return MASTER_VENDORS.find((v) => v.id === vid) ?? MASTER_VENDORS[0];
+}
+
+export function getItemRateCard(it: BOQItemWithMLEO, vendorId: string): number {
+  return it.vendorRateCards?.[vendorId] ?? Math.round(it.benchmark * 1.05);
+}
+
+export function getItemVendorQuote(
+  it: BOQItemWithMLEO,
+  vendorId: string
+): { initialRate: number; revisedRate?: number | null } {
+  return it.vendorQuotes?.[vendorId] ?? {
+    initialRate: Math.round(it.benchmark * 1.15),
+    revisedRate: null,
   };
 }
 
@@ -165,29 +166,28 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
   const [lineCounterRates, setLineCounterRates] = useState<Record<string, number>>({});
   const [selectedOfferVendorId, setSelectedOfferVendorId] = useState<string>('ALL');
   const [counterOfferInput, setCounterOfferInput] = useState<number>(148500);
-  const [counterOfferRemarks, setCounterOfferRemarks] = useState<string>('Reference AI cost model on granite & plywood. Volume rate requested with 45-day credit terms.');
   const [negRound, setNegRound] = useState<number>(1);
   const [negSavings, setNegSavings] = useState<{ amount: number; pct: string }>({ amount: 0, pct: '0.0' });
   const [isBafoLocked, setIsBafoLocked] = useState<boolean>(false);
   const [hasReceived2ndQuote, setHasReceived2ndQuote] = useState<boolean>(false);
 
-  const openMLEOModal = (item: BOQItemWithMLEO) => {
+  const openMLEOModal = (item: BOQItemWithMLEO): void => {
     setSelectedMLEOItem(item);
     setIsMLEOModalOpen(true);
   };
 
-  const closeMLEOModal = () => {
+  const closeMLEOModal = (): void => {
     setSelectedMLEOItem(null);
     setIsMLEOModalOpen(false);
   };
 
-  const applyLineShouldCostToNegotiation = () => {
+  const applyLineShouldCostToNegotiation = (): void => {
     const benchTot = currentPR.items.reduce((acc, it) => acc + (it.qty * it.benchmark), 0);
     setCounterOfferInput(Math.round(benchTot * 1.04));
     closeMLEOModal();
   };
 
-  const selectPR = (prId: string) => {
+  const selectPR = (prId: string): void => {
     setActivePRId(prId);
     const pr = prsData[prId];
     if (pr) {
@@ -203,7 +203,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     }
   };
 
-  const toggleVendorSelection = (vid: string) => {
+  const toggleVendorSelection = (vid: string): void => {
     if (rfqVendors.includes(vid)) {
       setRfqVendors(rfqVendors.filter(item => item !== vid));
     } else {
@@ -211,17 +211,17 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     }
   };
 
-  const addAllRateCard = () => {
+  const addAllRateCard = (): void => {
     const matching = MASTER_VENDORS.filter(v => v.category === currentPR.categoryMajor && v.isRateCard).map(v => v.id);
     const merged = Array.from(new Set([...rfqVendors, ...matching]));
     setRfqVendors(merged);
   };
 
-  const resetToRaiser = () => {
+  const resetToRaiser = (): void => {
     setRfqVendors([...currentPR.nominatedVendors]);
   };
 
-  const handleLineCounterRateChange = (itemCode: string, newRate: number) => {
+  const handleLineCounterRateChange = (itemCode: string, newRate: number): void => {
     const updated = { ...lineCounterRates, [itemCode]: newRate };
     setLineCounterRates(updated);
 
@@ -233,13 +233,13 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     setCounterOfferInput(Math.round(totAmt));
   };
 
-  const handleDispatchVendorWiseOffer = (targetVid?: string) => {
+  const handleDispatchVendorWiseOffer = (targetVid?: string): void => {
     const vid = targetVid || selectedOfferVendorId;
     setSelectedOfferVendorId(vid);
     setNegRound(1.5);
   };
 
-  const handleSimulate2ndQuote = () => {
+  const handleSimulate2ndQuote = (): void => {
     setNegRound(2);
     setHasReceived2ndQuote(true);
 
@@ -253,17 +253,19 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
         const vendorQuotes = { ...(it.vendorQuotes || {}) };
         targetVendors.forEach(vid => {
           const q = vendorQuotes[vid] || { initialRate: it.benchmark * 1.15, revisedRate: null };
-          const targetRate = lineCounterRates[it.code] !== undefined ? lineCounterRates[it.code] : Math.round(it.benchmark * 1.04);
+          const targetRate = lineCounterRates[it.code] !== undefined
+            ? lineCounterRates[it.code]
+            : Math.round(it.benchmark * 1.04);
           const reductionRatio = targetRate / q.initialRate;
           const discountedRate = Math.round(q.initialRate * Math.min(1.0, Math.max(0.85, reductionRatio * 1.02)));
           vendorQuotes[vid] = {
             initialRate: q.initialRate,
-            revisedRate: discountedRate
+            revisedRate: discountedRate,
           };
         });
         return {
           ...it,
-          vendorQuotes
+          vendorQuotes,
         };
       });
       setPrsData(updatedPRs);
@@ -272,7 +274,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     let initialTotal = 0;
     targetVendors.forEach(vid => {
       currentPR.items.forEach(it => {
-        const q = it.vendorQuotes && it.vendorQuotes[vid] ? it.vendorQuotes[vid].initialRate : it.benchmark * 1.15;
+        const q = it.vendorQuotes?.[vid] ? it.vendorQuotes[vid].initialRate : it.benchmark * 1.15;
         initialTotal += it.qty * q;
       });
     });
@@ -282,12 +284,12 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     setNegSavings({ amount: savings, pct });
   };
 
-  const handleAcceptBafo = () => {
+  const handleAcceptBafo = (): void => {
     setIsBafoLocked(true);
   };
 
   // Direct PPO Award Handler
-  const initiatePPOAward = (vendorId: string, isNonL1: boolean) => {
+  const initiatePPOAward = (vendorId: string, isNonL1: boolean): void => {
     if (!isNonL1) {
       executePPOAward(vendorId, false, undefined);
     } else {
@@ -296,7 +298,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     }
   };
 
-  const confirmNonL1Award = () => {
+  const confirmNonL1Award = (): void => {
     if (!nonL1JustificationText.trim()) {
       alert('Please enter an operational justification note for Non-L1 award.');
       return;
@@ -304,25 +306,25 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     if (pendingAwardVendorId) {
       executePPOAward(pendingAwardVendorId, true, {
         category: nonL1ReasonCategory,
-        text: nonL1JustificationText.trim()
+        text: nonL1JustificationText.trim(),
       });
     }
     setIsNonL1ModalOpen(false);
     setPendingAwardVendorId(null);
   };
 
-  const executePPOAward = (vendorId: string, isNonL1: boolean, justification?: NonL1Justification) => {
-    const v = MASTER_VENDORS.find(item => item.id === vendorId)!;
+  const executePPOAward = (vendorId: string, isNonL1: boolean, justification?: NonL1Justification): void => {
+    const v = getMasterVendor(vendorId);
     const isMethod2 = currentPR.method === 'METHOD_2';
 
     let netTotal = 0;
     currentPR.items.forEach(it => {
       if (isMethod2) {
-        const rc = it.vendorRateCards![vendorId];
+        const rc = getItemRateCard(it, vendorId);
         netTotal += it.qty * rc;
       } else {
-        const q = it.vendorQuotes?.[vendorId];
-        const rate = q ? (q.revisedRate ?? q.initialRate) : (it.benchmark * 1.15);
+        const q = getItemVendorQuote(it, vendorId);
+        const rate = q.revisedRate ?? q.initialRate;
         netTotal += it.qty * rate;
       }
     });
@@ -339,16 +341,14 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
       justification,
       netTotal: Math.round(netTotal),
       gst,
-      grandTotal
+      grandTotal,
     });
 
     setActiveTab('ppogen');
   };
 
   // Participating Vendors
-  const participatingVendors = rfqVendors.map(vid => {
-    return MASTER_VENDORS.find(v => v.id === vid)!;
-  });
+  const participatingVendors = rfqVendors.map(vid => getMasterVendor(vid));
 
   const isMethod2 = currentPR.method === 'METHOD_2';
 
@@ -359,11 +359,11 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     let initTot = 0;
     currentPR.items.forEach(it => {
       if (isMethod2) {
-        const rc = it.vendorRateCards![v.id];
+        const rc = getItemRateCard(it, v.id);
         tot += it.qty * rc;
         initTot += it.qty * rc;
       } else {
-        const q = it.vendorQuotes?.[v.id] ?? { initialRate: it.benchmark * 1.15, revisedRate: null };
+        const q = getItemVendorQuote(it, v.id);
         initTot += it.qty * q.initialRate;
         tot += it.qty * (q.revisedRate ?? q.initialRate);
       }
@@ -374,13 +374,14 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
   const sortedVendorIds = Object.keys(vendorTotals).sort((a, b) => vendorTotals[a].total - vendorTotals[b].total);
   const l1VendorId = sortedVendorIds[0];
   const l1MinTotal = vendorTotals[l1VendorId].total;
-  const l1VendorObj = participatingVendors.find(v => v.id === l1VendorId)!;
+  const l1VendorObj = getMasterVendor(l1VendorId);
 
   // For Non-L1 modal calculations
-  const pendingVendorObj = MASTER_VENDORS.find(v => v.id === pendingAwardVendorId) ?? MASTER_VENDORS[0];
+  const pendingVendorObj = getMasterVendor(pendingAwardVendorId || '');
   const pendingVendorTotal = pendingAwardVendorId ? vendorTotals[pendingAwardVendorId].total : 0;
   const nonL1DeltaAmt = pendingVendorTotal - l1MinTotal;
   const nonL1DeltaPct = l1MinTotal > 0 ? ((nonL1DeltaAmt / l1MinTotal) * 100).toFixed(1) : '0.0';
+
 
   return (
     <div className="space-y-6">
@@ -505,7 +506,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             <span className="font-bold text-amber-300 uppercase text-[10px] block">PR Raiser Nominated Suppliers (Step 4)</span>
             <div className="flex flex-wrap gap-1.5 pt-0.5">
               {currentPR.nominatedVendors.map(vid => {
-                const v = MASTER_VENDORS.find(item => item.id === vid)!;
+                const v = getMasterVendor(vid);
                 return (
                   <span key={vid} className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-bold border ${v.isRateCard ? 'bg-emerald-900/60 text-emerald-200 border-emerald-500/40' : 'bg-sky-900/60 text-sky-200 border-sky-500/40'}`}>
                     <span>{v.isRateCard ? '🟢' : '🔵'}</span>
@@ -632,7 +633,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                   >
                     <div className="flex items-center space-x-2 overflow-hidden flex-1">
                       {rfqVendors.slice(0, 3).map(vid => {
-                        const v = MASTER_VENDORS.find(item => item.id === vid)!;
+                        const v = getMasterVendor(vid);
                         return (
                           <span key={vid} className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${v.isRateCard ? 'bg-emerald-50 text-emerald-900 border-emerald-300' : 'bg-sky-50 text-sky-900 border-sky-300'}`}>
                             <span>{v.isRateCard ? '🟢' : '🔵'}</span>
@@ -688,7 +689,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                 {/* Selected Chips */}
                 <div className="flex flex-wrap gap-2 items-center min-h-[36px] p-2.5 bg-white rounded-xl border border-slate-200">
                   {rfqVendors.map(vid => {
-                    const v = MASTER_VENDORS.find(item => item.id === vid)!;
+                    const v = MASTER_VENDORS.find(item => item.id === vid) ?? MASTER_VENDORS[0];
                     const isNominatedByRaiser = currentPR.nominatedVendors.includes(vid);
                     return (
                       <div key={vid} className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${v.isRateCard ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-sky-100 text-sky-950 border-sky-300'}`}>
@@ -726,7 +727,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {sortedVendorIds.slice(0, 3).map((vid, idx) => {
-                      const v = MASTER_VENDORS.find(item => item.id === vid)!;
+                      const v = getMasterVendor(vid);
                       const data = vendorTotals[vid];
                       const varPct = (((data.total - currentPR.estBaseline) / currentPR.estBaseline) * 100).toFixed(1);
 
@@ -839,11 +840,11 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                     </thead>
                     <tbody className="divide-y divide-slate-200 font-mono">
                       {currentPR.items.map((it, idx) => {
-                        const rc14 = it.vendorRateCards!['VND-014'];
-                        const rc15 = it.vendorRateCards!['VND-015'];
+                        const rc14 = getItemRateCard(it, 'VND-014');
+                        const rc15 = getItemRateCard(it, 'VND-015');
                         const amt14 = it.qty * rc14;
                         const amt15 = it.qty * rc15;
-                        const isL1_14 = rc14 <= rc15;
+                        const isL1Package14 = rc14 <= rc15;
                         const delta = Math.abs(rc14 - rc15);
 
                         return (
@@ -859,20 +860,20 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                               <div className="text-[9px] text-slate-400 font-normal font-sans">{it.prevPo}</div>
                             </td>
                             <td className="p-3 text-right bg-purple-50/50 text-purple-900 font-bold">₹ {it.benchmark.toLocaleString()}</td>
-                            <td className={`p-3 text-right ${isL1_14 ? 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-300' : 'bg-slate-50 text-slate-800'}`}>
+                            <td className={`p-3 text-right ${isL1Package14 ? 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-300' : 'bg-slate-50 text-slate-800'}`}>
                               <div>₹ {rc14.toLocaleString()} / {it.uom}</div>
                               <div className="text-[10px] text-slate-500 font-normal">Tot: ₹ {amt14.toLocaleString()}</div>
-                              {isL1_14 && <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-200 text-emerald-900">★ L1 RATE</span>}
+                              {isL1Package14 && <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-200 text-emerald-900">★ L1 RATE</span>}
                             </td>
-                            <td className={`p-3 text-right ${!isL1_14 ? 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-300' : 'bg-slate-50 text-slate-800'}`}>
+                            <td className={`p-3 text-right ${!isL1Package14 ? 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-300' : 'bg-slate-50 text-slate-800'}`}>
                               <div>₹ {rc15.toLocaleString()} / {it.uom}</div>
                               <div className="text-[10px] text-slate-500 font-normal">Tot: ₹ {amt15.toLocaleString()}</div>
-                              {!isL1_14 && <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-200 text-emerald-900">★ L1 RATE</span>}
+                              {!isL1Package14 && <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-200 text-emerald-900">★ L1 RATE</span>}
                             </td>
                             <td className="p-3 text-center font-bold text-slate-700">₹ {delta.toLocaleString()}</td>
                             <td className="p-3 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isL1_14 ? 'bg-emerald-100 text-emerald-900' : 'bg-sky-100 text-sky-900'}`}>
-                                {isL1_14 ? 'Vendor 14 L1' : 'Vendor 15 L1'}
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isL1Package14 ? 'bg-emerald-100 text-emerald-900' : 'bg-sky-100 text-sky-900'}`}>
+                                {isL1Package14 ? 'Vendor 14 L1' : 'Vendor 15 L1'}
                               </span>
                             </td>
                           </tr>
@@ -991,7 +992,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {sortedVendorIds.map((vid, rankIdx) => {
-                  const v = participatingVendors.find(item => item.id === vid)!;
+                  const v = participatingVendors.find(item => item.id === vid)
+                    ?? participatingVendors[0]
+                    ?? MASTER_VENDORS[0];
                   const data = vendorTotals[vid];
                   const isL1 = rankIdx === 0;
                   const diffOverL1 = data.total - l1MinTotal;
@@ -1097,7 +1100,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                         <th className="p-3 text-right bg-slate-50 font-mono text-slate-800 border-r border-slate-200">Vendor 15 Amount (₹)</th>
                       </>
                     ) : (
-                      participatingVendors.map((v, idx) => {
+                      participatingVendors.map((v) => {
                         const isL1 = v.id === l1VendorId;
                         const rankNum = sortedVendorIds.indexOf(v.id) + 1;
                         return (
@@ -1129,11 +1132,11 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                     const benchAmt = it.qty * it.benchmark;
 
                     if (isMethod2) {
-                      const rc14 = it.vendorRateCards!['VND-014'];
-                      const rc15 = it.vendorRateCards!['VND-015'];
+                      const rc14 = getItemRateCard(it, 'VND-014');
+                      const rc15 = getItemRateCard(it, 'VND-015');
                       const amt14 = it.qty * rc14;
                       const amt15 = it.qty * rc15;
-                      const isL1_14 = rc14 <= rc15;
+                      const isL1Package14 = rc14 <= rc15;
 
                       return (
                         <tr key={idx} className="hover:bg-slate-50 transition-colors">
@@ -1156,26 +1159,26 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                           <td className="p-3 text-right bg-purple-50/40 border-r border-purple-100 font-bold text-purple-900">
                             ₹ {Math.round(benchAmt).toLocaleString()}
                           </td>
-                          <td className={`p-3 text-right ${isL1_14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
+                          <td className={`p-3 text-right ${isL1Package14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
                             <div>₹ {rc14.toLocaleString()}</div>
-                            {isL1_14 && <span className="block text-[9px] font-bold text-emerald-800">★ L1 Rate</span>}
+                            {isL1Package14 && <span className="block text-[9px] font-bold text-emerald-800">★ L1 Rate</span>}
                           </td>
-                          <td className={`p-3 text-right border-r border-slate-200 ${isL1_14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
+                          <td className={`p-3 text-right border-r border-slate-200 ${isL1Package14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
                             ₹ {amt14.toLocaleString()}
                           </td>
-                          <td className={`p-3 text-right ${!isL1_14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
+                          <td className={`p-3 text-right ${!isL1Package14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
                             <div>₹ {rc15.toLocaleString()}</div>
-                            {!isL1_14 && <span className="block text-[9px] font-bold text-emerald-800">★ L1 Rate</span>}
+                            {!isL1Package14 && <span className="block text-[9px] font-bold text-emerald-800">★ L1 Rate</span>}
                           </td>
-                          <td className={`p-3 text-right border-r border-slate-200 ${!isL1_14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
+                          <td className={`p-3 text-right border-r border-slate-200 ${!isL1Package14 ? 'bg-emerald-50/80 text-emerald-950 font-black' : 'bg-slate-50/50 text-slate-800 font-bold'}`}>
                             ₹ {amt15.toLocaleString()}
                           </td>
                           <td className="p-3 text-center">
-                            <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${isL1_14 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-sky-100 text-sky-900 border border-sky-300'} font-mono`}>
-                              {isL1_14 ? '★ L1: Vendor 14' : '★ L1: Vendor 15'}
+                            <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${isL1Package14 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-sky-100 text-sky-900 border border-sky-300'} font-mono`}>
+                              {isL1Package14 ? '★ L1: Vendor 14' : '★ L1: Vendor 15'}
                             </div>
                             <div className="text-[9px] text-slate-500 font-mono mt-0.5">
-                              {isL1_14 ? `L2: Vendor 15 (+₹${(rc15 - rc14).toLocaleString()})` : `L2: Vendor 14 (+₹${(rc14 - rc15).toLocaleString()})`}
+                              {isL1Package14 ? `L2: Vendor 15 (+₹${(rc15 - rc14).toLocaleString()})` : `L2: Vendor 14 (+₹${(rc14 - rc15).toLocaleString()})`}
                             </div>
                           </td>
                           <td className="p-3 text-center border-l border-purple-200 bg-purple-50/30">
@@ -1194,7 +1197,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
 
                     // Methods 1, 3, 4: Quoted rates & amounts per participating vendor in different columns
                     const vendorLineRates = participatingVendors.map(v => {
-                      const q = it.vendorQuotes?.[v.id] ?? { initialRate: it.benchmark * 1.15, revisedRate: null };
+                      const q = getItemVendorQuote(it, v.id);
                       const effectiveRate = q.revisedRate ?? q.initialRate;
                       return {
                         vendorId: v.id,
@@ -1202,7 +1205,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                         initialRate: q.initialRate,
                         revisedRate: q.revisedRate,
                         effectiveRate,
-                        amount: it.qty * effectiveRate
+                        amount: it.qty * effectiveRate,
                       };
                     });
 
@@ -1235,7 +1238,12 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                         </td>
 
                         {participatingVendors.map((v) => {
-                          const vData = vendorLineRates.find(item => item.vendorId === v.id)!;
+                          const vData = vendorLineRates.find(item => item.vendorId === v.id) ?? {
+                            initialRate: 0,
+                            revisedRate: null,
+                            amount: 0,
+                            effectiveRate: 0,
+                          };
                           const isItemL1 = v.id === lineL1.vendorId;
                           const isRevised = vData.revisedRate !== null && vData.revisedRate !== undefined;
 
@@ -1256,9 +1264,12 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                                 <div className={`text-xs ${isItemL1 ? 'text-emerald-950 font-black' : 'text-slate-900 font-bold'}`}>
                                   ₹ {Math.round(vData.amount).toLocaleString()}
                                 </div>
-                                {isRevised && (
+                                {isRevised &&
+                                  vData.revisedRate !== null &&
+                                  vData.revisedRate !== undefined && (
                                   <span className="text-[9px] text-emerald-600">
-                                    (-{(((vData.initialRate - vData.revisedRate!) / vData.initialRate) * 100).toFixed(1)}%)
+                                    (-{(((vData.initialRate - vData.revisedRate) /
+                                      vData.initialRate) * 100).toFixed(1)}%)
                                   </span>
                                 )}
                               </td>
@@ -1272,7 +1283,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                           </div>
                           {lineL2 && (
                             <div className="text-[9px] text-slate-500 font-mono mt-0.5">
-                              L2: {lineL2.vendorName} (+{(((lineL2.effectiveRate - lineL1.effectiveRate) / lineL1.effectiveRate) * 100).toFixed(1)}%)
+                              L2: {lineL2.vendorName} (+
+                              {(((lineL2.effectiveRate - lineL1.effectiveRate) /
+                                lineL1.effectiveRate) * 100).toFixed(1)}%)
                             </div>
                           )}
                           <div className="text-[9px] text-purple-700 font-bold mt-0.5 font-mono">+{l1DiffVsAI}% vs AI</div>
@@ -1299,7 +1312,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                     <td className="p-3 font-sans font-bold text-slate-900">Total Commercial Bid ({currentPR.items.length} Items)</td>
                     <td className="p-3 text-right font-mono font-bold">{currentPR.items.reduce((acc, it) => acc + it.qty, 0)} Units</td>
                     <td className="p-3 text-right bg-blue-100 text-blue-950 font-bold border-l border-blue-200">
-                      ₹ {Math.round(currentPR.items.reduce((acc, it) => acc + it.bestHistoricalPrice, 0)).toLocaleString()}
+                      ₹ {Math.round(
+                        currentPR.items.reduce((acc, it) => acc + it.bestHistoricalPrice, 0)
+                      ).toLocaleString()}
                     </td>
                     <td className="p-3 text-right bg-blue-100 text-blue-950 font-black border-r border-blue-200">
                       <div>₹ {Math.round(currentPR.items.reduce((acc, it) => acc + (it.qty * it.bestHistoricalPrice), 0)).toLocaleString()}</div>
@@ -1316,17 +1331,17 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                     {isMethod2 ? (
                       <>
                         {(() => {
-                          const t14 = vendorTotals['VND-014'].total;
-                          const t15 = vendorTotals['VND-015'].total;
-                          const r14 = currentPR.items.reduce((acc, it) => acc + it.vendorRateCards!['VND-014'], 0);
-                          const r15 = currentPR.items.reduce((acc, it) => acc + it.vendorRateCards!['VND-015'], 0);
-                          const isL1_14 = t14 <= t15;
+                          const t14 = vendorTotals['VND-014']?.total ?? 0;
+                          const t15 = vendorTotals['VND-015']?.total ?? 0;
+                          const r14 = currentPR.items.reduce((acc, it) => acc + (it.vendorRateCards?.['VND-014'] ?? 0), 0);
+                          const r15 = currentPR.items.reduce((acc, it) => acc + (it.vendorRateCards?.['VND-015'] ?? 0), 0);
+                          const isL1Package14 = t14 <= t15;
 
                           return (
                             <>
                               {[
-                                { id: 'VND-014', r: r14, t: t14, isL1: isL1_14 },
-                                { id: 'VND-015', r: r15, t: t15, isL1: !isL1_14 }
+                                { id: 'VND-014', r: r14, t: t14, isL1: isL1Package14 },
+                                { id: 'VND-015', r: r15, t: t15, isL1: !isL1Package14 },
                               ].map(v => (
                                 <React.Fragment key={v.id}>
                                   <td className={`p-3 text-right ${v.isL1 ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-slate-100 text-slate-900'}`}>
@@ -1341,7 +1356,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                                 </React.Fragment>
                               ))}
                               <td className="p-3 text-center bg-slate-100 font-sans">
-                                <div className="text-xs font-bold text-emerald-800">L1: {isL1_14 ? 'Vendor 14' : 'Vendor 15'}</div>
+                                <div className="text-xs font-bold text-emerald-800">L1: {isL1Package14 ? 'Vendor 14' : 'Vendor 15'}</div>
                                 <div className="text-[10px] text-slate-600 font-mono">Delta: ₹ {Math.abs(t14 - t15).toLocaleString()}</div>
                               </td>
                               <td className="p-3 text-center bg-purple-100 border-l border-purple-200">
@@ -1362,7 +1377,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                           const diffOverL1 = data.total - l1MinTotal;
                           const diffPct = l1MinTotal > 0 ? ((diffOverL1 / l1MinTotal) * 100).toFixed(1) : '0.0';
                           const totRate = currentPR.items.reduce((acc, it) => {
-                            const q = it.vendorQuotes?.[v.id] ?? { initialRate: it.benchmark * 1.15, revisedRate: null };
+                            const q = it.vendorQuotes?.[v.id] ?? {
+                              initialRate: it.benchmark * 1.15,
+                              revisedRate: null,
+                            };
                             return acc + (q.revisedRate ?? q.initialRate);
                           }, 0);
 
@@ -1384,7 +1402,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                           <div className="text-xs font-bold text-emerald-800">L1: {l1VendorObj.name}</div>
                           <div className="text-[9px] text-slate-500 font-mono mt-0.5">
                             {sortedVendorIds.map((vid, rIdx) => {
-                              const vObj = participatingVendors.find(v => v.id === vid)!;
+                              const vObj = participatingVendors.find(v => v.id === vid)
+                                ?? participatingVendors[0]
+                                ?? MASTER_VENDORS[0];
                               return `L${rIdx + 1}: ${vObj.name}`;
                             }).join(' < ')}
                           </div>
@@ -1594,7 +1614,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                 <h4 className="font-black text-purple-950 text-sm">AI Cost Benchmarking Engine (MLEO Bottom-Up Decomposition)</h4>
               </div>
               <p className="text-purple-900">
-                Machine learning model decomposing every BOQ line item into <strong>Material (M)</strong>, <strong>Labor (L)</strong>, <strong>Equipment (E)</strong>, and <strong>Overheads/Margin (O)</strong> with geographic cost indexing.
+                Machine learning model decomposing every BOQ line item into <strong>Material (M)</strong>,{' '}
+                <strong>Labor (L)</strong>, <strong>Equipment (E)</strong>, and{' '}
+                <strong>Overheads/Margin (O)</strong> with geographic cost indexing.
               </p>
             </div>
 
@@ -1696,7 +1718,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                     <span>Item-Wise Line Item Negotiation & MLEO Bottom-Up Breakdown</span>
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Inspect and negotiate commercial unit rates item-by-item against AI Should-Cost targets. Click <strong>MLEO Breakdown</strong> on any line to view detailed Material, Labor, Equipment, and Overheads.
+                    Inspect and negotiate commercial unit rates item-by-item against AI Should-Cost targets. Click{' '}
+                    <strong>MLEO Breakdown</strong> on any line to view detailed Material, Labor, Equipment,
+                    and Overheads.
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 shrink-0">
@@ -1758,7 +1782,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                   <tbody className="divide-y divide-slate-200 font-mono">
                     {currentPR.items.map((it, idx) => {
                       const shouldCostAmt = it.qty * it.benchmark;
-                      const currentCounterRate = lineCounterRates[it.code] !== undefined ? lineCounterRates[it.code] : Math.round(it.benchmark * 1.04);
+                      const currentCounterRate = lineCounterRates[it.code] !== undefined
+                        ? lineCounterRates[it.code]
+                        : Math.round(it.benchmark * 1.04);
                       const currentCounterAmt = it.qty * currentCounterRate;
 
                       return (
@@ -1785,12 +1811,16 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                           </td>
 
                           {participatingVendors.map(v => {
-                            const q = it.vendorQuotes?.[v.id] ?? { initialRate: Math.round(it.benchmark * 1.15), revisedRate: null };
+                            const q = getItemVendorQuote(it, v.id);
                             const initRate = q.initialRate;
                             const initAmt = it.qty * initRate;
                             const revisedRateVal = q.revisedRate;
                             const isRevised = typeof revisedRateVal === 'number';
-                            const revisedAmt = isRevised && revisedRateVal !== null && revisedRateVal !== undefined ? it.qty * revisedRateVal : null;
+                            const revisedAmt = isRevised &&
+                              revisedRateVal !== null &&
+                              revisedRateVal !== undefined
+                              ? it.qty * revisedRateVal
+                              : null;
 
                             return (
                               <React.Fragment key={v.id}>
@@ -1799,7 +1829,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                                   <div className="text-[10px] text-rose-700 font-semibold">Amt: ₹ {Math.round(initAmt).toLocaleString()}</div>
                                 </td>
                                 <td className="p-3 text-right bg-emerald-50/30 font-mono border-r border-slate-200">
-                                  {isRevised && revisedRateVal !== null && revisedRateVal !== undefined && revisedAmt !== null ? (
+                                  {isRevised &&
+                                  revisedRateVal !== null &&
+                                  revisedRateVal !== undefined &&
+                                  revisedAmt !== null ? (
                                     <>
                                       <div className="font-black text-emerald-800 text-xs">₹ {revisedRateVal.toLocaleString()}</div>
                                       <div className="text-[10px] text-emerald-900 font-bold">Amt: ₹ {Math.round(revisedAmt).toLocaleString()}</div>
@@ -1842,7 +1875,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                               <button 
                                 onClick={() => {
                                   const selectEl = document.getElementById(`rowOfferVendorSelect_${idx}`) as HTMLSelectElement;
-                                  handleDispatchVendorWiseOffer(selectEl ? selectEl.value : undefined);
+                                  handleDispatchVendorWiseOffer(selectEl.value);
                                 }} 
                                 className="px-1.5 py-0.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-[9px] font-bold shadow-xs" 
                                 title="Send counter-offer on this item"
@@ -1880,7 +1913,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                         totCounterAmtSum += it.qty * r;
 
                         participatingVendors.forEach(v => {
-                          const q = it.vendorQuotes?.[v.id] ?? { initialRate: Math.round(it.benchmark * 1.15), revisedRate: null };
+                          const q = it.vendorQuotes?.[v.id] ?? {
+                            initialRate: Math.round(it.benchmark * 1.15),
+                            revisedRate: null,
+                          };
                           vTotals1st[v.id].rate += q.initialRate;
                           vTotals1st[v.id].amt += it.qty * q.initialRate;
                           if (q.revisedRate !== null && q.revisedRate !== undefined) {
@@ -1984,10 +2020,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                       {currentPR.items.map((it, idx) => {
                         let rate = 0;
                         if (isMethod2) {
-                          rate = it.vendorRateCards?.[awardedPPO.vendorId] ?? 65000;
+                          rate = getItemRateCard(it, awardedPPO.vendorId);
                         } else {
-                          const quote = it.vendorQuotes?.[awardedPPO.vendorId];
-                          rate = quote ? (quote.revisedRate ?? quote.initialRate) : (it.benchmark * 1.15);
+                          const quote = getItemVendorQuote(it, awardedPPO.vendorId);
+                          rate = quote.revisedRate ?? quote.initialRate;
                         }
                         return (
                           <tr key={idx}>
@@ -2054,7 +2090,13 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                   <p className="text-[11px] text-slate-500">Audited operational justification required for bypassing lowest commercial bidder.</p>
                 </div>
               </div>
-              <button onClick={() => setIsNonL1ModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+              <button 
+                onClick={() => setIsNonL1ModalOpen(false)} 
+                aria-label="Close Non-L1 Modal" 
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-xs space-y-2 font-mono">
@@ -2174,7 +2216,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
               const ePct = ((e / sum) * 100).toFixed(1);
               const oPct = ((o / sum) * 100).toFixed(1);
 
-              const quotedRate = selectedMLEOItem.vendorQuotes![l1VendorId].initialRate;
+              const quotedRate = getItemVendorQuote(selectedMLEOItem, l1VendorId).initialRate;
               const deltaRate = quotedRate - selectedMLEOItem.benchmark;
               const deltaPct = ((deltaRate / selectedMLEOItem.benchmark) * 100).toFixed(1);
               const lineSavings = deltaRate * selectedMLEOItem.qty;

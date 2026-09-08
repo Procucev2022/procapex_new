@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getConfiguredModelName, isGeminiConfigured } from '@/lib/gemini';
 import { logger } from '@/lib/logger';
 import { validateQueryParams } from '@/lib/validator';
 import { API_AI_STATUS_QUERY_SCHEMA } from '@/constants';
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   const correlationId = `req-status-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   const { searchParams } = new URL(req.url);

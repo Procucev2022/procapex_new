@@ -1,4 +1,4 @@
-import { TenantKey, TenantConfig } from '@/types';
+import type { TenantKey, TenantConfig } from '@/types';
 
 export const TENANTS: Record<TenantKey, TenantConfig> = {
   'TNT_LNT': {
@@ -14,8 +14,8 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
       'CATEGORY_MANAGER_2': { name: 'Rajesh Singhania', title: 'Head of Strategic Sourcing' },
       'PROJECT_HEAD_PPO': { name: 'Anil Kulkarni', title: 'Vice President (Projects)' },
       'FINANCE_HEAD': { name: 'Sunil Deshmukh', title: 'Chief Financial Officer' },
-      'VENDOR': { name: 'DesignCraft Millworks Pvt Ltd', title: 'Approved Tier-1 Joinery Contractor' }
-    }
+      'VENDOR': { name: 'DesignCraft Millworks Pvt Ltd', title: 'Approved Tier-1 Joinery Contractor' },
+    },
   },
   'TNT_TATA': {
     id: 'TNT-TATA-002',
@@ -30,8 +30,8 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
       'CATEGORY_MANAGER_2': { name: 'Arunav Roy', title: 'Chief Procurement Officer' },
       'PROJECT_HEAD_PPO': { name: 'Capt. R. K. Nair', title: 'Project Director' },
       'FINANCE_HEAD': { name: 'G. Swaminathan', title: 'VP - Commercial & Finance' },
-      'VENDOR': { name: 'Tata Steel & BlueStar Chiller Div', title: 'OEM Strategic Partner' }
-    }
+      'VENDOR': { name: 'Tata Steel & BlueStar Chiller Div', title: 'OEM Strategic Partner' },
+    },
   },
   'TNT_GODREJ': {
     id: 'TNT-GODREJ-003',
@@ -46,8 +46,8 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
       'CATEGORY_MANAGER_2': { name: 'Pradeep Khurana', title: 'Head - Central Procurement' },
       'PROJECT_HEAD_PPO': { name: 'Rohan Godrej', title: 'Regional Projects Head' },
       'FINANCE_HEAD': { name: 'Deepak Varma', title: 'Financial Controller' },
-      'VENDOR': { name: 'Godrej Interio Enterprise', title: 'Approved Millwork Vendor' }
-    }
+      'VENDOR': { name: 'Godrej Interio Enterprise', title: 'Approved Millwork Vendor' },
+    },
   },
   'TNT_SHAPOORJI': {
     id: 'TNT-SHAPOORJI-004',
@@ -62,7 +62,7 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
       'CATEGORY_MANAGER_2': { name: 'Neville Tata', title: 'Head of Global Procurement' },
       'PROJECT_HEAD_PPO': { name: 'Farokh Mistry', title: 'Executive VP - Infra' },
       'FINANCE_HEAD': { name: 'Ratan Mehta', title: 'Director of Finance' },
-      'VENDOR': { name: 'SP Fabricators & Interior Solutions', title: 'Registered Contractor' }
-    }
-  }
+      'VENDOR': { name: 'SP Fabricators & Interior Solutions', title: 'Registered Contractor' },
+    },
+  },
 };

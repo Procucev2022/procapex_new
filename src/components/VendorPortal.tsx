@@ -11,18 +11,13 @@ import {
   History,
   FileCheck2,
   Award,
-  CreditCard,
-  Truck,
-  ShieldCheck,
   Download,
-  AlertTriangle,
   User,
   Check,
   FileText,
-  Calculator
+  Calculator,
 } from 'lucide-react';
-import { useProcurement } from '../context/ProcurementContext';
-import { VendorQuoteItem } from '@/types';
+import type { VendorQuoteItem } from '@/types';
 import { INITIAL_VENDOR_QUOTE_ITEMS, UI_STRINGS } from '@/constants';
 
 export const VendorPortal: React.FC = () => {
@@ -47,7 +42,7 @@ export const VendorPortal: React.FC = () => {
     deliveryDate: '2026-09-25',
     incoterms: 'FOR_SITE',
     warranty: '12 Months Defect Liability Period + 24 Months OEM Hardware Warranty',
-    deviations: '100% Compliant with PR scope specifications. Safe unloading and vertical hoisting included at site.'
+    deviations: '100% Compliant with PR scope specifications. Safe unloading and vertical hoisting included at site.',
   });
 
   // Round 2 (BAFO) Terms & Conditions State
@@ -61,22 +56,22 @@ export const VendorPortal: React.FC = () => {
     deliveryDate: '2026-09-25',
     incoterms: 'FOR_SITE',
     warranty: '12 Months Defect Liability Period + 24 Months OEM Hardware Warranty',
-    deviations: 'Concession discount applied referencing buyer target counter-offer. Priority factory staging guaranteed.'
+    deviations: 'Concession discount applied referencing buyer target counter-offer. Priority factory staging guaranteed.',
   });
 
-  const handleRate1Change = (idx: number, val: string) => {
+  const handleRate1Change = (idx: number, val: string): void => {
     const updated = [...items];
     updated[idx].rate1 = parseFloat(val) || 0;
     setItems(updated);
   };
 
-  const handleRate2Change = (idx: number, val: string) => {
+  const handleRate2Change = (idx: number, val: string): void => {
     const updated = [...items];
     updated[idx].rate2 = parseFloat(val) || 0;
     setItems(updated);
   };
 
-  const handlePaymentPreset1 = (preset: string) => {
+  const handlePaymentPreset1 = (preset: string): void => {
     let adv = '10%';
     let ret = '10%';
     let cred = '30 Days Net';
@@ -100,7 +95,7 @@ export const VendorPortal: React.FC = () => {
     setTerms1(prev => ({ ...prev, paymentStructure: preset, advPct: adv, retPct: ret, creditDays: cred }));
   };
 
-  const handlePaymentPreset2 = (preset: string) => {
+  const handlePaymentPreset2 = (preset: string): void => {
     let adv = '10%';
     let ret = '10%';
     let cred = '30 Days Net';
@@ -171,7 +166,7 @@ export const VendorPortal: React.FC = () => {
               <span className="text-[11px] text-slate-300 mr-1.5 font-medium">{UI_STRINGS.vendorPortal.vendorLabel}</span>
               <select
                 value={activeVendor}
-                onChange={(e) => setActiveVendor(e.target.value as any)}
+                onChange={(e) => setActiveVendor(e.target.value as 'VND-001' | 'VND-002' | 'VND-005')}
                 className="bg-purple-950 text-purple-200 text-xs font-bold rounded-lg px-2 py-1 border border-purple-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400"
               >
                 <option value="VND-001">Vendor 1 (DesignCraft Millworks - Mumbai)</option>
@@ -185,7 +180,7 @@ export const VendorPortal: React.FC = () => {
               <span className="text-[11px] text-slate-300 mr-1.5 font-medium">{UI_STRINGS.vendorPortal.rfqLabel}</span>
               <select
                 value={activePR}
-                onChange={(e) => setActivePR(e.target.value as any)}
+                onChange={(e) => setActivePR(e.target.value as 'PR-2026-0005' | 'PR-2026-0003')}
                 className="bg-slate-800 text-sky-200 text-xs font-bold rounded-lg px-2 py-1 border border-slate-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400"
               >
                 <option value="PR-2026-0005">PR-2026-0005 (Millwork & Counter)</option>
@@ -532,7 +527,8 @@ export const VendorPortal: React.FC = () => {
               <div className="space-y-1">
                 <span className="font-black text-sm text-white block">Ready to Submit 1st Round Formal Quotation?</span>
                 <p className="text-xs text-purple-200">
-                  Both your itemized commercial unit rates and quoted terms &amp; conditions will be transmitted directly to Category Manager&apos;s 4-Way Commercial Matrix.
+                  Both your itemized commercial unit rates and quoted terms &amp; conditions will be
+                  transmitted directly to Category Manager&apos;s 4-Way Commercial Matrix.
                 </p>
               </div>
               <button
@@ -567,7 +563,8 @@ export const VendorPortal: React.FC = () => {
                   </div>
                   <h3 className="text-base font-black text-white mt-1">Buyer Target Counter Proposal & Concession Request</h3>
                   <p className="text-xs text-sky-200/90 mt-0.5">
-                    Category Manager has requested a revised best-and-final-offer (BAFO) referencing AI Should-Cost benchmarks. Review your 1st quote and target rates below.
+                    Category Manager has requested a revised best-and-final-offer (BAFO) referencing AI
+                    Should-Cost benchmarks. Review your 1st quote and target rates below.
                   </p>
                 </div>
                 <div className="text-right bg-sky-900/60 p-3 rounded-xl border border-sky-600 font-mono">
@@ -868,7 +865,8 @@ export const VendorPortal: React.FC = () => {
               <div className="space-y-1">
                 <span className="font-black text-sm text-white block">Ready to Submit Revised 2nd Quote (BAFO)?</span>
                 <p className="text-xs text-emerald-200">
-                  Submitting revised 2nd quote and terms will update Category Manager&apos;s Negotiation Hub and 4-Way CBA Matrix in real time.
+                  Submitting revised 2nd quote and terms will update Category Manager&apos;s
+                  Negotiation Hub and 4-Way CBA Matrix in real time.
                 </p>
               </div>
               <button
@@ -1076,7 +1074,8 @@ export const VendorPortal: React.FC = () => {
                     <div>
                       <h4 className="text-sm font-black text-emerald-950">{UI_STRINGS.vendorPortal.orderAcknowledged}</h4>
                       <p className="text-xs text-emerald-800 mt-0.5">
-                        Electronically accepted by <strong>Authorized Signatory</strong> on <strong>06-Sep-2026 16:00 IST</strong>.
+                        Electronically accepted by <strong>Authorized Signatory</strong> on{' '}
+                        <strong>06-Sep-2026 16:00 IST</strong>.
                       </p>
                     </div>
                   </div>
@@ -1084,7 +1083,8 @@ export const VendorPortal: React.FC = () => {
                   <div>
                     <h4 className="text-sm font-black text-purple-950">Vendor Electronic Acceptance & Contract Confirmation</h4>
                     <p className="text-xs text-purple-800 mt-0.5">
-                      By accepting this Purchase Price Offer, your organization confirms commercial readiness to deliver as per contracted terms.
+                      By accepting this Purchase Price Offer, your organization confirms
+                      commercial readiness to deliver as per contracted terms.
                     </p>
                   </div>
                 )}

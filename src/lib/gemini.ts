@@ -1,9 +1,16 @@
+import type { GenerativeModel } from '@google/generative-ai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from './logger';
-import { MLEOCostBreakdown, NegotiationParams, NegotiationTactic } from '@/types';
+import type { MLEOCostBreakdown, NegotiationParams, NegotiationTactic } from '@/types';
 import { DEFAULT_GEMINI_MODEL } from '@/constants';
 
 export type { MLEOCostBreakdown, NegotiationParams, NegotiationTactic };
+
+export interface GeminiModelContext {
+  model: GenerativeModel;
+  displayModelName: string;
+  apiModelId: string;
+}
 
 /**
  * Returns the Gemini model configured via environment variable GEMINI_MODEL.
@@ -36,7 +43,7 @@ export function isGeminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '');
 }
 
-export function getGeminiModel() {
+export function getGeminiModel(): GeminiModelContext | null {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     return null;
@@ -124,9 +131,9 @@ Respond ONLY with valid JSON in this exact structure without markdown backticks:
         modelUsed: gemini.displayModelName,
         isLiveAi: true,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn('lib/gemini', 'Gemini API call failed, falling back to intelligent heuristic calculation', {
-        error: err?.message,
+        error: err instanceof Error ? err.message : String(err),
         durationMs: Date.now() - startTime,
       });
     }
@@ -200,14 +207,7 @@ Respond ONLY with valid JSON in this exact structure without markdown backticks:
 /**
  * Generate counter-offer negotiation tactics using Gemini.
  */
-export async function generateCounterOffer(params: {
-  prTitle: string;
-  itemName: string;
-  vendorQuoteRate: number;
-  targetBenchmark: number;
-  currentRound: number;
-  historySummary?: string;
-}) {
+export async function generateCounterOffer(params: NegotiationParams): Promise<NegotiationTactic> {
   const gemini = getGeminiModel();
   const { prTitle, itemName, vendorQuoteRate, targetBenchmark, currentRound, historySummary } = params;
 
@@ -260,9 +260,9 @@ Provide a tactical counter-offer. Respond ONLY with valid JSON in this structure
         modelUsed: gemini.displayModelName,
         isLiveAi: true,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn('lib/gemini', 'Gemini counter-offer generation failed, falling back to heuristic calculation', {
-        error: err?.message,
+        error: err instanceof Error ? err.message : String(err),
         durationMs: Date.now() - startTime,
       });
     }

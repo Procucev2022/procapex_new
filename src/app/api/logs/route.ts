@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { LogLevel } from '@/types';
+import type { LogLevel } from '@/types';
 import { DEFAULT_LOG_RETENTION_DAYS, API_LOGS_QUERY_SCHEMA, API_LOGS_INGEST_SCHEMA } from '@/constants';
 import { analyzeLogFiles, autoResolveBugs } from '@/lib/log-analyzer';
 import { validateQueryParams, validateSchema } from '@/lib/validator';
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
     const queryValidation = validateQueryParams(searchParams, API_LOGS_QUERY_SCHEMA);
-    const validParams = queryValidation.data;
+    const validParams = queryValidation.data as Record<string, string | undefined>;
     const action = validParams.action || searchParams.get('action');
 
     // Action: Automated Log Error Diagnostics
@@ -85,29 +86,30 @@ export async function GET(req: NextRequest) {
       offset,
       logs: result.logs,
     });
-  } catch (error: any) {
-    logger.error('api/logs', 'Failed to retrieve or purge logs', { error: error?.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to process logs request';
+    logger.error('api/logs', 'Failed to retrieve or purge logs', { error: errorMessage });
     return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to process logs request' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
 
     if (Array.isArray(body.logs)) {
-      const ingested = body.logs.map((entry: any) => {
+      const ingested = body.logs.map((entry: unknown) => {
         const itemVal = validateSchema(entry, API_LOGS_INGEST_SCHEMA);
-        const data = itemVal.data;
+        const data = itemVal.data as Record<string, unknown>;
         return logger.ingest({
-          level: data.level,
-          module: data.module,
-          message: data.message,
-          data: data.data,
-          correlationId: data.correlationId,
+          level: data.level as LogLevel | undefined,
+          module: data.module as string | undefined,
+          message: data.message as string | undefined,
+          data: data.data as Record<string, unknown> | undefined,
+          correlationId: data.correlationId as string | undefined,
           environment: 'browser',
         });
       });
@@ -122,22 +124,23 @@ export async function POST(req: NextRequest) {
     }
 
     const validation = validateSchema(body, API_LOGS_INGEST_SCHEMA);
-    const entryData = validation.data;
+    const entryData = validation.data as Record<string, unknown>;
 
     const entry = logger.ingest({
-      level: entryData.level,
-      module: entryData.module,
-      message: entryData.message,
-      data: entryData.data,
-      correlationId: entryData.correlationId,
+      level: entryData.level as LogLevel | undefined,
+      module: entryData.module as string | undefined,
+      message: entryData.message as string | undefined,
+      data: entryData.data as Record<string, unknown> | undefined,
+      correlationId: entryData.correlationId as string | undefined,
       environment: 'browser',
     });
 
     return NextResponse.json({ success: true, count: 1, entry });
-  } catch (error: any) {
-    logger.error('api/logs', 'Failed to ingest client logs', { error: error?.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to ingest log entry';
+    logger.error('api/logs', 'Failed to ingest client logs', { error: errorMessage });
     return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to ingest log entry' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

@@ -16,21 +16,23 @@ export interface CacheStats {
   estimatedComputeHoursSaved: number;
 }
 
+export type DatabaseOperation =
+  | 'FIND_UNIQUE'
+  | 'FIND_FIRST'
+  | 'FIND_MANY'
+  | 'CREATE'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'RAW'
+  | 'GRAPHQL_QUERY'
+  | 'ENCRYPT'
+  | 'DECRYPT';
+
 export interface QueryAuditEntry {
   id: string;
   querySignature: string;
   model: string;
-  operation:
-    | 'FIND_UNIQUE'
-    | 'FIND_FIRST'
-    | 'FIND_MANY'
-    | 'CREATE'
-    | 'UPDATE'
-    | 'DELETE'
-    | 'RAW'
-    | 'GRAPHQL_QUERY'
-    | 'ENCRYPT'
-    | 'DECRYPT';
+  operation: DatabaseOperation;
   durationMs: number;
   timestamp: string;
   isSlowQuery: boolean;

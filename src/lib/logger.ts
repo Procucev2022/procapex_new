@@ -10,7 +10,9 @@
  *  - Automatic purging: purges expired logs based on retention compliance (default 7 days)
  */
 
-import { LogLevel, LogEntry, LogFilterOptions, LoggerConfig } from '@/types';
+import type fs from 'fs';
+import type path from 'path';
+import type { LogLevel, LogEntry, LogFilterOptions, LoggerConfig } from '@/types';
 import {
   LOG_LEVEL_SEVERITY,
   MAX_IN_MEMORY_LOGS,
@@ -24,21 +26,21 @@ export type { LogLevel, LogEntry, LogFilterOptions, LoggerConfig };
 /**
  * Safely serialize any object handling circular references and Error instances
  */
-export function safeSerialize(obj: any): any {
+export function safeSerialize(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
   if (obj instanceof Error) {
     return {
       name: obj.name,
       message: obj.message,
       stack: obj.stack,
-      ...(obj as any),
+      ...(obj as unknown as Record<string, unknown>),
     };
   }
   if (typeof obj === 'bigint') return obj.toString();
   if (typeof obj !== 'object') return obj;
 
-  const seen = new WeakSet();
-  const serialize = (item: any): any => {
+  const seen = new WeakSet<object>();
+  const serialize = (item: unknown): unknown => {
     if (item === null || typeof item !== 'object') {
       if (typeof item === 'bigint') return item.toString();
       return item;
@@ -51,15 +53,15 @@ export function safeSerialize(obj: any): any {
         name: item.name,
         message: item.message,
         stack: item.stack,
-        ...(item as any),
+        ...(item as unknown as Record<string, unknown>),
       };
     }
     if (Array.isArray(item)) {
       return item.map(serialize);
     }
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     for (const key of Object.keys(item)) {
-      result[key] = serialize(item[key]);
+      result[key] = serialize((item as Record<string, unknown>)[key]);
     }
     return result;
   };
@@ -76,21 +78,25 @@ export class CentralizedLogger {
   private maxRotatedFiles: number;
   private retentionDays: number;
   private isServer: boolean;
-  private fs: typeof import('fs') | null = null;
-  private path: typeof import('path') | null = null;
+  private fs: typeof fs | null = null;
+  private path: typeof path | null = null;
 
   constructor(config: LoggerConfig = {}) {
     this.minLevel = config.minLevel || (process.env.LOG_LEVEL as LogLevel) || 'DEBUG';
     this.maxMemoryLogs = config.maxMemoryLogs || MAX_IN_MEMORY_LOGS;
     this.maxFileSize = config.maxFileSize || MAX_LOG_FILE_SIZE_BYTES;
     this.maxRotatedFiles = config.maxRotatedFiles || MAX_ROTATED_FILES;
-    this.retentionDays = config.retentionDays || (parseInt(process.env.LOG_RETENTION_DAYS || String(DEFAULT_LOG_RETENTION_DAYS), 10) || DEFAULT_LOG_RETENTION_DAYS);
+    const envRetention = process.env.LOG_RETENTION_DAYS;
+    const parsedRetention = envRetention ? parseInt(envRetention, 10) : DEFAULT_LOG_RETENTION_DAYS;
+    this.retentionDays = config.retentionDays || parsedRetention || DEFAULT_LOG_RETENTION_DAYS;
     this.isServer = config.isServer !== undefined ? config.isServer : typeof window === 'undefined';
 
     if (this.isServer) {
       try {
         // Dynamically require Node built-ins only on server
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const fsLib = require('fs');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const pathLib = require('path');
         this.fs = fsLib;
         this.path = pathLib;
@@ -105,13 +111,13 @@ export class CentralizedLogger {
     }
   }
 
-  private ensureLogDir() {
+  private ensureLogDir(): void {
     if (this.isServer && this.fs && this.logDir) {
       try {
         if (!this.fs.existsSync(this.logDir)) {
           this.fs.mkdirSync(this.logDir, { recursive: true });
         }
-      } catch (err) {
+      } catch {
         // Fallback silently if filesystem cannot be created
       }
     }
@@ -124,7 +130,7 @@ export class CentralizedLogger {
   /**
    * Rotate a log file if it exceeds maxFileSize
    */
-  private rotateLogFile(filePath: string) {
+  private rotateLogFile(filePath: string): void {
     if (!this.isServer || !this.fs || !this.path) return;
     try {
       if (!this.fs.existsSync(filePath)) return;
@@ -143,7 +149,7 @@ export class CentralizedLogger {
         }
       }
       this.fs.renameSync(filePath, `${filePath}.1`);
-    } catch (err) {
+    } catch {
       // Rotation failed gracefully
     }
   }
@@ -151,7 +157,7 @@ export class CentralizedLogger {
   /**
    * Persist a log entry to the local filesystem (when running on Node.js/server)
    */
-  private writeToFile(entry: LogEntry) {
+  private writeToFile(entry: LogEntry): void {
     if (!this.isServer || !this.fs || !this.path) return;
 
     try {
@@ -168,7 +174,7 @@ export class CentralizedLogger {
         this.rotateLogFile(errorPath);
         this.fs.appendFileSync(errorPath, jsonLine, 'utf8');
       }
-    } catch (err) {
+    } catch {
       // Ignore disk write errors to prevent breaking app operations
     }
   }
@@ -202,7 +208,7 @@ export class CentralizedLogger {
             purgedFiles.push(file);
           }
         }
-      } catch (err) {
+      } catch {
         // Ignore purging errors
       }
     }
@@ -213,14 +219,20 @@ export class CentralizedLogger {
   /**
    * Core logging mechanism
    */
-  public log(level: LogLevel, module: string, message: string, data?: Record<string, any>, correlationId?: string): LogEntry {
+  public log(
+    level: LogLevel,
+    module: string,
+    message: string,
+    data?: Record<string, unknown>,
+    correlationId?: string
+  ): LogEntry {
     const entry: LogEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       timestamp: new Date().toISOString(),
       level,
       module,
       message,
-      data: data ? safeSerialize(data) : undefined,
+      data: data ? (safeSerialize(data) as Record<string, unknown>) : undefined,
       correlationId,
       environment: this.isServer ? 'server' : 'browser',
     };
@@ -238,7 +250,9 @@ export class CentralizedLogger {
       }
 
       // Format console output
-      const prefix = `[${entry.timestamp}] [${entry.level}] [${entry.module}]${entry.correlationId ? ` [${entry.correlationId}]` : ''}:`;
+      const prefix = `[${entry.timestamp}] [${entry.level}] [${entry.module}]${
+        entry.correlationId ? ` [${entry.correlationId}]` : ''
+      }:`;
       if (level === 'ERROR') {
         console.error(prefix, entry.message, entry.data || '');
       } else if (level === 'WARN') {
@@ -253,19 +267,19 @@ export class CentralizedLogger {
     return entry;
   }
 
-  public debug(module: string, message: string, data?: Record<string, any>, correlationId?: string): LogEntry {
+  public debug(module: string, message: string, data?: Record<string, unknown>, correlationId?: string): LogEntry {
     return this.log('DEBUG', module, message, data, correlationId);
   }
 
-  public info(module: string, message: string, data?: Record<string, any>, correlationId?: string): LogEntry {
+  public info(module: string, message: string, data?: Record<string, unknown>, correlationId?: string): LogEntry {
     return this.log('INFO', module, message, data, correlationId);
   }
 
-  public warn(module: string, message: string, data?: Record<string, any>, correlationId?: string): LogEntry {
+  public warn(module: string, message: string, data?: Record<string, unknown>, correlationId?: string): LogEntry {
     return this.log('WARN', module, message, data, correlationId);
   }
 
-  public error(module: string, message: string, data?: Record<string, any>, correlationId?: string): LogEntry {
+  public error(module: string, message: string, data?: Record<string, unknown>, correlationId?: string): LogEntry {
     return this.log('ERROR', module, message, data, correlationId);
   }
 
@@ -321,7 +335,7 @@ export class CentralizedLogger {
       level: entry.level || 'INFO',
       module: entry.module || 'client',
       message: entry.message || '',
-      data: entry.data ? safeSerialize(entry.data) : undefined,
+      data: entry.data ? (safeSerialize(entry.data) as Record<string, unknown>) : undefined,
       correlationId: entry.correlationId,
       environment: entry.environment || (this.isServer ? 'server' : 'browser'),
     };
@@ -341,22 +355,27 @@ export class CentralizedLogger {
   /**
    * Reset in-memory log buffer (useful for test suites)
    */
-  public clearLogs() {
+  public clearLogs(): void {
     this.inMemoryLogs = [];
   }
 
   /**
    * Create a scoped child logger with default module and/or correlationId
    */
-  public child(defaults: { module?: string; correlationId?: string }) {
+  public child(defaults: { module?: string; correlationId?: string }): {
+    debug: (msg: string, data?: Record<string, unknown>, corrId?: string) => LogEntry;
+    info: (msg: string, data?: Record<string, unknown>, corrId?: string) => LogEntry;
+    warn: (msg: string, data?: Record<string, unknown>, corrId?: string) => LogEntry;
+    error: (msg: string, data?: Record<string, unknown>, corrId?: string) => LogEntry;
+  } {
     return {
-      debug: (msg: string, data?: Record<string, any>, corrId?: string) =>
+      debug: (msg: string, data?: Record<string, unknown>, corrId?: string): LogEntry =>
         this.debug(defaults.module || 'app', msg, data, corrId || defaults.correlationId),
-      info: (msg: string, data?: Record<string, any>, corrId?: string) =>
+      info: (msg: string, data?: Record<string, unknown>, corrId?: string): LogEntry =>
         this.info(defaults.module || 'app', msg, data, corrId || defaults.correlationId),
-      warn: (msg: string, data?: Record<string, any>, corrId?: string) =>
+      warn: (msg: string, data?: Record<string, unknown>, corrId?: string): LogEntry =>
         this.warn(defaults.module || 'app', msg, data, corrId || defaults.correlationId),
-      error: (msg: string, data?: Record<string, any>, corrId?: string) =>
+      error: (msg: string, data?: Record<string, unknown>, corrId?: string): LogEntry =>
         this.error(defaults.module || 'app', msg, data, corrId || defaults.correlationId),
     };
   }

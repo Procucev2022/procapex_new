@@ -9,10 +9,10 @@ import {
   TrendingDown, 
   GitMerge, 
   Bell, 
-  RotateCcw 
+  RotateCcw, 
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-import { DashboardProps } from '@/types';
+import type { DashboardProps } from '@/types';
 import { UI_STRINGS, formatString } from '@/constants';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {

@@ -66,7 +66,13 @@
 - Modernize all unit and integration tests to assert against `UI_STRINGS` constants (and `formatString` templates) instead of hardcoded strings to prevent brittle matches during UI copy updates.
 - All i18n modules and helper utilities must achieve $\ge 90\%$ code coverage per file across all 4 parameters.
 
-### 11. Mandatory Quality Check Execution
+### 11. Strictest Linter Configuration & Code Quality Standards (See: `.agents/rules/linter-standards.md`)
+- **Category A (Strong Typing & Error Prevention)**: Enforce `@typescript-eslint/no-explicit-any` (disallow any), `@typescript-eslint/explicit-function-return-type` (require return types), `@typescript-eslint/no-non-null-assertion` (disallow !), `@typescript-eslint/consistent-type-imports` (enforce `import type`), `@typescript-eslint/prefer-optional-chain`, `@typescript-eslint/no-unused-vars`, and `@typescript-eslint/naming-convention` (PascalCase for types/interfaces, camelCase for variables/functions).
+- **Category B (React/Next.js & Accessibility)**: Enforce component hooks rules (`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`), prohibit unsafe rendering (`react/no-danger`), consistent boolean properties (`react/jsx-boolean-value`), and strict web accessibility (`jsx-a11y/alt-text`, `jsx-a11y/no-redundant-roles`, `jsx-a11y/anchor-is-valid`).
+- **Category C (General Quality & Formatting)**: Limit complexity (max 10), max-lines (300 per file), and max-len (120 chars). Prohibit hardcoded strings to ensure `UI_STRINGS` usage. Enforce single quotes, semicolons, multiline trailing commas, `prefer-const`, `no-var`, and `object-shorthand`.
+- **Integrated Build & CI/CD**: Primary build runs `"next lint && next build"`. CI/CD blocks pull requests on any lint warnings or errors.
+
+### 12. Mandatory Quality Check Execution
 - AI coding agents must run quality checks after every change:
   - **Fast check for rapid development**:
     ```bash
@@ -83,19 +89,19 @@
     ```
     Recursively validates all projects in the workspace.
 
-### 12. Strict Check Order: Build & Coverage Checked First
+### 13. Strict Check Order: Build & Coverage Checked First
 Full quality checks must follow this mandatory sequence:
-1. **Build Verification**: `npm run build`
+1. **Build Verification**: `npm run build` (integrated `next lint && next build`)
 2. **Unit Test Code Coverage**: `npm run test:coverage` (90% per-file benchmark across lines, statements, branches, and functions, `--detectOpenHandles`)
 3. **Typecheck**: `npm run typecheck` (`tsc --noEmit`)
 4. **Lint**: `npm run lint` (`next lint`)
 5. **Database Schema & Migrations**: `npm run db:validate` / apply pending migrations
 
-### 13. Zero Tolerance for Coverage Regressions
+### 14. Zero Tolerance for Coverage Regressions
 - No files may be skipped.
 - Per-file thresholds must strictly remain $\ge 90\%$ on all 4 metrics.
 
-### 14. CI/CD Pull Request Pipeline & Quality Reporting
+### 15. CI/CD Pull Request Pipeline & Quality Reporting
 - Pull requests trigger `.github/workflows/pull-request.yml` with a strict job timeout (`timeout-minutes: 20`).
 - Pipeline enforces Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 metrics) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
 - Generates and publishes an automated PR summary comment detailing test pass/fail counts and overall & per-file coverage statistics (`npm run ci:summary`).

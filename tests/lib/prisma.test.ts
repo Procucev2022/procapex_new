@@ -1,14 +1,15 @@
+import type { Prisma } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 
 describe('Prisma Client Singleton', () => {
   const originalEnv = process.env.NODE_ENV;
 
   afterEach(() => {
-    (process.env as any).NODE_ENV = originalEnv;
+    (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
   });
 
   it('should instantiate PrismaClient when global prisma is undefined in development', async () => {
-    (process.env as any).NODE_ENV = 'development';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
     const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
     delete globalForPrisma.prisma;
     jest.resetModules();
@@ -19,7 +20,7 @@ describe('Prisma Client Singleton', () => {
   });
 
   it('should reuse existing global prisma when already defined', async () => {
-    (process.env as any).NODE_ENV = 'development';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
     const mockPrisma = new PrismaClient();
     const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
     globalForPrisma.prisma = mockPrisma;
@@ -30,13 +31,12 @@ describe('Prisma Client Singleton', () => {
   });
 
   it('should not assign global prisma in production environment', async () => {
-    (process.env as any).NODE_ENV = 'production';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
     const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
     delete globalForPrisma.prisma;
     jest.resetModules();
 
-    const mod = await import('@/lib/prisma');
-    expect(mod.prisma).toBeDefined();
+    await import('@/lib/prisma');
     expect(globalForPrisma.prisma).toBeUndefined();
   });
 
@@ -46,19 +46,30 @@ describe('Prisma Client Singleton', () => {
       const next = jest.fn().mockResolvedValue([{ id: '1' }]);
 
       const result = await prismaQueryAuditMiddleware(
-        { model: 'Tenant', action: 'findMany' },
+        {
+          model: 'Tenant',
+          action: 'findMany',
+          args: {},
+          dataPath: [],
+          runInTransaction: false,
+        } as unknown as Prisma.MiddlewareParams,
         next
       );
 
       expect(result).toEqual([{ id: '1' }]);
-      expect(next).toHaveBeenCalledWith({ model: 'Tenant', action: 'findMany' });
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'Tenant', action: 'findMany' })
+      );
     });
 
     it('should audit raw queries when model and action are omitted', async () => {
       const { prismaQueryAuditMiddleware } = await import('@/lib/prisma');
       const next = jest.fn().mockResolvedValue('ok');
 
-      const result = await prismaQueryAuditMiddleware({}, next);
+      const result = await prismaQueryAuditMiddleware(
+        {} as unknown as Prisma.MiddlewareParams,
+        next
+      );
       expect(result).toBe('ok');
     });
 

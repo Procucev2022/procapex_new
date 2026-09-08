@@ -13,10 +13,9 @@ import { MastersAudit } from '../components/MastersAudit';
 import { PlusCircle, X } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 
-export default function Home() {
+export default function Home(): JSX.Element {
   const { createPR, createPPO, prs } = useProcurement();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [selectedPRForBOQ, setSelectedPRForBOQ] = useState<string>('PR-2026-0005');
   
   // Modals state
   const [isNewPRModalOpen, setIsNewPRModalOpen] = useState<boolean>(false);
@@ -37,7 +36,7 @@ export default function Home() {
   const [ppoPaymentTerms, setPpoPaymentTerms] = useState<string>('30 Days Net from delivery & QC signoff');
   const [ppoLeadTime, setPpoLeadTime] = useState<string>('12 Calendar Days');
 
-  const handleNewPRSubmit = (e: React.FormEvent) => {
+  const handleNewPRSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     createPR({
       title: prTitle || 'New Requisition Package',
@@ -48,8 +47,8 @@ export default function Home() {
       reqDate: prDate,
       remarks: prRemarks,
       items: [
-        { code: 'GEN-ITEM-001', desc: prTitle || 'Custom Scope Item', uom: 'Nos', qty: 100, rateCard: 1000, benchmark: 950, std: 980, aiConf: '92%' }
-      ]
+        { code: 'GEN-ITEM-001', desc: prTitle || 'Custom Scope Item', uom: 'Nos', qty: 100, rateCard: 1000, benchmark: 950, std: 980, aiConf: '92%' },
+      ],
     });
     setIsNewPRModalOpen(false);
     setPrTitle('');
@@ -57,7 +56,7 @@ export default function Home() {
     setCurrentTab('pr_approval_queue');
   };
 
-  const handleCreatePPOSubmit = (e: React.FormEvent) => {
+  const handleCreatePPOSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     const qty = 1;
     const totalVal = ppoUnitRate * qty;
@@ -69,13 +68,13 @@ export default function Home() {
       vendor: ppoVendor,
       itemDesc: `Supply and Delivery as per ${ppoTargetPR}`,
       unitRate: ppoUnitRate,
-      qty: qty,
-      totalVal: totalVal,
+      qty,
+      totalVal,
       taxRate: ppoTaxRate,
-      taxAmount: taxAmount,
-      grandTotal: grandTotal,
+      taxAmount,
+      grandTotal,
       paymentTerms: ppoPaymentTerms,
-      leadTime: ppoLeadTime
+      leadTime: ppoLeadTime,
     });
     setIsNewPPOModalOpen(false);
     setCurrentTab('ppo_workorders');
@@ -105,8 +104,7 @@ export default function Home() {
         {/* VIEW 1: BOQ STUDIO & PR REQUISITIONS (PR RAISER SCOPE) */}
         {(currentTab === 'boq_raiser_studio' || currentTab === 'prs' || currentTab === 'boq') && (
           <PRModule
-            onNavigateToBOQ={(prId: string) => {
-              setSelectedPRForBOQ(prId);
+            onNavigateToBOQ={(_prId: string) => {
               setCurrentTab('pr_approval_queue');
             }}
             onOpenNewPRModal={() => setIsNewPRModalOpen(true)}

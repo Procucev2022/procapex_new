@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Scale, ArrowLeft, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useProcurement } from '../context/ProcurementContext';
+import { Scale, Sparkles, AlertTriangle } from 'lucide-react';
 import { COMMERCIAL_COUNTER_ITEMS, UI_STRINGS } from '@/constants';
-import { CommercialEvalProps } from '@/types';
+import type { CommercialEvalProps } from '@/types';
 
 export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICost, onNavigateToPPO }) => {
   const counterItems = COMMERCIAL_COUNTER_ITEMS;
@@ -22,7 +21,6 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
   });
 
   const variancePct = (((totalQuoted - totalRateCard) / totalRateCard) * 100).toFixed(1);
-  const isAcceptable = parseFloat(variancePct) <= 5.0;
 
   return (
     <div className="space-y-6">
@@ -33,7 +31,8 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
             <h2 className="text-xl font-bold text-slate-900">{UI_STRINGS.commercialEval.title}</h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Normalized 4-way commercial evaluation for drawing: <strong>Counter Elevation D (Millwork Package)</strong> with Line-Item MLEO Costing
+            Normalized 4-way commercial evaluation for drawing:{' '}
+            <strong>Counter Elevation D (Millwork Package)</strong> with Line-Item MLEO Costing
           </p>
         </div>
       </div>

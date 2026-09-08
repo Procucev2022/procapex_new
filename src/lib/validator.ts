@@ -6,7 +6,7 @@
  * and structured error reporting with zero external dependencies.
  */
 
-import {
+import type {
   ObjectSchema,
   ValidationRule,
   ValidationError,
@@ -26,8 +26,8 @@ const DEFAULT_OPTIONS: ValidationOptions = {
 /**
  * Validates any structured JavaScript object or payload against an ObjectSchema
  */
-export function validateSchema<T = any>(
-  data: any,
+export function validateSchema<T = Record<string, unknown>>(
+  data: unknown,
   schema: ObjectSchema,
   options?: ValidationOptions
 ): ValidationResult<T> {
@@ -50,12 +50,13 @@ export function validateSchema<T = any>(
     };
   }
 
-  const resultData: Record<string, any> = opts.stripUnknown ? {} : { ...data };
+  const dataObj = data as Record<string, unknown>;
+  const resultData: Record<string, unknown> = opts.stripUnknown ? {} : { ...dataObj };
 
   // Validate all defined fields in schema
   for (const field of Object.keys(schema)) {
     const rule: ValidationRule = schema[field];
-    let val = data[field];
+    let val = dataObj[field];
 
     // Apply default if undefined
     if (val === undefined && rule.default !== undefined) {
@@ -133,11 +134,12 @@ export function validateSchema<T = any>(
           });
           if (opts.abortEarly) break;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errMessage = err instanceof Error ? err.message : 'Error';
         errors.push({
           path: field,
           field,
-          message: `${field} validation threw: ${err?.message || 'Error'}`,
+          message: `${field} validation threw: ${errMessage}`,
           received: val,
         });
         if (opts.abortEarly) break;
@@ -172,12 +174,12 @@ export function validateSchema<T = any>(
 /**
  * Validates and coerces URL query parameters
  */
-export function validateQueryParams<T = any>(
+export function validateQueryParams<T = Record<string, unknown>>(
   searchParams: URLSearchParams | Record<string, string | string[] | undefined> | string,
   schema: ObjectSchema,
   options?: ValidationOptions
 ): ValidationResult<T> {
-  const rawParams: Record<string, any> = {};
+  const rawParams: Record<string, unknown> = {};
 
   if (searchParams instanceof URLSearchParams) {
     searchParams.forEach((val, key) => {
@@ -190,7 +192,7 @@ export function validateQueryParams<T = any>(
     });
   } else if (searchParams && typeof searchParams === 'object') {
     for (const key of Object.keys(searchParams)) {
-      const v = searchParams[key];
+      const v = (searchParams as Record<string, string | string[] | undefined>)[key];
       rawParams[key] = Array.isArray(v) ? v[0] : v;
     }
   }
@@ -202,25 +204,23 @@ export function validateQueryParams<T = any>(
  * Validates incoming HTTP headers against a HeadersSchema
  */
 export function validateHeaders(
-  headers: Headers | Record<string, string | undefined> | any,
+  headers: Headers | Record<string, string | undefined> | unknown,
   schema: HeadersSchema
 ): ValidationResult<Record<string, string>> {
   const errors: ValidationError[] = [];
   const normalizedHeaders: Record<string, string> = {};
 
   // Extract and normalize headers to lowercase
-  if (headers && typeof headers.get === 'function') {
+  if (headers && typeof (headers as Headers).get === 'function') {
     for (const rule of schema.headers) {
       const lower = rule.name.toLowerCase();
-      const val = headers.get(lower) || headers.get(rule.name);
+      const val = (headers as Headers).get(lower) || (headers as Headers).get(rule.name);
       if (val) normalizedHeaders[lower] = val;
     }
   } else if (headers && typeof headers === 'object') {
     for (const key of Object.keys(headers)) {
-      const val = headers[key];
-      if (typeof val === 'string') {
-        normalizedHeaders[key.toLowerCase()] = val;
-      }
+      const val = (headers as Record<string, string | undefined>)[key];
+      if (val) normalizedHeaders[key.toLowerCase()] = val;
     }
   }
 
@@ -274,7 +274,7 @@ export function validateHeaders(
 /**
  * Internal type validator for a single field
  */
-function validateFieldType(field: string, val: any, rule: ValidationRule): ValidationError | null {
+function validateFieldType(field: string, val: unknown, rule: ValidationRule): ValidationError | null {
   switch (rule.type) {
     case 'string': {
       if (typeof val !== 'string') {
@@ -359,7 +359,7 @@ function validateFieldType(field: string, val: any, rule: ValidationRule): Valid
     }
 
     case 'enum': {
-      if (!rule.enumValues || !rule.enumValues.includes(val)) {
+      if (!rule.enumValues || !rule.enumValues.includes(val as string)) {
         return {
           path: field,
           field,
@@ -455,7 +455,7 @@ function validateFieldType(field: string, val: any, rule: ValidationRule): Valid
 /**
  * Coerces primitive values from string/number inputs when appropriate
  */
-function coerceFieldValue(val: any, type: string): any {
+function coerceFieldValue(val: unknown, type: string): unknown {
   if (val === undefined || val === null) return val;
 
   if (type === 'number') {

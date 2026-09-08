@@ -320,11 +320,11 @@ describe('Centralized Validator Engine (src/lib/validator.ts)', () => {
       const schema: ObjectSchema = {
         discount: {
           type: 'number',
-          custom: (val) => val <= 50 || 'Discount cannot exceed 50%',
+          custom: (val) => (val as number) <= 50 || 'Discount cannot exceed 50%',
         },
         evenNumber: {
           type: 'number',
-          custom: (val) => val % 2 === 0,
+          custom: (val) => (val as number) % 2 === 0,
         },
         throwingValidator: {
           type: 'string',

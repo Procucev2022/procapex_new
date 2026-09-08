@@ -1,4 +1,4 @@
-import { CacheEntry, CacheStats, DatabaseOptimizationConfig } from '@/types';
+import type { CacheEntry, CacheStats, DatabaseOptimizationConfig } from '@/types';
 import { DEFAULT_DB_OPTIMIZATION_CONFIG, DB_COMPUTE_METRICS } from '@/constants';
 import { logger } from './logger';
 

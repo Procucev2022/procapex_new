@@ -17,11 +17,11 @@ export interface ValidationError {
   path: string;
   field: string;
   message: string;
-  received?: any;
+  received?: unknown;
   expected?: string;
 }
 
-export interface ValidationRule<T = any> {
+export interface ValidationRule<T = unknown> {
   type: FieldType;
   required?: boolean;
   nullable?: boolean;
@@ -34,15 +34,15 @@ export interface ValidationRule<T = any> {
   enumValues?: readonly (string | number)[] | (string | number)[];
   arrayItemSchema?: ValidationRule;
   objectSchema?: ObjectSchema;
-  custom?: (value: T, context?: any) => boolean | string;
+  custom?: (value: T, context?: unknown) => boolean | string;
   description?: string;
-  default?: any;
+  default?: unknown;
   coerce?: boolean;
 }
 
 export type ObjectSchema = Record<string, ValidationRule>;
 
-export interface ValidationResult<T = any> {
+export interface ValidationResult<T = unknown> {
   isValid: boolean;
   data: T;
   errors: ValidationError[];

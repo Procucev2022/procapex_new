@@ -1,15 +1,20 @@
+import type { Prisma } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { logger } from './logger';
 import { dbAuditor } from './db-auditor';
+import type { DatabaseOperation } from '@/types';
 
-export async function prismaQueryAuditMiddleware(params: any, next: (params: any) => Promise<any>) {
+export async function prismaQueryAuditMiddleware(
+  params: Prisma.MiddlewareParams,
+  next: (params: Prisma.MiddlewareParams) => Promise<unknown>
+): Promise<unknown> {
   const before = Date.now();
   const result = await next(params);
   const durationMs = Date.now() - before;
 
   dbAuditor.recordQuery({
     model: params.model || 'PrismaQuery',
-    operation: params.action ? (params.action.toUpperCase() as any) : 'RAW',
+    operation: params.action ? (params.action.toUpperCase() as DatabaseOperation) : 'RAW',
     querySignature: `${params.model || 'db'}.${params.action || 'execute'}`,
     durationMs,
     isCached: false,

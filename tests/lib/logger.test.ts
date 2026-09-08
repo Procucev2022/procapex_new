@@ -36,16 +36,20 @@ describe('CentralizedLogger System', () => {
 
     it('handles Error instances', () => {
       const err = new Error('Test Error');
-      const serialized = safeSerialize(err);
+      const serialized = safeSerialize(err) as Record<string, unknown>;
       expect(serialized.name).toBe('Error');
       expect(serialized.message).toBe('Test Error');
       expect(serialized.stack).toBeDefined();
     });
 
     it('handles circular references and nested objects', () => {
-      const obj: any = { a: 1, nested: { b: 2 } };
+      const obj: Record<string, unknown> = { a: 1, nested: { b: 2 } };
       obj.self = obj;
-      const serialized = safeSerialize(obj);
+      const serialized = safeSerialize(obj) as {
+        a: number;
+        nested: { b: number };
+        self: string;
+      };
       expect(serialized.a).toBe(1);
       expect(serialized.nested.b).toBe(2);
       expect(serialized.self).toBe('[Circular]');
@@ -53,7 +57,11 @@ describe('CentralizedLogger System', () => {
 
     it('handles arrays and complex objects with nested errors', () => {
       const arr = [1, { err: new Error('inner') }, BigInt(42)];
-      const serialized = safeSerialize(arr);
+      const serialized = safeSerialize(arr) as [
+        number,
+        { err: { message: string } },
+        string,
+      ];
       expect(serialized[0]).toBe(1);
       expect(serialized[1].err.message).toBe('inner');
       expect(serialized[2]).toBe('42');

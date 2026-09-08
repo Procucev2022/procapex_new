@@ -3,6 +3,7 @@
  */
 import { POST, GET } from '@/app/api/graphql/route';
 import { executeGraphQL } from '@/lib/graphql-client';
+import { resolvers } from '@/graphql/resolvers';
 import { dbCache } from '@/lib/db-cache';
 import { dbAuditor } from '@/lib/db-auditor';
 import { NextRequest } from 'next/server';
@@ -390,6 +391,24 @@ describe('GraphQL API & Resolvers Suite (/api/graphql)', () => {
       expect(json.data.createPurchaseRequest.reqDate).toBeDefined();
     });
 
+    it('should create purchase request with completely empty input and approve it via resolver', async () => {
+      const created = await resolvers.createPurchaseRequest({ input: {} });
+      expect(created.title).toBe('');
+      expect(created.projectName).toBe('');
+      expect(created.costCentre).toBe('');
+      expect(created.category).toBe('');
+      expect(created.requester).toBe('');
+
+      // Query single PR without initial quotes
+      const singlePr = await resolvers.purchaseRequest({ id: created.id });
+      expect(singlePr?.quotes).toEqual([]);
+
+      // Approve PR without initial quotes
+      const approved = await resolvers.approvePurchaseRequest({ id: created.id });
+      expect(approved?.status).toBe('APPROVED_BY_PROJECT_HEAD');
+      expect(approved?.quotes).toEqual([]);
+    });
+
     it('should approve a purchase request and update its status', async () => {
       const mutation = `
         mutation ApprovePR {
@@ -590,6 +609,11 @@ describe('GraphQL API & Resolvers Suite (/api/graphql)', () => {
       const decRes2 = await POST(createRequest({ query: decryptFieldsQuery }));
       const decJson2 = await decRes2.json();
       expect(decJson2.data.decryptData).toBe('Target Negotiation Limit: 500000');
+
+      // 4. Decrypt with individual bundle fields omitting algorithm, iv, salt
+      await expect(
+        resolvers.decryptData({ input: { serializedOrCiphertext: 'raw' } })
+      ).rejects.toThrow();
     });
 
     it('should securely encrypt and update PPO payment terms via mutation', async () => {
@@ -763,8 +787,12 @@ describe('GraphQL API & Resolvers Suite (/api/graphql)', () => {
       });
       global.fetch = mockFetch;
 
-      const result = await executeGraphQL('{ tenants { id } }', undefined, 'TestOp');
-      expect(result.data?.tenants[0].id).toBe('TNT-LNT-001');
+      const result = await executeGraphQL<{ tenants: Array<{ id: string }> }>(
+        '{ tenants { id } }',
+        undefined,
+        'TestOp'
+      );
+      expect(result.data?.tenants[0]?.id).toBe('TNT-LNT-001');
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/graphql',
         expect.objectContaining({ method: 'POST' })

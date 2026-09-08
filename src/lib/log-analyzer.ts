@@ -6,7 +6,7 @@ import {
   DEFAULT_LOG_ANALYZER_CONFIG,
   RESOLUTION_STRATEGIES,
 } from '@/constants';
-import {
+import type {
   BugCategory,
   StackTraceFrame,
   ParsedLogLine,
@@ -50,7 +50,7 @@ export function parseLogLine(line: string): ParsedLogLine | null {
         message: parsed.message || '',
         correlationId: parsed.correlationId,
         data: parsed.data,
-        stack: parsed.stack || parsed.data?.stack || (parsed.error && parsed.error.stack),
+        stack: parsed.stack || parsed.data?.stack || (parsed.error?.stack),
         raw: trimmed,
       };
     } catch {
@@ -67,7 +67,7 @@ export function parseLogLine(line: string): ParsedLogLine | null {
     const correlationId = match[4];
     const rest = match[5];
     let message = rest;
-    let data: any;
+    let data: Record<string, unknown> | undefined;
     let stack: string | undefined;
 
     // Check if rest contains JSON metadata at the end
@@ -75,11 +75,13 @@ export function parseLogLine(line: string): ParsedLogLine | null {
     if (lastBraceIndex !== -1) {
       try {
         const potentialJson = rest.slice(lastBraceIndex + 1);
-        data = JSON.parse(potentialJson);
+        data = JSON.parse(potentialJson) as Record<string, unknown>;
         message = rest.slice(0, lastBraceIndex).trim();
-        if (data?.stack) stack = data.stack;
-        if (data?.error && typeof data.error === 'string' && data.error.includes('\n    at ')) {
-          stack = data.error;
+        if (data && typeof data === 'object') {
+          if ('stack' in data && typeof data.stack === 'string') stack = data.stack;
+          if ('error' in data && typeof data.error === 'string' && data.error.includes('\n    at ')) {
+            stack = data.error;
+          }
         }
       } catch {
         // Not valid JSON metadata
@@ -310,9 +312,9 @@ export function analyzeLogFiles(filePaths?: string[]): LogAnalysisReport {
         const lines = content.split('\n');
         allLines.push(...lines);
         scannedFiles.push(filePath);
-      } catch (err: any) {
+      } catch (err: unknown) {
         logger.warn('lib/log-analyzer', `Failed to read log file for analysis: ${filePath}`, {
-          error: err?.message,
+          error: err instanceof Error ? err.message : String(err),
         });
       }
     }
@@ -376,14 +378,15 @@ export function autoResolveBugs(bugs: DiagnosedBug[]): AutoResolutionResult {
         });
         resolvedCount++;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       failedCount++;
+      const errMessage = err instanceof Error ? err.message : String(err);
       actions.push({
         bugId: bug.id,
         category: bug.category,
-        actionTaken: `Failed resolution attempt: ${err?.message}`,
+        actionTaken: `Failed resolution attempt: ${errMessage}`,
         success: false,
-        details: { error: err?.message },
+        details: { error: errMessage },
       });
     }
   }

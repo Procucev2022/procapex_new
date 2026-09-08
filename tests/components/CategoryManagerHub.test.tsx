@@ -1,6 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { CategoryManagerHub } from '@/components/CategoryManagerHub';
+import {
+  CategoryManagerHub,
+  getMasterVendor,
+  getItemRateCard,
+  getItemVendorQuote,
+} from '@/components/CategoryManagerHub';
+import type { BOQItemWithMLEO } from '@/types';
 import { useProcurement } from '@/context/ProcurementContext';
 import { UI_STRINGS } from '@/constants';
 
@@ -86,10 +92,8 @@ describe('CategoryManagerHub Component', () => {
     const tab1NonL1Btns = screen.getAllByRole('button', { name: /Award PPO \(Non-L1\) →/i });
     if (tab1NonL1Btns.length > 0) {
       fireEvent.click(tab1NonL1Btns[0]);
-      const closeX = screen.getAllByRole('button', { name: '✕' });
-      if (closeX.length > 0) {
-        fireEvent.click(closeX[0]);
-      }
+      const closeX = screen.getByRole('button', { name: 'Close Non-L1 Modal' });
+      fireEvent.click(closeX);
     }
 
     // Tab 1 CBA Matrix button
@@ -256,19 +260,36 @@ describe('CategoryManagerHub Component', () => {
       fireEvent.change(counterSpinInputs[0], { target: { value: '3350' } });
     }
 
-    // Change target offer vendor
-    const offerSelect = screen.getByDisplayValue(/All Vendors/i);
-    fireEvent.change(offerSelect, { target: { value: 'VND-001' } });
-
-    // Send offer
-    const sendOfferBtn = screen.getByRole('button', { name: /Send Offer →/i });
+    // Change table header target offer vendor and click Send Offer
+    const tableHeaderSelect = container.querySelector('thead select') as HTMLSelectElement;
+    if (tableHeaderSelect) {
+      fireEvent.change(tableHeaderSelect, { target: { value: 'VND-001' } });
+    }
+    const sendOfferBtn = screen.getByRole('button', { name: /^Send Offer →$/i });
     fireEvent.click(sendOfferBtn);
 
-    // Send row offer
-    const rowOfferButtons = screen.getAllByRole('button', { name: /Offer →/i });
+    // Send row offer with specific vendor
+    const rowSelect = container.querySelector('#rowOfferVendorSelect_0') as HTMLSelectElement;
+    if (rowSelect) {
+      fireEvent.change(rowSelect, { target: { value: 'VND-001' } });
+    }
+    const rowOfferButtons = screen.getAllByRole('button', { name: /^Offer →$/i });
     if (rowOfferButtons.length > 0) {
       fireEvent.click(rowOfferButtons[0]);
     }
+
+    // Simulate BAFO with single vendor selected
+    const receiveBafoBtn = screen.getByRole('button', { name: /Receive 2nd Quote \(BAFO\)/i });
+    fireEvent.click(receiveBafoBtn);
+
+    // Now change rowSelect to ALL and dispatch offer to ALL
+    if (rowSelect) {
+      fireEvent.change(rowSelect, { target: { value: 'ALL' } });
+    }
+    if (rowOfferButtons.length > 0) {
+      fireEvent.click(rowOfferButtons[0]);
+    }
+    fireEvent.click(receiveBafoBtn);
 
     // Open MLEO breakdown from negotiation table
     const tableMleoBtns = screen.getAllByRole('button', { name: /MLEO Breakdown/i });
@@ -276,10 +297,6 @@ describe('CategoryManagerHub Component', () => {
       fireEvent.click(tableMleoBtns[0]);
       fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.close }));
     }
-
-    // Simulate vendor 2nd quote / BAFO receipt
-    const receiveBafoBtn = screen.getByRole('button', { name: /Receive 2nd Quote \(BAFO\)/i });
-    fireEvent.click(receiveBafoBtn);
 
     // Lock and accept BAFO
     const lockBafoBtn = screen.getByRole('button', { name: /Lock & Accept BAFO/i });
@@ -322,5 +339,72 @@ describe('CategoryManagerHub Component', () => {
     const footerMleoBtn = screen.getByRole('button', { name: /Open MLEO Modal/i });
     fireEvent.click(footerMleoBtn);
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.close }));
+  });
+
+  describe('Helper Functions', () => {
+    it('getMasterVendor returns matching vendor or first fallback', () => {
+      const v1 = getMasterVendor('VND-001');
+      expect(v1.id).toBe('VND-001');
+      const vFallback = getMasterVendor('NON_EXISTENT_VENDOR');
+      expect(vFallback).toBeDefined();
+      expect(vFallback.id).toBe('VND-001');
+    });
+
+    it('getItemRateCard returns rate card or benchmark * 1.05', () => {
+      const mockItem = {
+        code: 'ITEM-01',
+        desc: 'Test Item',
+        qty: 10,
+        uom: 'NOS',
+        benchmark: 1000,
+        vendorRateCards: { 'VND-001': 1050 },
+      } as unknown as BOQItemWithMLEO;
+
+      expect(getItemRateCard(mockItem, 'VND-001')).toBe(1050);
+      expect(getItemRateCard(mockItem, 'VND-UNKNOWN')).toBe(1050);
+
+      const mockItemNoRC = {
+        code: 'ITEM-02',
+        desc: 'Test Item 2',
+        qty: 5,
+        uom: 'NOS',
+        benchmark: 2000,
+      } as unknown as BOQItemWithMLEO;
+      expect(getItemRateCard(mockItemNoRC, 'VND-001')).toBe(2100);
+    });
+
+    it('getItemVendorQuote returns quote or fallback', () => {
+      const mockItem = {
+        code: 'ITEM-01',
+        desc: 'Test Item',
+        qty: 10,
+        uom: 'NOS',
+        benchmark: 1000,
+        vendorQuotes: {
+          'VND-001': { initialRate: 1100, revisedRate: 1050 },
+        },
+      } as unknown as BOQItemWithMLEO;
+
+      expect(getItemVendorQuote(mockItem, 'VND-001')).toEqual({
+        initialRate: 1100,
+        revisedRate: 1050,
+      });
+      expect(getItemVendorQuote(mockItem, 'VND-UNKNOWN')).toEqual({
+        initialRate: 1150,
+        revisedRate: null,
+      });
+
+      const mockItemNoQuotes = {
+        code: 'ITEM-02',
+        desc: 'Test Item 2',
+        qty: 5,
+        uom: 'NOS',
+        benchmark: 2000,
+      } as unknown as BOQItemWithMLEO;
+      expect(getItemVendorQuote(mockItemNoQuotes, 'VND-001')).toEqual({
+        initialRate: 2300,
+        revisedRate: null,
+      });
+    });
   });
 });

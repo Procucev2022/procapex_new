@@ -6,7 +6,7 @@ export interface LogEntry {
   level: LogLevel;
   module: string;
   message: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   correlationId?: string;
   environment: 'server' | 'browser';
 }

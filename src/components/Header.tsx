@@ -7,13 +7,13 @@ import {
   PlusCircle, 
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-import { HeaderProps, UserRole, TenantKey } from '@/types';
+import type { HeaderProps, UserRole, TenantKey } from '@/types';
 import { NAV_ITEMS, UI_STRINGS } from '@/constants';
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpenNewPR }) => {
-  const { activeRole, setActiveRole, activeTenantKey, changeTenant, activeTenant } = useProcurement();
+  const { activeRole, setActiveRole, activeTenantKey, changeTenant } = useProcurement();
 
-  const handleRoleChange = (role: UserRole) => {
+  const handleRoleChange = (role: UserRole): void => {
     setActiveRole(role);
     switch (role) {
       case 'PROJECT_TEAM':

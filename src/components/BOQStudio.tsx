@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Check, Trash2, FileText, Upload, Plus, ShieldCheck } from 'lucide-react';
-import { useProcurement } from '../context/ProcurementContext';
-import { BOQItem, DrawingScope, BOQStudioProps } from '@/types';
+import { Sparkles, Check, Trash2, FileText, ShieldCheck } from 'lucide-react';
+import type { BOQItem, DrawingScope, BOQStudioProps } from '@/types';
 import { DRAWING_NAME_CATALOG, UI_STRINGS, formatString } from '@/constants';
 
 export const BOQStudio: React.FC<BOQStudioProps> = ({ onNavigateToCommercial }) => {
@@ -11,7 +10,7 @@ export const BOQStudio: React.FC<BOQStudioProps> = ({ onNavigateToCommercial }) 
   const [activeDwg, setActiveDwg] = useState<DrawingScope>(DRAWING_NAME_CATALOG['COUNTER_ELEVATION_D']);
   const [selectedItemSpecs, setSelectedItemSpecs] = useState<BOQItem | null>(null);
 
-  const applyCustomDrawingName = (name: string) => {
+  const applyCustomDrawingName = (name: string): void => {
     setDrawingInput(name);
     const lower = name.toLowerCase();
     if (lower.includes('counter') || lower.includes('elevation d')) {
@@ -88,7 +87,10 @@ export const BOQStudio: React.FC<BOQStudioProps> = ({ onNavigateToCommercial }) 
               Relevant Specifications for Drawing: <span className="text-sky-700 ml-1">{activeDwg.title}</span>
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {formatString(UI_STRINGS.boqStudio.specsCountTemplate, { count: activeDwg.items.length, title: activeDwg.title })}
+              {formatString(UI_STRINGS.boqStudio.specsCountTemplate, {
+                count: activeDwg.items.length,
+                title: activeDwg.title,
+              })}
             </p>
           </div>
 

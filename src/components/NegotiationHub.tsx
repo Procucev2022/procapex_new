@@ -20,18 +20,18 @@ export const NegotiationHub: React.FC = () => {
       user: 'Vendor 1 (VND-001)',
       rate: 162260,
       remarks: 'Initial competitive bid submitted against tender specifications.',
-      timestamp: '2026-09-06 10:30'
-    }
+      timestamp: '2026-09-06 10:30',
+    },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!rate) return;
     addNegotiationRound(selectedPRId, parseFloat(rate), remarks, actionType);
     setRemarks('');
   };
 
-  const handleSimulate2ndQuote = () => {
+  const handleSimulate2ndQuote = (): void => {
     addNegotiationRound(
       selectedPRId,
       148500,
@@ -112,8 +112,10 @@ export const NegotiationHub: React.FC = () => {
                       if (data.recommendedCounterRate) setRate(String(data.recommendedCounterRate));
                       if (data.counterRemarks) setRemarks(data.counterRemarks);
                     }
-                  } catch (e: any) {
-                    logger.error('ui/NegotiationHub', 'Failed to generate counter tactic', { error: e?.message });
+                  } catch (e: unknown) {
+                    logger.error('ui/NegotiationHub', 'Failed to generate counter tactic', {
+                      error: e instanceof Error ? e.message : String(e),
+                    });
                   }
                 }}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-1.5 px-2 rounded-md shadow-xs flex items-center justify-center space-x-1"

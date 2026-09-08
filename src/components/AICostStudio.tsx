@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, UserCheck, Send, Lightbulb, AlertCircle, RefreshCw, Cpu, CheckCircle2 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
-import {
+import type {
   AICostStudioProps,
   MLEOPillars,
   CostInflator,
@@ -68,7 +68,7 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
       });
   }, []);
 
-  const handleSelectPreset = (preset: typeof PRESET_ITEMS[0]) => {
+  const handleSelectPreset = (preset: typeof PRESET_ITEMS[0]): void => {
     logger.debug('ui/AICostStudio', 'Selected item preset for analysis', { preset: preset.name });
     setSelectedItemName(preset.name);
     setCustomItem('');
@@ -77,7 +77,7 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
     setQuotedRate(preset.quote);
   };
 
-  const handleGenerateAnalysis = async () => {
+  const handleGenerateAnalysis = async (): Promise<void> => {
     const itemToAnalyze = customItem.trim() || selectedItemName;
     setIsLoading(true);
     logger.info('ui/AICostStudio', 'Initiating cost analysis from UI', {
@@ -115,8 +115,10 @@ export const AICostStudio: React.FC<AICostStudioProps> = ({ onNavigateToNegotiat
       if (data.inflators) setInflators(data.inflators);
       if (data.negotiationScripts) setScripts(data.negotiationScripts);
       if (data.modelUsed) setModelUsedNote(data.modelUsed);
-    } catch (err: any) {
-      logger.error('ui/AICostStudio', 'Error running Gemini cost analysis', { error: err?.message });
+    } catch (err: unknown) {
+      logger.error('ui/AICostStudio', 'Error running Gemini cost analysis', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setIsLoading(false);
     }

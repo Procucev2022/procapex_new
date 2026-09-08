@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { generateCounterOffer } from '@/lib/gemini';
 import { logger } from '@/lib/logger';
 import { validateSchema } from '@/lib/validator';
 import { API_NEGOTIATION_SCHEMA } from '@/constants';
+import type { NegotiationParams } from '@/types';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   const correlationId = `req-nego-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const startTime = Date.now();
 
@@ -26,7 +28,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prTitle, itemName, vendorQuoteRate, targetBenchmark, currentRound, historySummary } = validation.data;
+    const { prTitle, itemName, vendorQuoteRate, targetBenchmark, currentRound, historySummary } =
+      validation.data as unknown as NegotiationParams;
 
     logger.info('api/negotiation', 'Received negotiation counter-offer request', {
       prTitle,
@@ -53,16 +56,17 @@ export async function POST(req: NextRequest) {
     }, correlationId);
 
     return NextResponse.json(tactic);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const durationMs = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate negotiation counter-offer';
     logger.error('api/negotiation', 'Error generating counter-offer', {
-      error: error?.message,
-      stack: error?.stack,
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
       durationMs,
     }, correlationId);
 
     return NextResponse.json(
-      { error: error?.message || 'Failed to generate negotiation counter-offer' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

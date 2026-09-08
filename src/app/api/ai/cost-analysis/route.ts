@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { generateCostAnalysis } from '@/lib/gemini';
 import { logger } from '@/lib/logger';
 import { validateSchema } from '@/lib/validator';
 import { API_COST_ANALYSIS_SCHEMA } from '@/constants';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   const correlationId = `req-cost-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const startTime = Date.now();
 
@@ -26,7 +27,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { itemDescription, quantity, uom, currentQuote } = validation.data;
+    const { itemDescription, quantity, uom, currentQuote } = validation.data as {
+      itemDescription: string;
+      quantity: number;
+      uom?: string;
+      currentQuote?: number;
+    };
 
     logger.info('api/cost-analysis', 'Received cost analysis request', {
       itemDescription,
@@ -51,16 +57,17 @@ export async function POST(req: NextRequest) {
     }, correlationId);
 
     return NextResponse.json(analysis);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const durationMs = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate cost analysis';
     logger.error('api/cost-analysis', 'Error generating cost analysis', {
-      error: error?.message,
-      stack: error?.stack,
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
       durationMs,
     }, correlationId);
 
     return NextResponse.json(
-      { error: error?.message || 'Failed to generate cost analysis' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -3,7 +3,7 @@
  * ProcureTrack / ProcApex Enterprise Platform
  */
 
-import { BUG_CATEGORIES } from '@/constants/diagnostics';
+import type { BUG_CATEGORIES } from '@/constants/diagnostics';
 
 export type BugCategory = (typeof BUG_CATEGORIES)[keyof typeof BUG_CATEGORIES];
 
@@ -21,7 +21,7 @@ export interface ParsedLogLine {
   module: string;
   message: string;
   correlationId?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   stack?: string;
   raw: string;
 }
@@ -58,7 +58,7 @@ export interface AutoResolutionAction {
   category: BugCategory;
   actionTaken: string;
   success: boolean;
-  details?: any;
+  details?: unknown;
 }
 
 export interface AutoResolutionResult {

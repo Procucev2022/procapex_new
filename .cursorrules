@@ -62,6 +62,12 @@
 - Modernize all unit and integration tests to assert against `UI_STRINGS` constants (and `formatString` templates) instead of hardcoded strings to prevent brittle matches during UI copy updates.
 - Maintain strict $\ge 90\%$ code coverage across all metrics for i18n modules, helpers, and components.
 
+## 📏 Strictest Linter Configuration & Code Quality Standards (See: `.agents/rules/linter-standards.md`)
+- **Integrated Build & CI/CD**: Primary build executes `"next lint && next build"`. Code with lint warnings or errors cannot be built or merged.
+- **Category A (Strong Typing & Error Prevention)**: Enforce `@typescript-eslint/no-explicit-any` (disallow any), `@typescript-eslint/explicit-function-return-type` (require return types), `@typescript-eslint/no-non-null-assertion` (disallow !), `@typescript-eslint/consistent-type-imports` (enforce `import type`), `@typescript-eslint/prefer-optional-chain`, `@typescript-eslint/no-unused-vars`, and `@typescript-eslint/naming-convention` (PascalCase for types/interfaces, camelCase for variables/functions).
+- **Category B (React/Next.js & Accessibility)**: Enforce component hooks rules (`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`), prohibit unsafe rendering (`react/no-danger`), consistent boolean attributes (`react/jsx-boolean-value`), and strict web accessibility (`jsx-a11y/alt-text`, `jsx-a11y/no-redundant-roles`, `jsx-a11y/anchor-is-valid`).
+- **Category C (Maintainability & Formatting)**: Limit complexity (max 10), max-lines (300 per file), and max-len (120 chars). Prohibit hardcoded strings to ensure `UI_STRINGS` usage. Enforce single quotes, semicolons, multiline trailing commas, `prefer-const`, `no-var`, and `object-shorthand`.
+
 ## ⚡ Quality Check Execution After Every Change
 - **Fast iterations on changed files**:
   `npm run check:fast`

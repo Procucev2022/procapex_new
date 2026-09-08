@@ -1,4 +1,4 @@
-import { LogLevel } from '@/types';
+import type { LogLevel } from '@/types';
 
 export const LOG_LEVEL_SEVERITY: Record<LogLevel, number> = {
   DEBUG: 10,

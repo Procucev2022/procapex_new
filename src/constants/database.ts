@@ -1,4 +1,4 @@
-import { DatabaseOptimizationConfig } from '@/types';
+import type { DatabaseOptimizationConfig } from '@/types';
 
 export const DEFAULT_DB_OPTIMIZATION_CONFIG: DatabaseOptimizationConfig = {
   defaultTtlMs: 60 * 1000, // 60 seconds TTL for read queries

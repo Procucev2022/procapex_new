@@ -1,4 +1,4 @@
-import { UIStringsDictionary, StringTemplateValues } from '@/types';
+import type { UIStringsDictionary, StringTemplateValues } from '@/types';
 
 /**
  * Formats a template string containing `{key}` tokens with provided runtime values.

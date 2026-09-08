@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { graphql } from 'graphql';
 import { schema } from '@/graphql/schema';
 import { resolvers } from '@/graphql/resolvers';
@@ -12,7 +13,7 @@ import {
   DEFAULT_GRAPHQL_INTROSPECTION_QUERY,
   API_GRAPHQL_SCHEMA,
 } from '@/constants';
-import { GraphQLOperationPayload, GraphQLResponse } from '@/types';
+import type { GraphQLOperationPayload, GraphQLResponse } from '@/types';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const correlationId = `gql-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -104,11 +105,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
     const responsePayload: GraphQLResponse = {
-      data: result.data as any,
+      data: result.data,
       errors: result.errors?.map((err) => ({
         message: err.message,
-        locations: err.locations as any,
-        path: err.path as any,
+        locations: err.locations ? err.locations.map((loc) => ({ line: loc.line, column: loc.column })) : undefined,
+        path: err.path ? [...err.path] : undefined,
       })),
       extensions: {
         durationMs,
@@ -118,10 +119,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     };
 
     return NextResponse.json(responsePayload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const durationMs = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Internal GraphQL execution error';
     logger.error('api/graphql', 'Unhandled exception during GraphQL execution', {
-      error: error?.message,
+      error: errorMessage,
       durationMs,
       correlationId,
     });
@@ -130,7 +132,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       {
         errors: [
           {
-            message: error?.message || 'Internal GraphQL execution error',
+            message: errorMessage,
             extensions: { code: GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR },
           },
         ],

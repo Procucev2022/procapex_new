@@ -6,9 +6,9 @@ import {
   FileCheck2,
   Store,
   Building,
-  Database
+  Database,
 } from 'lucide-react';
-import { NavItem } from '@/types';
+import type { NavItem } from '@/types';
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },

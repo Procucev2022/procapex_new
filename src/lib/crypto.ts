@@ -13,7 +13,7 @@ import {
   DEFAULT_ENCRYPTION_SECRET_FALLBACK,
   CRYPTO_ERROR_MESSAGES,
 } from '@/constants';
-import {
+import type {
   AESAlgorithm,
   EncryptedDataBundle,
   EncryptionOptions,
@@ -217,13 +217,14 @@ export function decrypt(
     });
 
     return decryptedBuffer.toString('utf8');
-  } catch (error: any) {
-    if (error?.message === CRYPTO_ERROR_MESSAGES.MISSING_AUTH_TAG) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg === CRYPTO_ERROR_MESSAGES.MISSING_AUTH_TAG) {
       throw error;
     }
     logger.warn('lib/crypto', 'Decryption failed: integrity or key mismatch', {
       algorithm: bundle.algorithm,
-      error: error?.message,
+      error: errorMsg,
     });
     throw new Error(CRYPTO_ERROR_MESSAGES.CORRUPTED_CIPHERTEXT);
   }
@@ -290,15 +291,15 @@ export function deserializeBundle(serialized: string): EncryptedDataBundle {
 /**
  * Field-level encryption for database records or DTOs
  */
-export function encryptFields<T extends Record<string, any>>(
+export function encryptFields<T extends object>(
   record: T,
   fieldsToEncrypt: (keyof T)[],
   options?: EncryptionOptions
 ): T {
-  const result: any = { ...record };
+  const result = { ...record } as Record<keyof T, unknown>;
   for (const field of fieldsToEncrypt) {
     if (result[field] !== undefined && result[field] !== null) {
-      const encryptedBundle = encrypt(result[field], options);
+      const encryptedBundle = encrypt(String(result[field]), options);
       result[field] = serializeBundle(encryptedBundle);
     }
   }
@@ -308,18 +309,18 @@ export function encryptFields<T extends Record<string, any>>(
 /**
  * Field-level decryption for database records or DTOs
  */
-export function decryptFields<T extends Record<string, any>>(
+export function decryptFields<T extends object>(
   record: T,
   fieldsToDecrypt: (keyof T)[],
   options?: DecryptionOptions
 ): T {
-  const result: any = { ...record };
+  const result = { ...record } as Record<keyof T, unknown>;
   for (const field of fieldsToDecrypt) {
     if (
       typeof result[field] === 'string' &&
-      result[field].startsWith(ENCRYPTION_SERIALIZATION_PREFIX)
+      (result[field] as string).startsWith(ENCRYPTION_SERIALIZATION_PREFIX)
     ) {
-      result[field] = decrypt(result[field], options);
+      result[field] = decrypt(result[field] as string, options);
     }
   }
   return result as T;

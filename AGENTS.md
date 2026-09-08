@@ -285,6 +285,35 @@ All AI coding agents MUST strictly enforce internationalization (i18n) readiness
 
 ---
 
+## 📏 Strictest Linter Configuration & Code Quality Standards
+
+All AI coding agents MUST strictly adhere to the project's comprehensive linter configuration and code quality standards (see dedicated rule: [`.agents/rules/linter-standards.md`](file:///c:/Users/procu/Desktop/Code/work/procapex_new/.agents/rules/linter-standards.md)).
+
+1. **Integrated Primary Build & CI/CD Enforcement**:
+   - The primary build script (`npm run build`) executes `"next lint && next build"`. Code with any lint warnings or errors cannot be bundled.
+   - Pull requests trigger `.github/workflows/pull-request.yml` which validates `npm run lint` and rejects any merge with lint failures.
+
+2. **Category A: Strong Typing and Error Prevention**:
+   - **Disallow `any` (`@typescript-eslint/no-explicit-any`)**: Prohibit `any` across all components, API routes, services, and state models. Use specific domain contracts, union types, or `unknown` with narrowing.
+   - **Explicit Return Types (`@typescript-eslint/explicit-function-return-type`)**: Declare explicit return types on all functions, methods, and exported helpers.
+   - **Disallow Non-Null Assertions (`@typescript-eslint/no-non-null-assertion`)**: Non-null assertions (`!`) are forbidden; use optional chaining (`?.`), nullish coalescing (`??`), or type guards.
+   - **Enforce Type-Only Imports (`@typescript-eslint/consistent-type-imports`)**: Enforce `import type` for all type imports (`import type { Foo } from '@/types'`).
+   - **Prefer Optional Chaining (`@typescript-eslint/prefer-optional-chain`)**: Replace verbose nested boolean checks with optional chaining.
+   - **Zero Unused Variables (`@typescript-eslint/no-unused-vars`)**: Prohibit unused variables, parameters, and imports (prefix ignored variables with `_`).
+   - **Strict Naming Conventions (`@typescript-eslint/naming-convention`)**: `PascalCase` for types, interfaces, enums, classes, components; `camelCase` for variables, functions, methods; `UPPER_CASE` or `PascalCase` for configuration dictionaries and constants.
+
+3. **Category B: React & Next.js Standards**:
+   - **Component Hooks & Security**: Enforce `react-hooks/rules-of-hooks` and complete dependency arrays in `react-hooks/exhaustive-deps`. Prohibit unsafe rendering methods (`react/no-danger`).
+   - **Consistent Boolean Attributes (`react/jsx-boolean-value`)**: Use concise boolean shorthand (`<Component isVisible />`).
+   - **Web Accessibility (`jsx-a11y`)**: Enforce `jsx-a11y/alt-text` on images, `jsx-a11y/no-redundant-roles` on semantic tags, and `jsx-a11y/anchor-is-valid` for hyperlinks.
+
+4. **Category C: Maintainability & Formatting**:
+   - **Maintainability Limits**: Cyclomatic complexity $\le 10$ (`complexity`), maximum 300 lines per file (`max-lines`), and maximum 120 characters per line (`max-len`).
+   - **Copy Integrity**: Prohibit hardcoded user-facing strings; all UI text must be referenced via `UI_STRINGS` from `@/constants`.
+   - **ES6+ Formatting**: Single quotes (`quotes: 'single'`), mandatory semicolons (`semi: 'always'`), multiline trailing commas (`comma-dangle: 'always-multiline'`), `prefer-const`, `no-var`, and `object-shorthand`.
+
+---
+
 ## ⚡ Quality Check & Verification Requirements
 
 ### Mandatory Quality Check Execution

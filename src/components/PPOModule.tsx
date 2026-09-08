@@ -1,12 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileCheck, FileBadge, Download, Check, Plus, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Download, Plus, CheckCircle2 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { PPOModuleProps } from '@/types';
+import type { PPOModuleProps } from '@/types';
 import { UI_STRINGS, formatString } from '@/constants';
+
+interface JsPdfWithAutoTable extends jsPDF {
+  autoTable: (options: Record<string, unknown>) => void;
+  lastAutoTable?: { finalY?: number };
+}
 
 export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
   const { 
@@ -20,17 +25,17 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
     approveTier1, 
     approveTier2, 
     approveTier3AndReleasePO, 
-    approvePPO 
+    approvePPO, 
   } = useProcurement();
 
   const [subTab, setSubTab] = useState<'WORKFLOW' | 'PPO' | 'PO'>('WORKFLOW');
 
-  const downloadPO_PDF = (poId: string) => {
+  const downloadPoPdf = (poId: string): void => {
     const po = pos.find(p => p.id === poId);
-    const ppo = ppos.find(p => p.id === (po ? po.ppoRef : ''));
     if (!po) return;
 
     const doc = new jsPDF();
+    const docWithAutoTable = doc as unknown as JsPdfWithAutoTable;
 
     // Header Banner
     doc.setFillColor(3, 105, 161);
@@ -65,7 +70,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
     doc.text('Payment Terms: 30 Days Net from GRN', 120, 50);
 
     // Items AutoTable
-    (doc as any).autoTable({
+    docWithAutoTable.autoTable({
       startY: 62,
       head: [['#', 'Item Code & Description', 'UOM', 'Qty', 'Unit Rate (INR)', 'Total Amount (INR)']],
       body: [
@@ -76,7 +81,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
         ['5', '12V LED Strip Light with Profile', 'Rmt', '16.0', 'Rs. 420', 'Rs. 6,720'],
         ['6', '100mm SS 304 Brushed Skirting', 'Rmt', '14.0', 'Rs. 780', 'Rs. 10,920'],
         ['', 'Applicable GST / Taxes (18%)', '', '', '', 'Rs. 26,730'],
-        ['', 'GRAND TOTAL (INC. TAXES)', '', '', '', `INR ${(po.amount ?? po.grandTotal ?? 175230).toLocaleString()}`]
+        ['', 'GRAND TOTAL (INC. TAXES)', '', '', '', `INR ${(po.amount ?? po.grandTotal ?? 175230).toLocaleString()}`],
       ],
       theme: 'striped',
       headStyles: { fillColor: [3, 105, 161], textColor: 255, fontSize: 8 },
@@ -84,11 +89,11 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       columnStyles: {
         0: { cellWidth: 10 },
         1: { cellWidth: 80 },
-        5: { halign: 'right', fontStyle: 'bold' }
-      }
+        5: { halign: 'right', fontStyle: 'bold' },
+      },
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY || 130;
+    const finalY = docWithAutoTable.lastAutoTable?.finalY || 130;
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
@@ -100,7 +105,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
     doc.save(`${po.id}_Official_Order.pdf`);
   };
 
-  const getOverallBadge = () => {
+  const getOverallBadge = (): { text: string; bg: string } => {
     if (poReleased) return { text: UI_STRINGS.ppoModule.badgePoReleased, bg: 'bg-emerald-100 text-emerald-900' };
     if (tier2Approved) return { text: UI_STRINGS.ppoModule.badgeTier3InProgress, bg: 'bg-purple-100 text-purple-900' };
     if (tier1Approved) return { text: UI_STRINGS.ppoModule.badgeTier2InProgress, bg: 'bg-amber-100 text-amber-900' };
@@ -155,7 +160,8 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             <div>
               <h3 className="text-sm font-bold text-slate-900">PPO-2026-0015 – Reception Counter Joinery Package</h3>
               <p className="text-xs text-slate-500">
-                Awarded to: <strong>DesignCraft Millworks & Interiors Pvt Ltd</strong> • Total Value: <strong>₹ 1,75,230 (Incl. 18% GST)</strong>
+                Awarded to: <strong>DesignCraft Millworks & Interiors Pvt Ltd</strong> • Total Value:{' '}
+                <strong>₹ 1,75,230 (Incl. 18% GST)</strong>
               </p>
             </div>
             <span className={`text-xs font-mono px-3 py-1 rounded-full font-bold ${badge.bg}`}>
@@ -183,7 +189,11 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
               ) : (
                 <div className="text-[11px] font-bold text-emerald-700 flex items-center pt-1">
                   <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                  <span>{formatString(UI_STRINGS.ppoModule.tier1SignedTemplate, { name: activeTenant.team['CATEGORY_MANAGER_2']?.name || 'Rajesh Singhania' })}</span>
+                  <span>
+                    {formatString(UI_STRINGS.ppoModule.tier1SignedTemplate, {
+                      name: activeTenant.team['CATEGORY_MANAGER_2']?.name || 'Rajesh Singhania',
+                    })}
+                  </span>
                 </div>
               )}
             </div>
@@ -192,8 +202,18 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${!tier1Approved ? 'opacity-60 border-slate-200 bg-slate-50' : tier2Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-amber-300 bg-white'}`}>
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900">{UI_STRINGS.ppoModule.tier2Title}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${!tier1Approved ? 'bg-slate-200 text-slate-600' : tier2Approved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                  {!tier1Approved ? UI_STRINGS.ppoModule.badgeAwaitingTier1 : tier2Approved ? UI_STRINGS.ppoModule.badgeApproved : UI_STRINGS.ppoModule.badgePendingSignOff}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                  !tier1Approved
+                    ? 'bg-slate-200 text-slate-600'
+                    : tier2Approved
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {!tier1Approved
+                    ? UI_STRINGS.ppoModule.badgeAwaitingTier1
+                    : tier2Approved
+                    ? UI_STRINGS.ppoModule.badgeApproved
+                    : UI_STRINGS.ppoModule.badgePendingSignOff}
                 </span>
               </div>
               <p className="text-slate-500 text-[11px]">{UI_STRINGS.ppoModule.tier2Desc}</p>
@@ -212,7 +232,11 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
               ) : (
                 <div className="text-[11px] font-bold text-emerald-700 flex items-center pt-1">
                   <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                  <span>{formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, { name: activeTenant.team['PROJECT_HEAD_PR']?.name || 'Anil Kulkarni' })}</span>
+                  <span>
+                    {formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, {
+                      name: activeTenant.team['PROJECT_HEAD_PR']?.name || 'Anil Kulkarni',
+                    })}
+                  </span>
                 </div>
               )}
             </div>
@@ -221,8 +245,18 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${!tier2Approved ? 'opacity-60 border-slate-200 bg-slate-50' : tier3Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-purple-300 bg-white'}`}>
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900">{UI_STRINGS.ppoModule.tier3Title}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${!tier2Approved ? 'bg-slate-200 text-slate-600' : tier3Approved ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}`}>
-                  {!tier2Approved ? UI_STRINGS.ppoModule.badgeAwaitingTier2 : tier3Approved ? UI_STRINGS.ppoModule.badgeApprovedIssued : UI_STRINGS.ppoModule.badgePendingFinalAudit}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                  !tier2Approved
+                    ? 'bg-slate-200 text-slate-600'
+                    : tier3Approved
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-purple-100 text-purple-800'
+                }`}>
+                  {!tier2Approved
+                    ? UI_STRINGS.ppoModule.badgeAwaitingTier2
+                    : tier3Approved
+                    ? UI_STRINGS.ppoModule.badgeApprovedIssued
+                    : UI_STRINGS.ppoModule.badgePendingFinalAudit}
                 </span>
               </div>
               <p className="text-slate-500 text-[11px]">{UI_STRINGS.ppoModule.tier3Desc}</p>
@@ -239,9 +273,13 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                   {UI_STRINGS.ppoModule.tier3SignOff}
                 </button>
               ) : (
-                <div className="text-[11px] font-bold text-emerald-700 flex items-center pt-1">
-                  <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                  <span>{formatString(UI_STRINGS.ppoModule.tier3SignedTemplate, { name: activeTenant.team['FINANCE_HEAD']?.name || 'Sunil Deshmukh' })}</span>
+                <div className="text-[11px] font-bold text-purple-800 flex items-center pt-1">
+                  <CheckCircle2 className="w-4 h-4 mr-1 text-purple-600" />
+                  <span>
+                    {formatString(UI_STRINGS.ppoModule.tier3SignedTemplate, {
+                      name: activeTenant.team['FINANCE_HEAD']?.name || 'Sunil Deshmukh',
+                    })}
+                  </span>
                 </div>
               )}
             </div>
@@ -260,7 +298,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                   </p>
                 </div>
                 <button
-                  onClick={() => downloadPO_PDF('PO-2026-0089')}
+                  onClick={() => downloadPoPdf('PO-2026-0089')}
                   className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-md flex items-center space-x-1.5 shrink-0"
                 >
                   <Download className="w-4 h-4" />
@@ -362,7 +400,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                     <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">{po.status}</span></td>
                     <td className="p-3 text-right">
                       <button
-                        onClick={() => downloadPO_PDF(po.id)}
+                        onClick={() => downloadPoPdf(po.id)}
                         className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center space-x-1 ml-auto"
                       >
                         <Download className="w-3.5 h-3.5" />

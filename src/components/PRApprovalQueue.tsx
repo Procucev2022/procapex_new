@@ -1,15 +1,15 @@
 'use client';
 
 import React from 'react';
-import { CheckSquare, ArrowRight, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { CheckSquare, CheckCircle2 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-import { PRApprovalQueueProps } from '@/types';
+import type { PRApprovalQueueProps } from '@/types';
 import { UI_STRINGS } from '@/constants';
 
 export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCategoryManager }) => {
   const { prs, activeTenant, approvePRByProjectHead, setActiveRole } = useProcurement();
 
-  const handleApprove = (prId: string) => {
+  const handleApprove = (prId: string): void => {
     approvePRByProjectHead(prId);
     setActiveRole('CATEGORY_MANAGER');
     if (onRouteToCategoryManager) {

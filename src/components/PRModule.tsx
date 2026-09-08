@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  PlusCircle, 
   UploadCloud, 
   Download, 
   Sparkles, 
@@ -14,28 +13,24 @@ import {
   FileSpreadsheet, 
   ChevronRight, 
   ChevronLeft, 
-  ChevronDown,
+  ChevronDown, 
   Paperclip, 
   FileText, 
-  Building2, 
   MapPin, 
-  Layers,
-  FileUp,
-  Star,
-  CreditCard,
-  Store,
-  Users,
-  Truck,
-  ShieldCheck,
-  Scale
+  Layers, 
+  FileUp, 
+  CreditCard, 
+  Store, 
+  Users, 
+  Truck, 
+  ShieldCheck, 
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 
-import {
+import type {
   PRModuleProps,
   RequesterBOQItem,
   AttachedDoc,
-  VendorItem,
 } from '@/types';
 import {
   DEFAULT_COUNTER_ITEMS,
@@ -44,8 +39,12 @@ import {
   UI_STRINGS,
 } from '@/constants';
 
-export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigateToBOQ, onOpenNewPRModal }) => {
-  const { prs, createPR } = useProcurement();
+export const PRModule: React.FC<PRModuleProps> = ({
+  onSelectPRForBOQ,
+  onNavigateToBOQ,
+  onOpenNewPRModal: _onOpenNewPRModal,
+}) => {
+  const { createPR } = useProcurement();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [activeMethod, setActiveMethod] = useState<number>(3);
   
@@ -75,7 +74,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent): void => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
@@ -109,7 +108,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
   const [tcPriceFirmness, setTcPriceFirmness] = useState<string>('Firm & Fixed (No escalation allowed)');
   const [tcSpecialConditions, setTcSpecialConditions] = useState<string>('1. Mockup sample of granite beveling and laminate edge finish must be approved by Architect prior to batch cutting.\n2. All transit insurance and octroi/entry tolls under Supplier scope till safe offloading at site.');
 
-  const loadTermsPreset = (presetType: string) => {
+  const loadTermsPreset = (presetType: string): void => {
     if (presetType === 'standard_construction') {
       setTcPaymentStructure('MILESTONE_10_70_10_10');
       setTcAdvancePct('10%');
@@ -158,7 +157,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
     }
   };
 
-  const handlePaymentStructureChange = (val: string) => {
+  const handlePaymentStructureChange = (val: string): void => {
     setTcPaymentStructure(val);
     if (val === 'MILESTONE_10_70_10_10') {
       setTcAdvancePct('10%');
@@ -183,7 +182,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
   const [documents, setDocuments] = useState<AttachedDoc[]>(INITIAL_DOCS);
 
   // Filter vendors based on category, region, and type
-  const getFilteredVendors = () => {
+  const getFilteredVendors = (): typeof VENDOR_DATABASE => {
     let list = VENDOR_DATABASE.filter(v => v.category === majorCategory);
     if (list.length === 0) list = VENDOR_DATABASE;
 
@@ -203,7 +202,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
 
   const filteredVendors = getFilteredVendors();
 
-  const toggleSupplierSelection = (id: string) => {
+  const toggleSupplierSelection = (id: string): void => {
     if (selectedSupplierIds.includes(id)) {
       setSelectedSupplierIds(selectedSupplierIds.filter(item => item !== id));
     } else {
@@ -211,54 +210,54 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
     }
   };
 
-  const removeSupplierSelection = (id: string) => {
+  const removeSupplierSelection = (id: string): void => {
     setSelectedSupplierIds(selectedSupplierIds.filter(item => item !== id));
   };
 
-  const selectAllRateCardSuppliers = () => {
+  const selectAllRateCardSuppliers = (): void => {
     const list = getFilteredVendors().filter(v => v.isRateCard);
     const idsToAdd = list.map(v => v.id).filter(id => !selectedSupplierIds.includes(id));
     setSelectedSupplierIds([...selectedSupplierIds, ...idsToAdd]);
   };
 
-  const selectAllSuppliers = () => {
+  const selectAllSuppliers = (): void => {
     const list = getFilteredVendors();
     const idsToAdd = list.map(v => v.id).filter(id => !selectedSupplierIds.includes(id));
     setSelectedSupplierIds([...selectedSupplierIds, ...idsToAdd]);
   };
 
-  const clearAllSuppliers = () => {
+  const clearAllSuppliers = (): void => {
     setSelectedSupplierIds([]);
   };
 
-  const handleQtyChange = (idx: number, val: string) => {
+  const handleQtyChange = (idx: number, val: string): void => {
     const updated = [...items];
     updated[idx].qty = parseFloat(val) || 0;
     setItems(updated);
   };
 
-  const handleAddLine = () => {
+  const handleAddLine = (): void => {
     setItems([...items, { code: `ITEM-${items.length + 1}`, desc: 'Custom Site Requisition Line Item', uom: 'Nos', qty: 1 }]);
   };
 
-  const handleRemoveLine = (idx: number) => {
+  const handleRemoveLine = (idx: number): void => {
     setItems(items.filter((_, i) => i !== idx));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles: AttachedDoc[] = Array.from(e.target.files).map(f => ({
         name: f.name,
         type: 'Uploaded Document',
         size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
         date: new Date().toISOString().slice(0, 10),
-        status: 'Attached'
+        status: 'Attached',
       }));
       setDocuments([...documents, ...newFiles]);
     }
   };
 
-  const handleSubmitPR = () => {
+  const handleSubmitPR = (): void => {
     const selectedVendorObjs = VENDOR_DATABASE.filter(v => selectedSupplierIds.includes(v.id));
     const vendorSummary = selectedVendorObjs.map(v => `${v.name} (${v.isRateCard ? 'Rate Card' : 'Non-Rate Card'})`).join(', ');
     const newPR = {
@@ -274,8 +273,8 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
         rateCard: 0,
         benchmark: 0,
         std: 0,
-        aiConf: '98%'
-      }))
+        aiConf: '98%',
+      })),
     };
     createPR(newPR);
     if (onSelectPRForBOQ) {
@@ -285,7 +284,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
     }
   };
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating: number): JSX.Element => {
     const full = Math.floor(rating);
     const hasHalf = rating % 1 >= 0.5;
     return (
@@ -634,7 +633,8 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                       Method 1: Upload New BOQ Spreadsheet (Column Headings & Blank Format)
                     </h3>
                     <p className="text-[11px] text-purple-800 mt-0.5">
-                      Download the official blank BOQ format, fill item specifications and quantities, and upload. The items will immediately populate in the down screen table below.
+                      Download the official blank BOQ format, fill item specifications and quantities, and upload.
+                      The items will immediately populate in the down screen table below.
                     </p>
                   </div>
                   <button onClick={() => setCurrentStep(4)} className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0">
@@ -663,11 +663,11 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                     </div>
                     <button 
                       onClick={() => {
-                        const csvContent = "data:text/csv;charset=utf-8,Item Code,Item Description / Specs,Unit (UOM),Required Quantity,Remarks\nITEM-001,Granite Countertop 20mm Polished Jet Black,Sqm,12.5,Elevation D\nITEM-002,18mm Marine BWP Plywood IS 710,Sqm,38.0,Carcass\n";
+                        const csvContent = 'data:text/csv;charset=utf-8,Item Code,Item Description / Specs,Unit (UOM),Required Quantity,Remarks\nITEM-001,Granite Countertop 20mm Polished Jet Black,Sqm,12.5,Elevation D\nITEM-002,18mm Marine BWP Plywood IS 710,Sqm,38.0,Carcass\n';
                         const encodedUri = encodeURI(csvContent);
-                        const link = document.createElement("a");
-                        link.setAttribute("href", encodedUri);
-                        link.setAttribute("download", "Blank_BOQ_Format_Template.csv");
+                        const link = document.createElement('a');
+                        link.setAttribute('href', encodedUri);
+                        link.setAttribute('download', 'Blank_BOQ_Format_Template.csv');
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -693,7 +693,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                             { code: 'UPL-003', desc: '1.0mm Textured Decorative HPL Laminate Lining', uom: 'Sqm', qty: 24.0 },
                             { code: 'UPL-004', desc: 'Concealed Soft-Close Hinges & Heavy Duty Telescopic Channel Set', uom: 'Set', qty: 14.0 },
                             { code: 'UPL-005', desc: '12V Profile LED Lighting with Aluminium Diffuser Channel', uom: 'Rmt', qty: 16.0 },
-                            { code: 'UPL-006', desc: '100mm SS 304 Grade Brushed Skirting Strip with Sealant', uom: 'Rmt', qty: 14.0 }
+                            { code: 'UPL-006', desc: '100mm SS 304 Grade Brushed Skirting Strip with Sealant', uom: 'Rmt', qty: 14.0 },
                           ]);
                         }} 
                         className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2 rounded-lg shadow-sm flex items-center justify-center space-x-1.5"
@@ -717,7 +717,8 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                       Method 2: Corporate Standard BOQ Template (Download & Upload)
                     </h3>
                     <p className="text-[11px] text-emerald-800 mt-0.5">
-                      Select a standard corporate package. Download the template to enter quantities offline, upload the filled template, or edit quantities directly in the down screen table.
+                      Select a standard corporate package. Download the template to enter quantities offline,
+                      upload the filled template, or edit quantities directly in the down screen table.
                     </p>
                   </div>
                   <button onClick={() => setCurrentStep(4)} className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0">
@@ -733,11 +734,11 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                     </div>
                     <button 
                       onClick={() => {
-                        const csvContent = "data:text/csv;charset=utf-8,Item Code,Item Description / Specs,Unit (UOM),Required Quantity\nCNT-TOP-GRN20,20mm Granite Countertop,Sqm,12.5\nCNT-PLY-BWP18,18mm Marine Plywood IS 710,Sqm,38.0\nCNT-LAM-1MM,1.0mm Textured Laminate,Sqm,24.0\nCNT-HDW-SOFT,Soft-Close Hinges Set,Set,14.0\n";
+                        const csvContent = 'data:text/csv;charset=utf-8,Item Code,Item Description / Specs,Unit (UOM),Required Quantity\nCNT-TOP-GRN20,20mm Granite Countertop,Sqm,12.5\nCNT-PLY-BWP18,18mm Marine Plywood IS 710,Sqm,38.0\nCNT-LAM-1MM,1.0mm Textured Laminate,Sqm,24.0\nCNT-HDW-SOFT,Soft-Close Hinges Set,Set,14.0\n';
                         const encodedUri = encodeURI(csvContent);
-                        const link = document.createElement("a");
-                        link.setAttribute("href", encodedUri);
-                        link.setAttribute("download", "Interior_Standard_Package.csv");
+                        const link = document.createElement('a');
+                        link.setAttribute('href', encodedUri);
+                        link.setAttribute('download', 'Interior_Standard_Package.csv');
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -778,7 +779,8 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                       Method 3: Drawing AI Extractor (Without Commercial Rates)
                     </h3>
                     <p className="text-[11px] text-sky-800 mt-0.5">
-                      AI ingests technical drawing (e.g. <em>Counter Elevation D</em>) and extracts itemized specifications and quantities directly into the schedule below.
+                      AI ingests technical drawing (e.g. <em>Counter Elevation D</em>) and extracts
+                      itemized specifications and quantities directly into the schedule below.
                     </p>
                   </div>
                   <button onClick={() => setCurrentStep(4)} className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0">
@@ -823,7 +825,8 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                       Method 4: Master Catalog Selection & Manual Line Entry
                     </h3>
                     <p className="text-[11px] text-amber-800 mt-0.5">
-                      Select pre-approved items from the corporate master catalog or add custom line items directly into the schedule below.
+                      Select pre-approved items from the corporate master catalog or add custom line items
+                      directly into the schedule below.
                     </p>
                   </div>
                   <button onClick={() => setCurrentStep(4)} className="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0">
@@ -1194,7 +1197,12 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                     </span>
                   ) : (
                     selectedSupplierIds.map(id => {
-                      const v = VENDOR_DATABASE.find(item => item.id === id) || { id, name: id, rating: 4.5, isRateCard: false };
+                      const v = VENDOR_DATABASE.find((item) => item.id === id) || {
+                        id,
+                        name: id,
+                        rating: 4.5,
+                        isRateCard: false,
+                      };
                       return (
                         <div 
                           key={id}

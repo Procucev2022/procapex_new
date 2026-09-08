@@ -4,7 +4,7 @@ import React from 'react';
 import { Building2, Check } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { TENANTS, UI_STRINGS } from '@/constants';
-import { TenantKey } from '@/types';
+import type { TenantKey } from '@/types';
 
 export const TenantOverview: React.FC = () => {
   const { activeTenantKey, changeTenant } = useProcurement();

@@ -1,5 +1,5 @@
-import { ComponentType } from 'react';
-import { BOQItem, MLEOBreakdown, VendorQuoteDetail } from './procurement';
+import type { ComponentType } from 'react';
+import type { BOQItem, MLEOBreakdown, VendorQuoteDetail } from './procurement';
 
 // --- Header ---
 export interface NavItem {
@@ -191,3 +191,21 @@ export interface MastersItem {
   uom: string;
   region: string;
 }
+
+export interface VendorCommercialTerms {
+  paymentTerms: string;
+  advancePct: string;
+  retentionPct: string;
+  creditDays: string;
+  paymentBadge: string;
+  paymentBadgeClass: string;
+  leadTime: string;
+  deliveryDate: string;
+  deliveryBadge: string;
+  deliveryBadgeClass: string;
+  complianceStatus: string;
+  complianceBadge: string;
+  complianceClass: string;
+  complianceNote: string;
+}
+

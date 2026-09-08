@@ -45,6 +45,15 @@ describe('Log Diagnostics & Auto-Resolution Engine (src/lib/log-analyzer.ts)', (
       expect(parsed?.stack).toContain('calculateTarget');
     });
 
+    it('should parse JSON log line with default fallbacks when fields are missing', () => {
+      const parsed = parseLogLine('{}');
+      expect(parsed).not.toBeNull();
+      expect(parsed?.level).toBe('INFO');
+      expect(parsed?.module).toBe('app');
+      expect(parsed?.message).toBe('');
+      expect(parsed?.timestamp).toBeDefined();
+    });
+
     it('should parse structured text log lines with correlation ID and metadata', () => {
       const textLine =
         '[2026-09-07T12:00:00.000Z] [ERROR] [api/graphql] [gql-12345]: GraphQL operation failed {"error":"PrismaClient query timeout","stack":"Error: PrismaClient query timeout\\n    at executeQuery (src/lib/prisma.ts:32:10)"}';
@@ -56,7 +65,7 @@ describe('Log Diagnostics & Auto-Resolution Engine (src/lib/log-analyzer.ts)', (
       expect(parsed?.module).toBe('api/graphql');
       expect(parsed?.correlationId).toBe('gql-12345');
       expect(parsed?.message).toBe('GraphQL operation failed');
-      expect(parsed?.data?.error).toContain('PrismaClient query timeout');
+      expect(String(parsed?.data?.error)).toContain('PrismaClient query timeout');
       expect(parsed?.stack).toContain('executeQuery');
     });
 
@@ -378,6 +387,34 @@ describe('Log Diagnostics & Auto-Resolution Engine (src/lib/log-analyzer.ts)', (
       expect(result.failedCount).toBe(1);
       expect(result.actions[0].success).toBe(false);
       expect(result.actions[0].actionTaken).toContain('Memory lock error');
+
+      spy.mockRestore();
+    });
+
+    it('should handle non-Error throw during resolution attempt', () => {
+      const spy = jest.spyOn(dbCache, 'invalidateAll').mockImplementationOnce(() => {
+        throw 'String error thrown';
+      });
+
+      const bugs: DiagnosedBug[] = [
+        {
+          id: 'BUG-FAIL-STRING',
+          signature: 'sig-fail-str',
+          category: BUG_CATEGORIES.DATABASE_ERROR,
+          message: 'Prisma query failed',
+          stackFrames: [],
+          occurrences: 1,
+          firstSeen: '',
+          lastSeen: '',
+          correlationIds: [],
+          resolutionStrategy: 'Flush cache',
+          autoResolvable: true,
+        },
+      ];
+
+      const result = autoResolveBugs(bugs);
+      expect(result.failedCount).toBe(1);
+      expect(result.actions[0].actionTaken).toContain('String error thrown');
 
       spy.mockRestore();
     });

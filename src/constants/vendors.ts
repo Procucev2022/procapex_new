@@ -1,4 +1,4 @@
-import { VendorItem, VendorQuoteItem } from '@/types';
+import type { VendorItem, VendorQuoteItem } from '@/types';
 
 export const VENDOR_DATABASE: VendorItem[] = [
   // INTERIOR & FITOUTS - WEST
@@ -19,7 +19,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Mumbai, Maharashtra',
     leadTime: '7-10 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'High'
+    capacity: 'High',
   },
   {
     id: 'VND-002',
@@ -38,7 +38,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Pune, Maharashtra',
     leadTime: '10-14 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'Enterprise'
+    capacity: 'Enterprise',
   },
   {
     id: 'VND-003',
@@ -57,7 +57,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Ahmedabad, Gujarat',
     leadTime: '12-15 Days',
     badgeText: 'Non-Rate Card Vendor (Empanelled)',
-    capacity: 'Medium'
+    capacity: 'Medium',
   },
   {
     id: 'VND-004',
@@ -76,7 +76,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Thane, Maharashtra',
     leadTime: '14-18 Days',
     badgeText: 'Non-Rate Card Vendor (Open Market)',
-    capacity: 'Small-Medium'
+    capacity: 'Small-Medium',
   },
   // INTERIOR & FITOUTS - NORTH
   {
@@ -96,7 +96,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'New Delhi, NCR',
     leadTime: '8-12 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'High'
+    capacity: 'High',
   },
   {
     id: 'VND-006',
@@ -115,7 +115,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Noida, Uttar Pradesh',
     leadTime: '12-16 Days',
     badgeText: 'Non-Rate Card Vendor (Empanelled)',
-    capacity: 'Medium'
+    capacity: 'Medium',
   },
   // INTERIOR & FITOUTS - SOUTH
   {
@@ -135,7 +135,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Bengaluru, Karnataka',
     leadTime: '10-12 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'High'
+    capacity: 'High',
   },
   {
     id: 'VND-008',
@@ -154,7 +154,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Chennai, Tamil Nadu',
     leadTime: '15-18 Days',
     badgeText: 'Non-Rate Card Vendor (Empanelled)',
-    capacity: 'Medium'
+    capacity: 'Medium',
   },
   // INTERIOR & FITOUTS - EAST
   {
@@ -174,7 +174,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Kolkata, West Bengal',
     leadTime: '14-16 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'High'
+    capacity: 'High',
   },
   {
     id: 'VND-010',
@@ -193,7 +193,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Bhubaneswar, Odisha',
     leadTime: '20-22 Days',
     badgeText: 'Non-Rate Card Vendor (Open Market)',
-    capacity: 'Small-Medium'
+    capacity: 'Small-Medium',
   },
   // CIVIL - WEST
   {
@@ -213,7 +213,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Navi Mumbai, Maharashtra',
     leadTime: '3-5 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'Mega Enterprise'
+    capacity: 'Mega Enterprise',
   },
   {
     id: 'VND-012',
@@ -232,7 +232,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Thane, Maharashtra',
     leadTime: '4-6 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'Enterprise'
+    capacity: 'Enterprise',
   },
   {
     id: 'VND-013',
@@ -251,7 +251,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Panvel, Maharashtra',
     leadTime: '7-10 Days',
     badgeText: 'Non-Rate Card Vendor (Empanelled)',
-    capacity: 'Medium'
+    capacity: 'Medium',
   },
   // MEP - WEST
   {
@@ -271,7 +271,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Mumbai, Maharashtra',
     leadTime: '15-20 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'Enterprise OEM'
+    capacity: 'Enterprise OEM',
   },
   {
     id: 'VND-015',
@@ -290,7 +290,7 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Mumbai, Maharashtra',
     leadTime: '14-18 Days',
     badgeText: 'Rate Card Vendor (Contracted)',
-    capacity: 'Enterprise OEM'
+    capacity: 'Enterprise OEM',
   },
   {
     id: 'VND-016',
@@ -309,8 +309,8 @@ export const VENDOR_DATABASE: VendorItem[] = [
     city: 'Pune, Maharashtra',
     leadTime: '20-25 Days',
     badgeText: 'Non-Rate Card Vendor (Empanelled)',
-    capacity: 'Medium'
-  }
+    capacity: 'Medium',
+  },
 ];
 
 export const MASTER_VENDORS = [
@@ -325,7 +325,7 @@ export const MASTER_VENDORS = [
   { id: 'VND-013', name: 'Vendor 13', category: 'CIVIL', rating: 4.1, isRateCard: false, city: 'Panvel', leadTime: '7-10 Days' },
   { id: 'VND-014', name: 'Vendor 14', category: 'MEP', rating: 4.9, isRateCard: true, city: 'Mumbai', leadTime: '15-20 Days' },
   { id: 'VND-015', name: 'Vendor 15', category: 'MEP', rating: 4.8, isRateCard: true, city: 'Mumbai', leadTime: '14-18 Days' },
-  { id: 'VND-016', name: 'Vendor 16', category: 'MEP', rating: 4.2, isRateCard: false, city: 'Pune', leadTime: '20-25 Days' }
+  { id: 'VND-016', name: 'Vendor 16', category: 'MEP', rating: 4.2, isRateCard: false, city: 'Pune', leadTime: '20-25 Days' },
 ];
 
 export const INITIAL_VENDOR_QUOTE_ITEMS: VendorQuoteItem[] = [
@@ -334,5 +334,5 @@ export const INITIAL_VENDOR_QUOTE_ITEMS: VendorQuoteItem[] = [
   { code: 'CNT-LAM-1MM', desc: '1.0mm Textured HPL Laminate Fascia', uom: 'Sqm', qty: 24.0, rate1: 980, targetRate: 850, rate2: 910 },
   { code: 'CNT-HDW-SOFT', desc: 'Soft-Close Concealed Hinges & Telescopic Slides', uom: 'Set', qty: 14.0, rate1: 2100, targetRate: 1715, rate2: 1950 },
   { code: 'CNT-LED-PROF', desc: '12V DC Warm White LED Strip in Profile', uom: 'Rmt', qty: 16.0, rate1: 450, targetRate: 365, rate2: 410 },
-  { code: 'CNT-SKT-SS304', desc: '100mm SS 304 Brushed Skirting', uom: 'Rmt', qty: 14.0, rate1: 850, targetRate: 705, rate2: 780 }
+  { code: 'CNT-SKT-SS304', desc: '100mm SS 304 Brushed Skirting', uom: 'Rmt', qty: 14.0, rate1: 850, targetRate: 705, rate2: 780 },
 ];

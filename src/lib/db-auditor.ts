@@ -1,4 +1,4 @@
-import { QueryAuditEntry, DatabaseAuditMetrics, DatabaseOptimizationConfig } from '@/types';
+import type { QueryAuditEntry, DatabaseAuditMetrics, DatabaseOptimizationConfig } from '@/types';
 import { DEFAULT_DB_OPTIMIZATION_CONFIG, DB_COMPUTE_METRICS } from '@/constants';
 import { dbCache } from './db-cache';
 import { logger } from './logger';

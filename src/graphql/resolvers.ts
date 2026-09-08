@@ -11,11 +11,10 @@ import {
   ENCRYPTION_SERIALIZATION_PREFIX,
   DEFAULT_AES_ALGORITHM,
 } from '@/constants';
-import {
+import type {
   PurchaseRequest,
   PPOItem,
   PurchaseOrder,
-  TenantConfig,
   TenantKey,
   ClearCacheInput,
   AESAlgorithm,
@@ -239,16 +238,16 @@ export const resolvers = {
   },
 
   // Mutation: Create Purchase Request (invalidates PR cache)
-  createPurchaseRequest: async ({ input }: { input: any }) => {
+  createPurchaseRequest: async ({ input }: { input: Partial<PurchaseRequest> }) => {
     return dbAuditor.auditAsync('PurchaseRequest', 'CREATE', 'graphql.mutation.createPurchaseRequest', async () => {
       const id = `PR-2026-${String(purchaseRequestsState.length + 10).padStart(4, '0')}`;
       const newPR: PurchaseRequest = {
         id,
-        title: input.title,
-        projectName: input.projectName,
-        costCentre: input.costCentre,
-        category: input.category,
-        requester: input.requester,
+        title: input.title || '',
+        projectName: input.projectName || '',
+        costCentre: input.costCentre || '',
+        category: input.category || '',
+        requester: input.requester || '',
         reqDate: input.reqDate || new Date().toISOString().split('T')[0],
         status: 'SUBMITTED',
         remarks: input.remarks || '',
@@ -289,7 +288,18 @@ export const resolvers = {
   },
 
   // Mutation: Create PPO (invalidates PPO cache)
-  createPPO: async ({ input }: { input: any }) => {
+  createPPO: async ({
+    input,
+  }: {
+    input: Partial<PPOItem> & {
+      unitRate: number;
+      qty: number;
+      taxRate: number;
+      prId: string;
+      vendor: string;
+      itemDesc: string;
+    };
+  }) => {
     return dbAuditor.auditAsync('PPO', 'CREATE', 'graphql.mutation.createPPO', async () => {
       const id = `PPO-2026-${String(pposState.length + 20).padStart(4, '0')}`;
       const totalVal = input.unitRate * input.qty;

@@ -6,7 +6,7 @@
  * controller arguments, query parameters, and headers are defined here.
  */
 
-import { ObjectSchema, HeadersSchema } from '@/types/validation';
+import type { ObjectSchema, HeadersSchema } from '@/types/validation';
 
 // ==============================================================================
 // 1. API Route Input Validation Schemas

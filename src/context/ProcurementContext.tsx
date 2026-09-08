@@ -1,10 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
+import React, { createContext, useContext, useState } from 'react';
+import type {
   UserRole,
   TenantKey,
-  TenantConfig,
   PurchaseRequest,
   VendorQuote,
   NegotiationEvent,
@@ -32,7 +31,7 @@ export { TENANTS } from '@/constants';
 
 const ProcurementContext = createContext<ProcurementContextType | undefined>(undefined);
 
-export function ProcurementProvider({ children }: { children: React.ReactNode }) {
+export function ProcurementProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [activeTenantKey, setActiveTenantKey] = useState<TenantKey>('TNT_LNT');
   const [activeRole, setActiveRole] = useState<UserRole>('PROJECT_TEAM');
   const [prs, setPrs] = useState<PurchaseRequest[]>(INITIAL_PRS);
@@ -50,7 +49,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
 
   const activeTenant = TENANTS[activeTenantKey];
 
-  const changeTenant = (key: TenantKey) => {
+  const changeTenant = (key: TenantKey): void => {
     logger.info('context/procurement', 'Switching active procurement tenant', {
       previousTenant: activeTenantKey,
       newTenant: key,
@@ -58,7 +57,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setActiveTenantKey(key);
   };
 
-  const approveTier1 = () => {
+  const approveTier1 = (): void => {
     logger.info('context/procurement', 'Approved Tier 1 sign-off for PPO-2026-0015', {
       user: 'Rajesh Singhania (Category Manager 2)',
     });
@@ -67,11 +66,11 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: 'Rajesh Singhania (Category Manager 2)',
       action: 'PPO Tier 1 Signed-off',
-      detail: 'Approved commercial savings & compliance for PPO-2026-0015.'
+      detail: 'Approved commercial savings & compliance for PPO-2026-0015.',
     }, ...prev]);
   };
 
-  const approveTier2 = () => {
+  const approveTier2 = (): void => {
     logger.info('context/procurement', 'Approved Tier 2 site budget clearance for PPO-2026-0015', {
       user: 'Anil Kulkarni (Project Head)',
     });
@@ -80,11 +79,11 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: 'Anil Kulkarni (Project Head)',
       action: 'PPO Tier 2 Signed-off',
-      detail: 'Site budget clearance given for PPO-2026-0015.'
+      detail: 'Site budget clearance given for PPO-2026-0015.',
     }, ...prev]);
   };
 
-  const approveTier3AndReleasePO = () => {
+  const approveTier3AndReleasePO = (): void => {
     logger.info('context/procurement', 'PPO Tier 3 Approved & Purchase Order Released', {
       user: 'Sunil Deshmukh (Finance Head)',
       ppoId: 'PPO-2026-0015',
@@ -97,11 +96,11 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: 'Sunil Deshmukh (Finance Head)',
       action: 'PPO Tier 3 Signed & PO Released',
-      detail: 'Official PO-2026-0089 released to DesignCraft Millworks.'
+      detail: 'Official PO-2026-0089 released to DesignCraft Millworks.',
     }, ...prev]);
   };
 
-  const resetTiers = () => {
+  const resetTiers = (): void => {
     logger.debug('context/procurement', 'Reset approval tiers state');
     setTier1Approved(false);
     setTier2Approved(false);
@@ -109,7 +108,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setPoReleased(false);
   };
 
-  const createPR = (prData: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'>) => {
+  const createPR = (prData: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'>): void => {
     const validation = validateSchema(prData, PURCHASE_REQUEST_FORM_SCHEMA);
     if (!validation.isValid) {
       logger.warn('context/procurement', 'Purchase request input validation failed, rejecting submission', {
@@ -122,7 +121,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       ...prData,
       id: `PR-2026-000${prs.length + 1}`,
       status: 'SUBMITTED',
-      buyer: 'Unassigned'
+      buyer: 'Unassigned',
     };
     logger.info('context/procurement', 'Purchase Request created and submitted', {
       prId: newPR.id,
@@ -136,32 +135,36 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: `${activeRole} (User)`,
       action: 'PR Submitted',
-      detail: `Created ${newPR.id} - ${newPR.title}`
+      detail: `Created ${newPR.id} - ${newPR.title}`,
     }, ...prev]);
   };
 
-  const updatePRStatus = (id: string, status: PurchaseRequest['status'], comments?: string) => {
+  const updatePRStatus = (id: string, status: PurchaseRequest['status'], comments?: string): void => {
     logger.info('context/procurement', 'Updated PR status', {
       prId: id,
       newStatus: status,
       role: activeRole,
       comments,
     });
-    setPrs(prev => prev.map(p => p.id === id ? { ...p, status, buyer: status === 'ACCEPTED' ? 'Vikram Mehta (Category Mgr)' : p.buyer } : p));
+    setPrs(prev => prev.map(p => p.id === id ? {
+      ...p,
+      status,
+      buyer: status === 'ACCEPTED' ? 'Vikram Mehta (Category Mgr)' : p.buyer,
+    } : p));
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: `${activeRole} (User)`,
       action: `PR Status Changed to ${status}`,
-      detail: `PR ${id} updated to ${status}. Notes: ${comments || 'None'}`
+      detail: `PR ${id} updated to ${status}. Notes: ${comments || 'None'}`,
     }, ...prev]);
   };
 
-  const approvePRByProjectHead = (id: string) => {
+  const approvePRByProjectHead = (id: string): void => {
     logger.info('context/procurement', 'PR approved by Project Head', { prId: id });
     updatePRStatus(id, 'APPROVED_BY_PROJECT_HEAD', 'Project Head approved. Routed to Category Manager.');
   };
 
-  const updateBOQItems = (prId: string, items: PurchaseRequest['items']) => {
+  const updateBOQItems = (prId: string, items: PurchaseRequest['items']): void => {
     if (!Array.isArray(items) || items.length === 0) {
       logger.warn('context/procurement', 'Invalid BOQ line items update: items must be a non-empty array', { prId });
       return;
@@ -173,7 +176,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setPrs(prev => prev.map(p => p.id === prId ? { ...p, items } : p));
   };
 
-  const addNegotiationRound = (prId: string, rate: number, remarks: string, actionType: string) => {
+  const addNegotiationRound = (prId: string, rate: number, remarks: string, actionType: string): void => {
     const validation = validateSchema({ rate, remarks, actionType }, NEGOTIATION_ROUND_FORM_SCHEMA);
     if (!validation.isValid) {
       logger.warn('context/procurement', 'Negotiation round input validation failed, rejecting submission', {
@@ -195,15 +198,15 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       type: actionType.replace('_', ' '),
       rate,
       remarks,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
     };
     setNegotiations(prev => ({
       ...prev,
-      [prId]: [...(prev[prId] || []), newEvent]
+      [prId]: [...(prev[prId] || []), newEvent],
     }));
   };
 
-  const createPPO = (ppoData: Omit<PPOItem, 'id' | 'status' | 'createdDate'>) => {
+  const createPPO = (ppoData: Omit<PPOItem, 'id' | 'status' | 'createdDate'>): void => {
     const validation = validateSchema(ppoData, PPO_CREATE_FORM_SCHEMA);
     if (!validation.isValid) {
       logger.warn('context/procurement', 'PPO creation input validation failed, rejecting creation', {
@@ -216,7 +219,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       ...ppoData,
       id: `PPO-2026-00${ppos.length + 11}`,
       status: 'PENDING_APPROVAL',
-      createdDate: new Date().toISOString().split('T')[0]
+      createdDate: new Date().toISOString().split('T')[0],
     };
     logger.info('context/procurement', 'Created Pending Purchase Order (PPO)', {
       ppoId: newPPO.id,
@@ -227,7 +230,7 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setPpos(prev => [newPPO, ...prev]);
   };
 
-  const approvePPO = (ppoId: string) => {
+  const approvePPO = (ppoId: string): void => {
     const ppo = ppos.find(p => p.id === ppoId);
     logger.info('context/procurement', 'Approved PPO and issuing official Purchase Order', {
       ppoId,
@@ -243,13 +246,13 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
         vendor: ppo.vendor,
         amount: ppo.grandTotal,
         issueDate: new Date().toISOString().split('T')[0],
-        status: 'ISSUED'
+        status: 'ISSUED',
       };
       setPos(prev => [newPO, ...prev]);
     }
   };
 
-  const resetToSampleData = () => {
+  const resetToSampleData = (): void => {
     logger.info('context/procurement', 'Reset procurement system data to sample state');
     setPrs(INITIAL_PRS);
     setQuotes(INITIAL_QUOTES);
@@ -288,14 +291,14 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       addNegotiationRound,
       createPPO,
       approvePPO,
-      resetToSampleData
+      resetToSampleData,
     }}>
       {children}
     </ProcurementContext.Provider>
   );
 }
 
-export function useProcurement() {
+export function useProcurement(): ProcurementContextType {
   const context = useContext(ProcurementContext);
   if (!context) throw new Error('useProcurement must be used within ProcurementProvider');
   return context;

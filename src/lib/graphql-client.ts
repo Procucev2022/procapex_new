@@ -1,7 +1,7 @@
-import { GraphQLResponse } from '@/types';
+import type { GraphQLResponse } from '@/types';
 import { logger } from './logger';
 
-export async function executeGraphQL<TData = any, TVariables = Record<string, unknown>>(
+export async function executeGraphQL<TData = unknown, TVariables = Record<string, unknown>>(
   query: string,
   variables?: TVariables,
   operationName?: string
@@ -28,13 +28,14 @@ export async function executeGraphQL<TData = any, TVariables = Record<string, un
     }
 
     return json;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Network error executing GraphQL query';
     logger.error('lib/graphql-client', 'Failed to execute GraphQL query', {
       operationName,
-      error: error?.message,
+      error: errorMessage,
     });
     return {
-      errors: [{ message: error?.message || 'Network error executing GraphQL query' }],
+      errors: [{ message: errorMessage }],
     };
   }
 }
