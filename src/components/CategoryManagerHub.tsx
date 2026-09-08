@@ -170,6 +170,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
   const [negSavings, setNegSavings] = useState<{ amount: number; pct: string }>({ amount: 0, pct: '0.0' });
   const [isBafoLocked, setIsBafoLocked] = useState<boolean>(false);
   const [hasReceived2ndQuote, setHasReceived2ndQuote] = useState<boolean>(false);
+  const [rowOfferVendors, setRowOfferVendors] = useState<Record<number, string>>({});
 
   const openMLEOModal = (item: BOQItemWithMLEO): void => {
     setSelectedMLEOItem(item);
@@ -1864,7 +1865,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                             <div className="mt-1 flex items-center justify-end space-x-1 font-sans">
                               <select 
                                 id={`rowOfferVendorSelect_${idx}`} 
-                                defaultValue={participatingVendors[0].id}
+                                value={rowOfferVendors[idx] ?? participatingVendors[0].id}
+                                onChange={(e) => {
+                                  setRowOfferVendors({ ...rowOfferVendors, [idx]: e.target.value });
+                                }}
                                 className="bg-white border border-slate-300 rounded text-[9px] p-0.5 font-bold"
                               >
                                 {participatingVendors.map(v => (
@@ -1874,8 +1878,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                               </select>
                               <button 
                                 onClick={() => {
-                                  const selectEl = document.getElementById(`rowOfferVendorSelect_${idx}`) as HTMLSelectElement;
-                                  handleDispatchVendorWiseOffer(selectEl.value);
+                                  handleDispatchVendorWiseOffer(rowOfferVendors[idx] ?? participatingVendors[0].id);
                                 }} 
                                 className="px-1.5 py-0.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-[9px] font-bold shadow-xs" 
                                 title="Send counter-offer on this item"

@@ -71,6 +71,15 @@
 - **Category B (React/Next.js & Accessibility)**: Enforce component hooks rules (`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`), prohibit unsafe rendering (`react/no-danger`), consistent boolean attributes (`react/jsx-boolean-value`), and strict web accessibility (`jsx-a11y/alt-text`, `jsx-a11y/no-redundant-roles`, `jsx-a11y/anchor-is-valid`).
 - **Category C (Maintainability & Formatting)**: Limit complexity (max 10), max-lines (300 per file), and max-len (120 chars). Prohibit hardcoded strings to ensure `UI_STRINGS` usage. Enforce single quotes, semicolons, multiline trailing commas, `prefer-const`, `no-var`, and `object-shorthand`.
 
+### 🚫 Prohibition of Direct DOM Manipulation & Declarative UI State Standards (See: `.agents/rules/dom-manipulation-standards.md`)
+- Direct DOM manipulation and low-level DOM selectors (`document.getElementById`, `document.querySelector`, `document.querySelectorAll`, `document.createElement`, `element.innerHTML`, `element.classList`, `element.style.*`) are strictly prohibited.
+- The framework's virtual DOM and declarative state management (`useState`, `useReducer`, React Context) must remain the single source of truth.
+- Use controlled components (`value` and `onChange`) instead of reading form element values from the DOM.
+- Use React `useRef` for imperative interactions with native elements (e.g. triggering hidden file inputs via `ref.current?.click()`).
+- Use declarative JSX elements (e.g. `<a href={uri} download={name}>`) for file downloads instead of temporary synthetic DOM anchor elements.
+- Use declarative backdrop overlays for modal/dropdown dismissals instead of global `document.addEventListener('mousedown', ...)`.
+- Direct DOM selectors are statically blocked via ESLint `no-restricted-properties` in `.eslintrc.json`.
+
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:
 - **Fast iterations on changed files**:

@@ -314,6 +314,32 @@ All AI coding agents MUST strictly adhere to the project's comprehensive linter 
 
 ---
 
+## 🚫 Prohibition of Direct DOM Manipulation & Declarative UI State Standards
+
+All AI coding agents MUST strictly adhere to the project's prohibition of direct DOM manipulation and follow declarative state management standards (see dedicated rule: [`.agents/rules/dom-manipulation-standards.md`](file:///c:/Users/procu/Desktop/Code/work/procapex_new/.agents/rules/dom-manipulation-standards.md)).
+
+1. **Absolute Prohibition of Direct DOM Access**:
+   - Application components and hooks MUST NOT use low-level DOM selectors: `document.getElementById()`, `document.querySelector()`, `document.querySelectorAll()`, `document.getElementsByClassName()`.
+   - Imperative DOM tree mutations (`document.createElement()`, `element.appendChild()`, `element.removeChild()`, `element.innerHTML`, `element.classList`, `element.style.*`) are forbidden.
+   - Low-level DOM manipulation libraries (e.g. jQuery) are strictly prohibited.
+   - The React virtual DOM and declarative state engine MUST remain the single source of truth for all view updates.
+
+2. **Declarative State Management & Controlled Forms**:
+   - Never inspect the DOM to retrieve input, select, or textarea values. Always bind form elements to controlled React state (`value` and `onChange`).
+   - Dynamic list or table row selections MUST be stored in state maps (`Record<number, string>`) rather than queried from dynamically generated element IDs.
+
+3. **Imperative Native Element Interactions via `useRef`**:
+   - For native elements requiring programmatic execution (e.g. hidden `<input type="file" />`), use React's typed `useRef` hook (`fileInputRef.current?.click()`), NEVER `document.getElementById().click()`.
+
+4. **Declarative File Downloads & Overlay Backdrops**:
+   - File download triggers MUST be declared as native JSX `<a>` hyperlinks with `href` and `download` attributes, styled as buttons, instead of imperatively injecting temporary `document.createElement('a')` anchors into `document.body`.
+   - Modals and dropdowns MUST handle dismissals using declarative React backdrop overlays instead of global `document.addEventListener('mousedown', ...)`.
+
+5. **Static Linter Enforcement**:
+   - Direct DOM selectors (`getElementById`, `querySelector`, `querySelectorAll`, `createElement`) are blocked via ESLint's `no-restricted-properties` rule in `.eslintrc.json`.
+
+---
+
 ## ⚡ Quality Check & Verification Requirements
 
 ### Mandatory Quality Check Execution

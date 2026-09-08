@@ -72,7 +72,16 @@
 - **Category C (General Quality & Formatting)**: Limit complexity (max 10), max-lines (300 per file), and max-len (120 chars). Prohibit hardcoded strings to ensure `UI_STRINGS` usage. Enforce single quotes, semicolons, multiline trailing commas, `prefer-const`, `no-var`, and `object-shorthand`.
 - **Integrated Build & CI/CD**: Primary build runs `"next lint && next build"`. CI/CD blocks pull requests on any lint warnings or errors.
 
-### 12. Mandatory Quality Check Execution
+### 12. Prohibition of Direct DOM Manipulation & Declarative State Standards (See: `.agents/rules/dom-manipulation-standards.md`)
+- Strictly prohibit direct DOM manipulation, manual DOM tree mutations, and low-level DOM selectors (`document.getElementById`, `document.querySelector`, `document.querySelectorAll`, `document.createElement`, `element.innerHTML`, `element.classList`, `element.style.*`).
+- React virtual DOM and declarative state management (`useState`, `useReducer`, React Context) must remain the single source of truth for all UI state and rendering.
+- Enforce controlled form components (`value` and `onChange`) instead of reading values from the DOM.
+- Use React `useRef` for imperative operations on native elements (e.g. triggering hidden file inputs via `fileInputRef.current?.click()`).
+- Use declarative JSX elements (e.g. `<a href={uri} download={name}>`) for file downloads instead of creating synthetic anchor nodes.
+- Use declarative backdrop overlays for modal/dropdown dismissals instead of global `document.addEventListener('mousedown', ...)`.
+- Enforce static linter blocking via `no-restricted-properties` in `.eslintrc.json`.
+
+### 13. Mandatory Quality Check Execution
 - AI coding agents must run quality checks after every change:
   - **Fast check for rapid development**:
     ```bash
@@ -89,7 +98,7 @@
     ```
     Recursively validates all projects in the workspace.
 
-### 13. Strict Check Order: Build & Coverage Checked First
+### 14. Strict Check Order: Build & Coverage Checked First
 Full quality checks must follow this mandatory sequence:
 1. **Build Verification**: `npm run build` (integrated `next lint && next build`)
 2. **Unit Test Code Coverage**: `npm run test:coverage` (90% per-file benchmark across lines, statements, branches, and functions, `--detectOpenHandles`)
@@ -97,11 +106,11 @@ Full quality checks must follow this mandatory sequence:
 4. **Lint**: `npm run lint` (`next lint`)
 5. **Database Schema & Migrations**: `npm run db:validate` / apply pending migrations
 
-### 14. Zero Tolerance for Coverage Regressions
+### 15. Zero Tolerance for Coverage Regressions
 - No files may be skipped.
 - Per-file thresholds must strictly remain $\ge 90\%$ on all 4 metrics.
 
-### 15. CI/CD Pull Request Pipeline & Quality Reporting
+### 16. CI/CD Pull Request Pipeline & Quality Reporting
 - Pull requests trigger `.github/workflows/pull-request.yml` with a strict job timeout (`timeout-minutes: 20`).
 - Pipeline enforces Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 metrics) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
 - Generates and publishes an automated PR summary comment detailing test pass/fail counts and overall & per-file coverage statistics (`npm run ci:summary`).

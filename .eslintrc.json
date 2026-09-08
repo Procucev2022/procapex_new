@@ -105,7 +105,30 @@
     "comma-dangle": ["error", "always-multiline"],
     "prefer-const": "error",
     "no-var": "error",
-    "object-shorthand": ["error", "always"]
+    "object-shorthand": ["error", "always"],
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "document",
+        "property": "getElementById",
+        "message": "Direct DOM access via document.getElementById is strictly prohibited. Use React state or useRef instead."
+      },
+      {
+        "object": "document",
+        "property": "querySelector",
+        "message": "Direct DOM access via document.querySelector is strictly prohibited. Use React state or useRef instead."
+      },
+      {
+        "object": "document",
+        "property": "querySelectorAll",
+        "message": "Direct DOM access via document.querySelectorAll is strictly prohibited. Use React state or useRef instead."
+      },
+      {
+        "object": "document",
+        "property": "createElement",
+        "message": "Direct DOM creation via document.createElement is strictly prohibited. Use declarative JSX elements instead."
+      }
+    ]
   },
   "overrides": [
     {

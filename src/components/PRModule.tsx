@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   UploadCloud, 
   Download, 
@@ -37,6 +37,8 @@ import {
   INITIAL_DOCS,
   VENDOR_DATABASE,
   UI_STRINGS,
+  BLANK_BOQ_TEMPLATE_CSV_URI,
+  STANDARD_PACKAGE_TEMPLATE_CSV_URI,
 } from '@/constants';
 
 export const PRModule: React.FC<PRModuleProps> = ({
@@ -71,19 +73,8 @@ export const PRModule: React.FC<PRModuleProps> = ({
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>(['VND-001', 'VND-002']);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  const [selectedCatalogItem, setSelectedCatalogItem] = useState<string>('20mm Granite Countertop');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 5: Delivery Locations State
   const [deliveryAddress, setDeliveryAddress] = useState<string>('Metro Line 4 Underground Station Yard - Depot 3, Mumbai Central (Entry Gate 2B)');
@@ -661,22 +652,14 @@ export const PRModule: React.FC<PRModuleProps> = ({
                       <span className="font-bold text-slate-900 block text-xs">Option A: Download Blank BOQ Format</span>
                       <p className="text-[11px] text-slate-500 mt-0.5">Download pre-structured blank CSV template with approved column headers.</p>
                     </div>
-                    <button 
-                      onClick={() => {
-                        const csvContent = 'data:text/csv;charset=utf-8,Item Code,Item Description / Specs,Unit (UOM),Required Quantity,Remarks\nITEM-001,Granite Countertop 20mm Polished Jet Black,Sqm,12.5,Elevation D\nITEM-002,18mm Marine BWP Plywood IS 710,Sqm,38.0,Carcass\n';
-                        const encodedUri = encodeURI(csvContent);
-                        const link = document.createElement('a');
-                        link.setAttribute('href', encodedUri);
-                        link.setAttribute('download', 'Blank_BOQ_Format_Template.csv');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }} 
+                    <a 
+                      href={BLANK_BOQ_TEMPLATE_CSV_URI}
+                      download="Blank_BOQ_Format_Template.csv"
                       className="w-full bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-purple-300"
                     >
                       <Download className="w-4 h-4" />
                       <span>Download Blank BOQ Format (CSV)</span>
-                    </button>
+                    </a>
                   </div>
 
                   <div className="p-4 bg-white rounded-xl border border-purple-200 space-y-2 flex flex-col justify-between">
@@ -732,22 +715,14 @@ export const PRModule: React.FC<PRModuleProps> = ({
                       <span className="font-bold text-slate-900 block text-xs">1. Download Selected Template</span>
                       <p className="text-[11px] text-slate-500 mt-0.5">Download pre-filled standard package items in CSV format to enter quantities.</p>
                     </div>
-                    <button 
-                      onClick={() => {
-                        const csvContent = 'data:text/csv;charset=utf-8,Item Code,Item Description / Specs,Unit (UOM),Required Quantity\nCNT-TOP-GRN20,20mm Granite Countertop,Sqm,12.5\nCNT-PLY-BWP18,18mm Marine Plywood IS 710,Sqm,38.0\nCNT-LAM-1MM,1.0mm Textured Laminate,Sqm,24.0\nCNT-HDW-SOFT,Soft-Close Hinges Set,Set,14.0\n';
-                        const encodedUri = encodeURI(csvContent);
-                        const link = document.createElement('a');
-                        link.setAttribute('href', encodedUri);
-                        link.setAttribute('download', 'Interior_Standard_Package.csv');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
+                    <a 
+                      href={STANDARD_PACKAGE_TEMPLATE_CSV_URI}
+                      download="Interior_Standard_Package.csv"
                       className="w-full bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-emerald-300"
                     >
                       <Download className="w-4 h-4" />
                       <span>Download Standard Template (CSV)</span>
-                    </button>
+                    </a>
                   </div>
 
                   <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2 flex flex-col justify-between">
@@ -837,7 +812,12 @@ export const PRModule: React.FC<PRModuleProps> = ({
                 <div className="p-4 bg-white rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
                   <div className="flex-1">
                     <label className="block font-bold text-slate-900 mb-1">Search Approved Corporate Catalog:</label>
-                    <select id="nextCatalogPicker" className="w-full text-xs font-semibold bg-white border border-amber-300 rounded-lg px-3 py-2">
+                    <select 
+                      id="nextCatalogPicker" 
+                      value={selectedCatalogItem}
+                      onChange={(e) => setSelectedCatalogItem(e.target.value)}
+                      className="w-full text-xs font-semibold bg-white border border-amber-300 rounded-lg px-3 py-2"
+                    >
                       <option value="20mm Granite Countertop">20mm Polished Jet Black Granite Top</option>
                       <option value="18mm BWP Marine Plywood">18mm Marine Grade BWP Plywood (IS 710)</option>
                       <option value="1.0mm Textured Laminate">1.0mm High Pressure Suede Finish Laminate</option>
@@ -847,8 +827,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
                   </div>
                   <button 
                     onClick={() => {
-                      const sel = (document.getElementById('nextCatalogPicker') as HTMLSelectElement)?.value || 'Catalog Item';
-                      setItems([...items, { code: `CAT-${Math.floor(100 + Math.random() * 900)}`, desc: `${sel} as per standard`, uom: 'Sqm', qty: 10 }]);
+                      setItems([...items, { code: `CAT-${Math.floor(100 + Math.random() * 900)}`, desc: `${selectedCatalogItem} as per standard`, uom: 'Sqm', qty: 10 }]);
                     }}
                     className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-lg shadow-sm flex items-center space-x-1 mt-auto"
                   >
@@ -1019,7 +998,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
             {/* Multi-Select Vendor Dropdown Component */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
               
-              <div className="space-y-1.5 relative" ref={dropdownRef}>
+              <div className="space-y-1.5 relative">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <label className="block font-bold text-slate-900 text-xs flex items-center">
                     <Store className="w-4 h-4 text-purple-600 mr-1.5" />
@@ -1070,7 +1049,13 @@ export const PRModule: React.FC<PRModuleProps> = ({
 
                 {/* Collapsible Floating Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border-2 border-sky-400 rounded-2xl shadow-2xl z-40 p-4 space-y-3">
+                  <>
+                    <div
+                      className="fixed inset-0 z-30"
+                      onClick={() => setIsDropdownOpen(false)}
+                      aria-hidden="true"
+                    />
+                    <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border-2 border-sky-400 rounded-2xl shadow-2xl z-40 p-4 space-y-3">
                     
                     {/* Quick Filter & Action Header inside Dropdown */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-2.5">
@@ -1177,6 +1162,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
                     </div>
 
                   </div>
+                </>
                 )}
 
               </div>
@@ -1599,9 +1585,9 @@ export const PRModule: React.FC<PRModuleProps> = ({
                 <h4 className="text-xs font-bold text-slate-900">Drag & Drop Documents or Browse</h4>
                 <p className="text-[11px] text-slate-500 mt-0.5">Supports PDF, DWG, DOCX, XLSX, PNG, JPG</p>
               </div>
-              <input type="file" id="nextPrFileInput" multiple className="hidden" onChange={handleFileUpload} />
+              <input ref={fileInputRef} type="file" id="nextPrFileInput" multiple className="hidden" onChange={handleFileUpload} />
               <button 
-                onClick={() => document.getElementById('nextPrFileInput')?.click()} 
+                onClick={() => fileInputRef.current?.click()} 
                 className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm"
               >
                 + Choose Document Files

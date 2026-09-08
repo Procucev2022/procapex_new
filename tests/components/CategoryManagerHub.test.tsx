@@ -268,12 +268,17 @@ describe('CategoryManagerHub Component', () => {
     const sendOfferBtn = screen.getByRole('button', { name: /^Send Offer →$/i });
     fireEvent.click(sendOfferBtn);
 
+    // Send row offer with default vendor (covers undefined rowOfferVendors branch)
+    const rowOfferButtons = screen.getAllByRole('button', { name: /^Offer →$/i });
+    if (rowOfferButtons.length > 0) {
+      fireEvent.click(rowOfferButtons[0]);
+    }
+
     // Send row offer with specific vendor
     const rowSelect = container.querySelector('#rowOfferVendorSelect_0') as HTMLSelectElement;
     if (rowSelect) {
       fireEvent.change(rowSelect, { target: { value: 'VND-001' } });
     }
-    const rowOfferButtons = screen.getAllByRole('button', { name: /^Offer →$/i });
     if (rowOfferButtons.length > 0) {
       fireEvent.click(rowOfferButtons[0]);
     }

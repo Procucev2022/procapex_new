@@ -514,3 +514,9 @@ export const COMMERCIAL_COUNTER_ITEMS: CommercialCounterItem[] = [
     std: 560,
   },
 ];
+
+export const BLANK_BOQ_TEMPLATE_CSV_URI =
+  'data:text/csv;charset=utf-8,Item%20Code,Item%20Description%20/%20Specs,Unit%20(UOM),Required%20Quantity,Remarks%0AITEM-001,Granite%20Countertop%2020mm%20Polished%20Jet%20Black,Sqm,12.5,Elevation%20D%0AITEM-002,18mm%20Marine%20BWP%20Plywood%20IS%20710,Sqm,38.0,Carcass%0A';
+
+export const STANDARD_PACKAGE_TEMPLATE_CSV_URI =
+  'data:text/csv;charset=utf-8,Item%20Code,Item%20Description%20/%20Specs,Unit%20(UOM),Required%20Quantity%0ACNT-TOP-GRN20,20mm%20Granite%20Countertop,Sqm,12.5%0ACNT-PLY-BWP18,18mm%20Marine%20Plywood%20IS%20710,Sqm,38.0%0ACNT-LAM-1MM,1.0mm%20Textured%20Laminate,Sqm,24.0%0ACNT-HDW-SOFT,Soft-Close%20Hinges%20Set,Set,14.0%0A';

@@ -92,7 +92,7 @@ describe('PRModule Component', () => {
 
     // Switch to Method 1
     fireEvent.click(screen.getByText('1. Upload New BOQ'));
-    const downloadCsvBtn = screen.getByRole('button', { name: /Download Blank BOQ Format/i });
+    const downloadCsvBtn = screen.getByRole('link', { name: /Download Blank BOQ Format/i });
     fireEvent.click(downloadCsvBtn);
 
     const uploadSpreadsheetBtn = screen.getByRole('button', { name: /Upload & Parse BOQ File/i });
@@ -105,7 +105,7 @@ describe('PRModule Component', () => {
     // Back to Step 3, test Method 2
     fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     fireEvent.click(screen.getByText('2. Standard Template'));
-    const downloadStdBtn = screen.getByRole('button', { name: /Download Standard Template/i });
+    const downloadStdBtn = screen.getByRole('link', { name: /Download Standard Template/i });
     fireEvent.click(downloadStdBtn);
 
     const uploadStdBtn = screen.getByRole('button', { name: /Upload Filled Template/i });
@@ -417,7 +417,11 @@ describe('PRModule Component', () => {
       fireEvent.click(dropdownTrigger);
       expect(screen.getByText(/Multi-Select Enabled/i)).toBeInTheDocument();
 
-      fireEvent.mouseDown(document.body);
+      const backdrop = container.querySelector('.fixed.inset-0.z-30') as HTMLElement;
+      if (backdrop) {
+        fireEvent.click(backdrop);
+        expect(screen.queryByText(/Multi-Select Enabled/i)).not.toBeInTheDocument();
+      }
     }
   });
 });
