@@ -4,6 +4,7 @@ import React from 'react';
 import { CheckSquare, ArrowRight, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { PRApprovalQueueProps } from '@/types';
+import { UI_STRINGS } from '@/constants';
 
 export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCategoryManager }) => {
   const { prs, activeTenant, approvePRByProjectHead, setActiveRole } = useProcurement();
@@ -27,9 +28,9 @@ export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCateg
             <span className="bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
               Role 2: Project Head (Technical Approver)
             </span>
-            <h1 className="text-2xl font-black mt-1">Purchase Request Review & Authorization Inbox</h1>
+            <h1 className="text-2xl font-black mt-1">{UI_STRINGS.prApprovalQueue.title}</h1>
             <p className="text-xs text-amber-200 mt-1">
-              Review General details, Category mapping, BOQ specifications, Delivery location, and Attachments submitted by PR Raiser.
+              {UI_STRINGS.prApprovalQueue.subtitle}
             </p>
           </div>
           <div className="text-right">
@@ -82,7 +83,7 @@ export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCateg
                     <td className="p-3">
                       {isPending ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
-                          PENDING REVIEW
+                          {UI_STRINGS.prApprovalQueue.pendingBadge}
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900">
@@ -97,11 +98,11 @@ export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCateg
                           className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm inline-flex items-center space-x-1.5 transition-all"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Approve PR & Route to Category Manager (Role 3)</span>
+                          <span>{UI_STRINGS.prApprovalQueue.approveButton}</span>
                         </button>
                       ) : (
                         <span className="text-[11px] font-semibold text-slate-400 italic">
-                          Authorized & Routed
+                          {UI_STRINGS.prApprovalQueue.approvedBadge}
                         </span>
                       )}
                     </td>

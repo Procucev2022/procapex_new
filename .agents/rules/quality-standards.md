@@ -58,7 +58,15 @@
 - Use `src/lib/validator.ts`: `validateSchema()`, `validateQueryParams()`, `validateHeaders()`.
 - Return structured 400 errors for API validation failures and prevent invalid state transitions.
 
-### 10. Mandatory Quality Check Execution
+### 10. Internationalization (i18n) & UI Strings Architecture Standards (See: `.agents/rules/i18n-standards.md`)
+- Strictly enforce i18n readiness across the application: zero hardcoded user-facing strings, labels, or literals embedded directly in JSX/TSX or application code.
+- All user-facing text, titles, subtitles, descriptions, button labels, input placeholders, table headers, empty state notices, ARIA labels, and dialog copy must be declared in dedicated constants modules under `src/constants/strings.ts` and referenced via the centralized `UI_STRINGS` dictionary.
+- Dynamic runtime values must use template placeholders (e.g. `'{round}'`, `'{name}'`, `'{count}'`, `'{tenantName}'`) formatted via the centralized `formatString(template, values)` helper (no string concatenation or ad-hoc template literals).
+- All UI string types and dictionary interfaces must be declared in `src/types/strings.ts` and exported via `@/types`.
+- Modernize all unit and integration tests to assert against `UI_STRINGS` constants (and `formatString` templates) instead of hardcoded strings to prevent brittle matches during UI copy updates.
+- All i18n modules and helper utilities must achieve $\ge 90\%$ code coverage per file across all 4 parameters.
+
+### 11. Mandatory Quality Check Execution
 - AI coding agents must run quality checks after every change:
   - **Fast check for rapid development**:
     ```bash
@@ -75,7 +83,7 @@
     ```
     Recursively validates all projects in the workspace.
 
-### 10. Strict Check Order: Build & Coverage Checked First
+### 12. Strict Check Order: Build & Coverage Checked First
 Full quality checks must follow this mandatory sequence:
 1. **Build Verification**: `npm run build`
 2. **Unit Test Code Coverage**: `npm run test:coverage` (90% per-file benchmark across lines, statements, branches, and functions, `--detectOpenHandles`)
@@ -83,12 +91,13 @@ Full quality checks must follow this mandatory sequence:
 4. **Lint**: `npm run lint` (`next lint`)
 5. **Database Schema & Migrations**: `npm run db:validate` / apply pending migrations
 
-### 11. Zero Tolerance for Coverage Regressions
+### 13. Zero Tolerance for Coverage Regressions
 - No files may be skipped.
 - Per-file thresholds must strictly remain $\ge 90\%$ on all 4 metrics.
 
-### 12. CI/CD Pull Request Pipeline & Quality Reporting
+### 14. CI/CD Pull Request Pipeline & Quality Reporting
 - Pull requests trigger `.github/workflows/pull-request.yml` with a strict job timeout (`timeout-minutes: 20`).
 - Pipeline enforces Build $\rightarrow$ Unit Test Coverage ($\ge 90\%$ per file across all 4 metrics) $\rightarrow$ Typecheck $\rightarrow$ Lint $\rightarrow$ Database validation.
 - Generates and publishes an automated PR summary comment detailing test pass/fail counts and overall & per-file coverage statistics (`npm run ci:summary`).
+
 

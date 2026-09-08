@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AICostStudio } from '@/components/AICostStudio';
+import { UI_STRINGS } from '@/constants';
 
 describe('AICostStudio Component', () => {
   const mockOnNavigateToNegotiation = jest.fn();
@@ -47,7 +48,7 @@ describe('AICostStudio Component', () => {
       render(<AICostStudio onNavigateToNegotiation={mockOnNavigateToNegotiation} />);
     });
 
-    expect(screen.getByText('Bottom-Up MLEO Cost Analysis')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.aiCostStudio.title)).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('gemini 3.5 flash lite')).toBeInTheDocument();
     });
@@ -120,7 +121,7 @@ describe('AICostStudio Component', () => {
       render(<AICostStudio onNavigateToNegotiation={mockOnNavigateToNegotiation} />);
     });
 
-    const navBtn = screen.getByRole('button', { name: /Send to Negotiation Hub/i });
+    const navBtn = screen.getByRole('button', { name: UI_STRINGS.aiCostStudio.sendToNegotiationHub });
     fireEvent.click(navBtn);
 
     expect(mockOnNavigateToNegotiation).toHaveBeenCalled();
@@ -131,13 +132,13 @@ describe('AICostStudio Component', () => {
       render(<AICostStudio onNavigateToNegotiation={mockOnNavigateToNegotiation} />);
     });
 
-    const runBtn = screen.getByRole('button', { name: /Run Gemini AI/i });
+    const runBtn = screen.getByRole('button', { name: UI_STRINGS.aiCostStudio.runAnalysis });
     await act(async () => {
       fireEvent.click(runBtn);
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Live Cost Deconstruction Complete/i)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.aiCostStudio.liveCostComplete)).toBeInTheDocument();
     });
   });
 
@@ -153,7 +154,7 @@ describe('AICostStudio Component', () => {
       render(<AICostStudio onNavigateToNegotiation={mockOnNavigateToNegotiation} />);
     });
 
-    const runBtn = screen.getByRole('button', { name: /Run Gemini AI/i });
+    const runBtn = screen.getByRole('button', { name: UI_STRINGS.aiCostStudio.runAnalysis });
     await act(async () => {
       fireEvent.click(runBtn);
     });
@@ -172,7 +173,7 @@ describe('AICostStudio Component', () => {
       render(<AICostStudio onNavigateToNegotiation={mockOnNavigateToNegotiation} />);
     });
 
-    const runBtn = screen.getByRole('button', { name: /Run Gemini AI/i });
+    const runBtn = screen.getByRole('button', { name: UI_STRINGS.aiCostStudio.runAnalysis });
     await act(async () => {
       fireEvent.click(runBtn);
     });

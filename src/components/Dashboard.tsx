@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { DashboardProps } from '@/types';
+import { UI_STRINGS, formatString } from '@/constants';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { prs, pos, activeTenant, resetToSampleData } = useProcurement();
@@ -28,7 +29,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 Enterprise Dashboard
               </span>
               <h1 className="text-2xl font-bold mt-1">
-                {activeTenant ? `${activeTenant.name} – Sourcing Command` : 'Procurement & AI Cost Intelligence Hub'}
+                {activeTenant
+                  ? formatString(UI_STRINGS.dashboard.sourcingCommandTemplate, { tenantName: activeTenant.name })
+                  : UI_STRINGS.dashboard.defaultTitle}
               </h1>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl">
                 Active Project: <strong className="text-white font-semibold">{activeTenant?.project}</strong> • Real-time pipeline across BOQ Studio, Technical Approvals, 4-Way Commercial Matrix, Multi-Tier PPO sign-offs, and Vendor Awards.
@@ -52,7 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active PRs</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{UI_STRINGS.dashboard.activePRs}</p>
             <p className="text-2xl font-extrabold text-slate-800 mt-1">{prs.length}</p>
             <p className="text-[11px] text-slate-400 mt-1">2 Pending Approval • 2 Accepted</p>
           </div>
@@ -85,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Work Orders Issued</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{UI_STRINGS.dashboard.workOrdersIssued}</p>
             <p className="text-2xl font-extrabold text-slate-800 mt-1">{pos.length}</p>
             <p className="text-[11px] text-emerald-600 font-medium mt-1">100% PPO Compliant</p>
           </div>
@@ -108,28 +111,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center cursor-pointer hover:border-sky-300" onClick={() => onNavigate('prs')}>
-              <span className="text-[10px] font-bold uppercase text-slate-500">1. PR & BOQ</span>
+              <span className="text-[10px] font-bold uppercase text-slate-500">{UI_STRINGS.dashboard.stage1}</span>
               <p className="text-lg font-bold text-slate-800 mt-1">2 Requests</p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="bg-sky-500 h-full w-2/3"></div>
               </div>
             </div>
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center cursor-pointer hover:border-amber-300" onClick={() => onNavigate('commercial')}>
-              <span className="text-[10px] font-bold uppercase text-slate-500">2. Commercial Eval</span>
+              <span className="text-[10px] font-bold uppercase text-slate-500">{UI_STRINGS.dashboard.stage2}</span>
               <p className="text-lg font-bold text-slate-800 mt-1">2 Active</p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="bg-amber-500 h-full w-1/2"></div>
               </div>
             </div>
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center cursor-pointer hover:border-purple-300" onClick={() => onNavigate('negotiation')}>
-              <span className="text-[10px] font-bold uppercase text-slate-500">3. Negotiation</span>
+              <span className="text-[10px] font-bold uppercase text-slate-500">{UI_STRINGS.dashboard.stage3}</span>
               <p className="text-lg font-bold text-slate-800 mt-1">1 In-Round</p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="bg-purple-500 h-full w-3/4"></div>
               </div>
             </div>
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center cursor-pointer hover:border-emerald-300" onClick={() => onNavigate('ppo')}>
-              <span className="text-[10px] font-bold uppercase text-slate-500">4. PPO & PO</span>
+              <span className="text-[10px] font-bold uppercase text-slate-500">{UI_STRINGS.dashboard.stage4}</span>
               <p className="text-lg font-bold text-slate-800 mt-1">{pos.length} Issued</p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="bg-emerald-500 h-full w-full"></div>
@@ -217,7 +220,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset to Sample Baseline Data</span>
+              <span>{UI_STRINGS.dashboard.resetToSample}</span>
             </button>
           </div>
         </div>

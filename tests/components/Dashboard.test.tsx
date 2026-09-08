@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Dashboard } from '@/components/Dashboard';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS, formatString } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -24,10 +25,10 @@ describe('Dashboard Component', () => {
   it('renders welcome banner and KPI cards with tenant information', () => {
     render(<Dashboard onNavigate={mockOnNavigate} />);
 
-    expect(screen.getByText('L&T Construction – Sourcing Command')).toBeInTheDocument();
+    expect(screen.getByText(formatString(UI_STRINGS.dashboard.sourcingCommandTemplate, { tenantName: 'L&T Construction' }))).toBeInTheDocument();
     expect(screen.getByText('Noida Airport')).toBeInTheDocument();
-    expect(screen.getByText('Active PRs')).toBeInTheDocument();
-    expect(screen.getByText('Work Orders Issued')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.dashboard.activePRs)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.dashboard.workOrdersIssued)).toBeInTheDocument();
   });
 
   it('falls back to default title when activeTenant is undefined', () => {
@@ -39,22 +40,22 @@ describe('Dashboard Component', () => {
     });
 
     render(<Dashboard onNavigate={mockOnNavigate} />);
-    expect(screen.getByText('Procurement & AI Cost Intelligence Hub')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.dashboard.defaultTitle)).toBeInTheDocument();
   });
 
   it('handles pipeline stage card navigations', () => {
     render(<Dashboard onNavigate={mockOnNavigate} />);
 
-    fireEvent.click(screen.getByText('1. PR & BOQ'));
+    fireEvent.click(screen.getByText(UI_STRINGS.dashboard.stage1));
     expect(mockOnNavigate).toHaveBeenCalledWith('prs');
 
-    fireEvent.click(screen.getByText('2. Commercial Eval'));
+    fireEvent.click(screen.getByText(UI_STRINGS.dashboard.stage2));
     expect(mockOnNavigate).toHaveBeenCalledWith('commercial');
 
-    fireEvent.click(screen.getByText('3. Negotiation'));
+    fireEvent.click(screen.getByText(UI_STRINGS.dashboard.stage3));
     expect(mockOnNavigate).toHaveBeenCalledWith('negotiation');
 
-    fireEvent.click(screen.getByText('4. PPO & PO'));
+    fireEvent.click(screen.getByText(UI_STRINGS.dashboard.stage4));
     expect(mockOnNavigate).toHaveBeenCalledWith('ppo');
   });
 
@@ -73,7 +74,7 @@ describe('Dashboard Component', () => {
   it('triggers reset to sample baseline data', () => {
     render(<Dashboard onNavigate={mockOnNavigate} />);
 
-    const resetBtn = screen.getByRole('button', { name: /Reset to Sample Baseline Data/i });
+    const resetBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.dashboard.resetToSample, 'i') });
     fireEvent.click(resetBtn);
     expect(mockResetToSampleData).toHaveBeenCalled();
   });

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Scale, ArrowLeft, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-import { COMMERCIAL_COUNTER_ITEMS } from '@/constants';
+import { COMMERCIAL_COUNTER_ITEMS, UI_STRINGS } from '@/constants';
 import { CommercialEvalProps } from '@/types';
 
 export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICost, onNavigateToPPO }) => {
@@ -30,7 +30,7 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
         <div>
           <div className="flex items-center space-x-2">
             <span className="bg-amber-100 text-amber-800 text-[10px] font-bold uppercase px-2 py-0.5 rounded-md">FR-06 & FR-07 Commercial Engine</span>
-            <h2 className="text-xl font-bold text-slate-900">Commercial Price Check & 4-Way Comparison</h2>
+            <h2 className="text-xl font-bold text-slate-900">{UI_STRINGS.commercialEval.title}</h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Normalized 4-way commercial evaluation for drawing: <strong>Counter Elevation D (Millwork Package)</strong> with Line-Item MLEO Costing
@@ -41,22 +41,22 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
       {/* 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-blue-50/80 p-4 rounded-2xl border border-blue-200 shadow-sm">
-          <p className="text-[10px] font-bold uppercase text-blue-700">1. Master Rate Card Baseline</p>
+          <p className="text-[10px] font-bold uppercase text-blue-700">{UI_STRINGS.commercialEval.card1}</p>
           <p className="text-xl font-black text-blue-950 mt-1 font-mono">₹ {Math.round(totalRateCard).toLocaleString()}</p>
           <p className="text-[11px] text-blue-600 mt-0.5">Approved corporate schedule rates</p>
         </div>
         <div className="bg-amber-50/80 p-4 rounded-2xl border border-amber-200 shadow-sm">
-          <p className="text-[10px] font-bold uppercase text-amber-700">2. Lowest Vendor Quote (L1)</p>
+          <p className="text-[10px] font-bold uppercase text-amber-700">{UI_STRINGS.commercialEval.card2}</p>
           <p className="text-xl font-black text-amber-950 mt-1 font-mono">₹ {Math.round(totalQuoted).toLocaleString()}</p>
           <p className="text-[11px] text-amber-700 mt-0.5 font-bold">+{variancePct}% vs Rate Card</p>
         </div>
         <div className="bg-purple-50/80 p-4 rounded-2xl border border-purple-200 shadow-sm">
-          <p className="text-[10px] font-bold uppercase text-purple-700">3. AI Market Benchmark</p>
+          <p className="text-[10px] font-bold uppercase text-purple-700">{UI_STRINGS.commercialEval.card3}</p>
           <p className="text-xl font-black text-purple-950 mt-1 font-mono">₹ {Math.round(totalBenchmark).toLocaleString()}</p>
           <p className="text-[11px] text-purple-600 mt-0.5">Regional market pricing index</p>
         </div>
         <div className="bg-slate-100 p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold uppercase text-slate-700">4. Internal Historical Std</p>
+          <p className="text-[10px] font-bold uppercase text-slate-700">{UI_STRINGS.commercialEval.card4}</p>
           <p className="text-xl font-black text-slate-900 mt-1 font-mono">₹ {Math.round(totalStd).toLocaleString()}</p>
           <p className="text-[11px] text-slate-500 mt-0.5">Past 6-month weighted avg</p>
         </div>
@@ -137,12 +137,12 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
                     <td className="p-3 text-center">
                       {itemOk ? (
                         <button onClick={onNavigateToPPO} className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded shadow-sm">
-                          Proceed to PPO
+                          {UI_STRINGS.commercialEval.proceedToPPO}
                         </button>
                       ) : (
                         <button onClick={onNavigateToAICost} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold rounded flex items-center space-x-1 mx-auto shadow-sm whitespace-nowrap">
                           <Sparkles className="w-3 h-3" />
-                          <span>Invoke AI Costing</span>
+                          <span>{UI_STRINGS.commercialEval.invokeAICosting}</span>
                         </button>
                       )}
                     </td>
@@ -161,7 +161,7 @@ export const CommercialEval: React.FC<CommercialEvalProps> = ({ onNavigateToAICo
                 <td className="p-3 text-center text-rose-700 font-bold">+{variancePct}%</td>
                 <td colSpan={2} className="p-3 text-center font-sans">
                   <button onClick={onNavigateToAICost} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg shadow">
-                    Detailed MLEO Analysis →
+                    {UI_STRINGS.commercialEval.detailedAnalysis} →
                   </button>
                 </td>
               </tr>

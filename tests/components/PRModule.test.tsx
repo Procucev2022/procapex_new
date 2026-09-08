@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PRModule } from '@/components/PRModule';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -24,6 +25,8 @@ describe('PRModule Component', () => {
   it('renders Step 1 (General Details) and updates all general fields', () => {
     const { container } = render(<PRModule onSelectPRForBOQ={mockOnSelectPRForBOQ} />);
 
+    expect(screen.getByText(UI_STRINGS.prModule.roleBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.prModule.title)).toBeInTheDocument();
     expect(screen.getByText(/Step 1\/7/i)).toBeInTheDocument();
 
     const descInput = screen.getByDisplayValue(/Fabrication & Installation of Reception Counter/i);
@@ -51,7 +54,7 @@ describe('PRModule Component', () => {
     }
 
     // Direct click Tab 1 to cover tab 1 button onClick
-    const tab1Btn = screen.getByRole('button', { name: /1 General/i });
+    const tab1Btn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepGeneral, 'i') });
     fireEvent.click(tab1Btn);
     expect(screen.getByText(/Step 1\/7/i)).toBeInTheDocument();
   });
@@ -59,7 +62,7 @@ describe('PRModule Component', () => {
   it('interacts with Step 2 (Category Selection)', () => {
     const { container } = render(<PRModule />);
 
-    fireEvent.click(screen.getByRole('button', { name: /2 Category Selection/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepCategory, 'i') }));
     expect(screen.getByText(/Step 2\/7/i)).toBeInTheDocument();
 
     const majorCategorySelect = container.querySelector('select') as HTMLSelectElement;
@@ -76,7 +79,7 @@ describe('PRModule Component', () => {
     }
 
     // Step 2 Next button
-    const nextBtn = screen.getByRole('button', { name: /Next/i });
+    const nextBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.nextStep, 'i') });
     fireEvent.click(nextBtn);
     expect(screen.getByText(/Step 3\/7/i)).toBeInTheDocument();
   });
@@ -84,7 +87,7 @@ describe('PRModule Component', () => {
   it('interacts with Step 3 (BOQ Studio) and all 4 ingestion methods', () => {
     const { container } = render(<PRModule />);
 
-    fireEvent.click(screen.getByRole('button', { name: /3 BOQ Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     expect(screen.getByText(/Step 3\/7/i)).toBeInTheDocument();
 
     // Switch to Method 1
@@ -100,7 +103,7 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
 
     // Back to Step 3, test Method 2
-    fireEvent.click(screen.getByRole('button', { name: /3 BOQ Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     fireEvent.click(screen.getByText('2. Standard Template'));
     const downloadStdBtn = screen.getByRole('button', { name: /Download Standard Template/i });
     fireEvent.click(downloadStdBtn);
@@ -113,7 +116,7 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
 
     // Back to Step 3, test Method 4
-    fireEvent.click(screen.getByRole('button', { name: /3 BOQ Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     fireEvent.click(screen.getByText('4. Manual / Catalog'));
     const addFromCatalogBtn = screen.getByRole('button', { name: /Add from Catalog/i });
     fireEvent.click(addFromCatalogBtn);
@@ -123,7 +126,7 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
 
     // Back to Step 3, test Method 3
-    fireEvent.click(screen.getByRole('button', { name: /3 BOQ Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     fireEvent.click(screen.getByText('3. Drawing AI Extractor'));
     const drawingInput = screen.getByDisplayValue('Counter Elevation D');
     fireEvent.change(drawingInput, { target: { value: 'Elevation Front View' } });
@@ -136,7 +139,7 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
 
     // Back to Step 3, test Down Screen Schedule actions
-    fireEvent.click(screen.getByRole('button', { name: /3 BOQ Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     const addCustomBtn = screen.getByRole('button', { name: /\+ Add Custom Item/i });
     fireEvent.click(addCustomBtn);
     expect(screen.getByText('Custom Site Requisition Line Item')).toBeInTheDocument();
@@ -163,7 +166,7 @@ describe('PRModule Component', () => {
   it('interacts with Step 4 (Supplier Selection), filters, chips, dropdown, and validation', () => {
     const { container } = render(<PRModule />);
 
-    fireEvent.click(screen.getByRole('button', { name: /4 Supplier Selection/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepSuppliers, 'i') }));
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
 
     // Test Region filters
@@ -239,7 +242,7 @@ describe('PRModule Component', () => {
   it('interacts with Step 5 (Delivery Locations)', () => {
     render(<PRModule />);
 
-    fireEvent.click(screen.getByRole('button', { name: /5 Delivery Locations/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDelivery, 'i') }));
     expect(screen.getByText(/Step 5\/7/i)).toBeInTheDocument();
 
     const addrInput = screen.getByDisplayValue(/Metro Line 4 Underground Station Yard/i);
@@ -262,7 +265,7 @@ describe('PRModule Component', () => {
   it('interacts with Step 6 (Terms & Conditions) presets and custom structures', () => {
     const { container } = render(<PRModule />);
 
-    fireEvent.click(screen.getByRole('button', { name: /6 Terms & Conditions/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepTerms, 'i') }));
     expect(screen.getByText(/Step 6\/7/i)).toBeInTheDocument();
 
     // Presets
@@ -339,7 +342,7 @@ describe('PRModule Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /7 Documents/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i') }));
     expect(screen.getByText(/Step 7\/7/i)).toBeInTheDocument();
 
     const chooseDocsBtn = screen.getByRole('button', { name: /\+ Choose Document Files/i });
@@ -359,7 +362,7 @@ describe('PRModule Component', () => {
       fireEvent.click(deleteButtons[0]);
     }
 
-    const submitBtn = screen.getByRole('button', { name: /Submit PR with BOQ to Project Head/i });
+    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitToProjectHead, 'i') });
     fireEvent.click(submitBtn);
 
     expect(mockCreatePR).toHaveBeenCalledWith(
@@ -375,8 +378,8 @@ describe('PRModule Component', () => {
   it('handles submission with only onNavigateToBOQ provided', () => {
     render(<PRModule onNavigateToBOQ={mockOnNavigateToBOQ} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /7 Documents/i }));
-    const submitBtn = screen.getByRole('button', { name: /Submit PR with BOQ to Project Head/i });
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i') }));
+    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitToProjectHead, 'i') });
     fireEvent.click(submitBtn);
 
     expect(mockCreatePR).toHaveBeenCalled();
@@ -389,25 +392,25 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 1\/7/i)).toBeInTheDocument();
 
     // Next
-    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.nextStep, 'i') }));
     expect(screen.getByText(/Step 2\/7/i)).toBeInTheDocument();
 
     // Previous
-    fireEvent.click(screen.getByRole('button', { name: /Previous/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.prevStep, 'i') }));
     expect(screen.getByText(/Step 1\/7/i)).toBeInTheDocument();
 
     // Cancel PR resets to Step 1
-    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.nextStep, 'i') }));
     expect(screen.getByText(/Step 2\/7/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Cancel PR Creation/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.cancelPR, 'i') }));
     expect(screen.getByText(/Step 1\/7/i)).toBeInTheDocument();
   });
 
   it('closes vendor dropdown when clicking outside', () => {
     const { container } = render(<PRModule />);
 
-    fireEvent.click(screen.getByRole('button', { name: /4 Supplier Selection/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepSuppliers, 'i') }));
 
     const dropdownTrigger = container.querySelector('.border-2.border-sky-400') as HTMLElement;
     if (dropdownTrigger) {

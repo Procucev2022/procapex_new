@@ -3,7 +3,7 @@
 import React from 'react';
 import { Building2, Check } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-import { TENANTS } from '@/constants';
+import { TENANTS, UI_STRINGS } from '@/constants';
 import { TenantKey } from '@/types';
 
 export const TenantOverview: React.FC = () => {
@@ -18,9 +18,9 @@ export const TenantOverview: React.FC = () => {
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-black">Multi-Tenancy Architecture & Corporate Roster</h1>
+            <h1 className="text-2xl font-black">{UI_STRINGS.tenantOverview.title}</h1>
             <p className="text-xs text-slate-300 mt-0.5">
-              Every enterprise client possesses independent project scopes, assigned personnel, and private rate cards.
+              {UI_STRINGS.tenantOverview.subtitle}
             </p>
           </div>
         </div>
@@ -29,9 +29,9 @@ export const TenantOverview: React.FC = () => {
       {/* Corporate Roster Grid */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Enterprise Clients & Assigned Personnel</h2>
+          <h2 className="text-base font-bold text-slate-900">{UI_STRINGS.tenantOverview.gridTitle}</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Switching the active client dynamically scopes projects, cost centres, and role assignments across the entire platform.
+            {UI_STRINGS.tenantOverview.gridSubtitle}
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export const TenantOverview: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Active Project</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">{UI_STRINGS.tenantOverview.activeProject}</span>
                   <p className="text-slate-800 font-semibold text-xs leading-snug">{t.project}</p>
                 </div>
 
@@ -91,10 +91,10 @@ export const TenantOverview: React.FC = () => {
                   {isActive ? (
                     <>
                       <Check className="w-3.5 h-3.5 mr-1" />
-                      <span>Current Active Client</span>
+                      <span>{UI_STRINGS.tenantOverview.currentActiveClient}</span>
                     </>
                   ) : (
-                    <span>Switch to this Client</span>
+                    <span>{UI_STRINGS.tenantOverview.switchToClient}</span>
                   )}
                 </button>
               </div>

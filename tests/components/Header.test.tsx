@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '@/components/Header';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -34,10 +35,10 @@ describe('Header Component', () => {
       />
     );
 
-    expect(screen.getByText('ProCPX')).toBeInTheDocument();
-    expect(screen.getByText('Multi-Tenant SaaS')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.brandName)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.brandBadge)).toBeInTheDocument();
 
-    const logo = screen.getByText('ProCPX').closest('div');
+    const logo = screen.getByText(UI_STRINGS.header.brandName).closest('div');
     fireEvent.click(logo!);
     expect(mockSetCurrentTab).toHaveBeenCalledWith('dashboard');
   });
@@ -107,7 +108,7 @@ describe('Header Component', () => {
       />
     );
 
-    const raiseBtn = screen.getByRole('button', { name: /Raise New PR/i });
+    const raiseBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.header.raisePRButton, 'i') });
     fireEvent.click(raiseBtn);
 
     expect(mockSetActiveRole).toHaveBeenCalledWith('PROJECT_TEAM');

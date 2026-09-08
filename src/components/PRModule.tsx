@@ -41,6 +41,7 @@ import {
   DEFAULT_COUNTER_ITEMS,
   INITIAL_DOCS,
   VENDOR_DATABASE,
+  UI_STRINGS,
 } from '@/constants';
 
 export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigateToBOQ, onOpenNewPRModal }) => {
@@ -310,14 +311,14 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
           <div>
             <div className="flex items-center space-x-2">
               <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">
-                PR Raiser Scope (Role 1)
+                {UI_STRINGS.prModule.roleBadge}
               </span>
               <span className="text-xs text-slate-300 font-mono">
                 L&T Infra • Metro Line 4 Underground
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
-              Create New Procurement Request CAPEX
+              {UI_STRINGS.prModule.title}
             </h1>
           </div>
           <div className="flex items-center space-x-2">
@@ -336,7 +337,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 1 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 1 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>1</span>
-              <span>General</span>
+              <span>{UI_STRINGS.prModule.stepGeneral}</span>
             </button>
 
             <button 
@@ -344,7 +345,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 2 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 2 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>2</span>
-              <span>Category Selection</span>
+              <span>{UI_STRINGS.prModule.stepCategory}</span>
             </button>
 
             <button 
@@ -352,7 +353,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 3 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 3 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>3</span>
-              <span>BOQ Studio (PR Items)</span>
+              <span>{UI_STRINGS.prModule.stepBOQ}</span>
             </button>
 
             <button 
@@ -360,7 +361,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 4 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 4 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>4</span>
-              <span>Supplier Selection</span>
+              <span>{UI_STRINGS.prModule.stepSuppliers}</span>
             </button>
 
             <button 
@@ -368,7 +369,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 5 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 5 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>5</span>
-              <span>Delivery Locations</span>
+              <span>{UI_STRINGS.prModule.stepDelivery}</span>
             </button>
 
             <button 
@@ -376,7 +377,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 6 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 6 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>6</span>
-              <span>Terms & Conditions</span>
+              <span>{UI_STRINGS.prModule.stepTerms}</span>
             </button>
 
             <button 
@@ -384,7 +385,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
               className={`py-3 px-1 border-b-2 flex items-center space-x-1.5 transition-all ${currentStep === 7 ? 'font-bold text-sky-600 border-sky-600' : 'text-slate-500 border-transparent hover:text-slate-900'}`}
             >
               <span className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${currentStep === 7 ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}`}>7</span>
-              <span>Documents</span>
+              <span>{UI_STRINGS.prModule.stepDocuments}</span>
             </button>
 
           </nav>
@@ -1653,7 +1654,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
             onClick={() => setCurrentStep(1)} 
             className="text-rose-600 hover:bg-rose-50 border border-rose-300 font-bold text-xs px-4 py-2 rounded-xl transition-all"
           >
-            Cancel PR Creation
+            {UI_STRINGS.prModule.cancelPR}
           </button>
 
           <div className="flex items-center space-x-3">
@@ -1665,7 +1666,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                 className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1"
               >
                 <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
+                <span>{UI_STRINGS.prModule.prevStep}</span>
               </button>
             )}
 
@@ -1674,7 +1675,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                 onClick={() => setCurrentStep(currentStep + 1)} 
                 className="bg-sky-600 hover:bg-sky-700 text-white font-black text-xs px-6 py-2 rounded-xl shadow-md flex items-center space-x-1.5"
               >
-                <span>Next</span>
+                <span>{UI_STRINGS.prModule.nextStep}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
@@ -1683,7 +1684,7 @@ export const PRModule: React.FC<PRModuleProps> = ({ onSelectPRForBOQ, onNavigate
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-6 py-2 rounded-xl shadow-md flex items-center space-x-2"
               >
                 <Send className="w-4 h-4" />
-                <span>Submit PR with BOQ to Project Head (Role 2) →</span>
+                <span>{UI_STRINGS.prModule.submitToProjectHead} (Role 2) →</span>
               </button>
             )}
           </div>

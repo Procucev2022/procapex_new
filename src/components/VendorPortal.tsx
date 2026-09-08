@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { VendorQuoteItem } from '@/types';
-import { INITIAL_VENDOR_QUOTE_ITEMS } from '@/constants';
+import { INITIAL_VENDOR_QUOTE_ITEMS, UI_STRINGS } from '@/constants';
 
 export const VendorPortal: React.FC = () => {
   const [activeVendor, setActiveVendor] = useState<'VND-001' | 'VND-002' | 'VND-005'>('VND-001');
@@ -148,7 +148,7 @@ export const VendorPortal: React.FC = () => {
             <div className="flex items-center space-x-2">
               <span className="bg-purple-500/30 text-purple-300 border border-purple-400/40 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full flex items-center space-x-1">
                 <Store className="w-3 h-3" />
-                <span>Role 7: Vendor Portal & Supplier Workbench</span>
+                <span>{UI_STRINGS.vendorPortal.roleBadge}</span>
               </span>
               <span className="text-xs text-slate-300 font-mono">
                 Active RFQ: <strong className="text-sky-300">{activePR}</strong>
@@ -168,7 +168,7 @@ export const VendorPortal: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center bg-purple-900/60 rounded-xl px-3 py-1.5 border border-purple-500/40 shadow-inner">
               <User className="w-3.5 h-3.5 text-purple-300 mr-2 shrink-0" />
-              <span className="text-[11px] text-slate-300 mr-1.5 font-medium">Vendor:</span>
+              <span className="text-[11px] text-slate-300 mr-1.5 font-medium">{UI_STRINGS.vendorPortal.vendorLabel}</span>
               <select
                 value={activeVendor}
                 onChange={(e) => setActiveVendor(e.target.value as any)}
@@ -182,7 +182,7 @@ export const VendorPortal: React.FC = () => {
 
             <div className="flex items-center bg-slate-900/80 rounded-xl px-3 py-1.5 border border-slate-700 shadow-inner">
               <FileText className="w-3.5 h-3.5 text-sky-400 mr-2 shrink-0" />
-              <span className="text-[11px] text-slate-300 mr-1.5 font-medium">RFQ:</span>
+              <span className="text-[11px] text-slate-300 mr-1.5 font-medium">{UI_STRINGS.vendorPortal.rfqLabel}</span>
               <select
                 value={activePR}
                 onChange={(e) => setActivePR(e.target.value as any)}
@@ -215,19 +215,19 @@ export const VendorPortal: React.FC = () => {
             <div>
               <span className="text-[10px] text-purple-300 uppercase font-bold block">RFQ Participation:</span>
               <strong className="text-emerald-300 text-xs font-sans">
-                {rfqAccepted ? '✓ RFQ Accepted & Confirmed' : 'Action: Pending Acceptance'}
+                {rfqAccepted ? UI_STRINGS.vendorPortal.rfqAccepted : UI_STRINGS.vendorPortal.pendingAcceptance}
               </strong>
             </div>
             {rfqAccepted ? (
               <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
-                Active Bidder
+                {UI_STRINGS.vendorPortal.activeBidder}
               </span>
             ) : (
               <button
                 onClick={() => setRfqAccepted(true)}
                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold shadow-xs"
               >
-                Accept RFQ
+                {UI_STRINGS.vendorPortal.acceptRfq}
               </button>
             )}
           </div>
@@ -245,7 +245,7 @@ export const VendorPortal: React.FC = () => {
               className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[10px] font-bold shadow-xs flex items-center space-x-1"
             >
               <Award className="w-3 h-3" />
-              <span>{ppoAccepted ? 'View PO' : 'Review Offer →'}</span>
+              <span>{ppoAccepted ? UI_STRINGS.vendorPortal.viewPO : UI_STRINGS.vendorPortal.reviewOffer}</span>
             </button>
           </div>
         </div>
@@ -261,7 +261,7 @@ export const VendorPortal: React.FC = () => {
             }`}
           >
             <FileEdit className="w-4 h-4" />
-            <span>1. 1st Round Quote (Pricing & Terms)</span>
+            <span>{UI_STRINGS.vendorPortal.tabQuote1}</span>
           </button>
           <button
             onClick={() => setActiveTab('quote2')}
@@ -270,7 +270,7 @@ export const VendorPortal: React.FC = () => {
             }`}
           >
             <Split className="w-4 h-4" />
-            <span>2. 2nd Quote / BAFO (with 1st Quote Comparison & Terms)</span>
+            <span>{UI_STRINGS.vendorPortal.tabQuote2}</span>
           </button>
           <button
             onClick={() => setActiveTab('final')}
@@ -279,7 +279,7 @@ export const VendorPortal: React.FC = () => {
             }`}
           >
             <History className="w-4 h-4" />
-            <span>3. Final Quote & Multi-Round Summary</span>
+            <span>{UI_STRINGS.vendorPortal.tabFinal}</span>
           </button>
           <button
             onClick={() => setActiveTab('ppo')}
@@ -288,7 +288,7 @@ export const VendorPortal: React.FC = () => {
             }`}
           >
             <Award className="w-4 h-4" />
-            <span>4. PPO Award Review & Acceptance Console</span>
+            <span>{UI_STRINGS.vendorPortal.tabPPO}</span>
           </button>
         </div>
 
@@ -543,7 +543,7 @@ export const VendorPortal: React.FC = () => {
                 className="bg-purple-500 hover:bg-purple-400 text-slate-950 font-black text-xs px-8 py-3.5 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0"
               >
                 <Send className="w-4 h-4" />
-                <span>{quote1Submitted ? '1st Round Quotation Submitted ✓' : 'Submit 1st Round Formal Quotation (Pricing + Terms) →'}</span>
+                <span>{quote1Submitted ? UI_STRINGS.vendorPortal.quote1Submitted : UI_STRINGS.vendorPortal.submitQuote1}</span>
               </button>
             </div>
           </div>
@@ -879,7 +879,7 @@ export const VendorPortal: React.FC = () => {
                 className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-8 py-3.5 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0"
               >
                 <Send className="w-4 h-4" />
-                <span>{quote2Submitted ? 'Revised 2nd Quote Submitted ✓' : 'Submit Revised 2nd Quote (BAFO) & Commercial Terms →'}</span>
+                <span>{quote2Submitted ? UI_STRINGS.vendorPortal.quote2Submitted : UI_STRINGS.vendorPortal.submitQuote2}</span>
               </button>
             </div>
           </div>
@@ -893,7 +893,7 @@ export const VendorPortal: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <div className="flex items-center justify-between border-b pb-3">
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Multi-Round Quotation History & Final Settlement Record</h3>
+                  <h3 className="text-sm font-black text-slate-900">{UI_STRINGS.vendorPortal.historyTitle}</h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Audit log of 1st Quote, Buyer Counter Target, 2nd Quote (BAFO), and Final Agreed Commercial Package.
                   </p>
@@ -1074,7 +1074,7 @@ export const VendorPortal: React.FC = () => {
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-emerald-950">Order Acknowledged & Binding Contract Activated ✓</h4>
+                      <h4 className="text-sm font-black text-emerald-950">{UI_STRINGS.vendorPortal.orderAcknowledged}</h4>
                       <p className="text-xs text-emerald-800 mt-0.5">
                         Electronically accepted by <strong>Authorized Signatory</strong> on <strong>06-Sep-2026 16:00 IST</strong>.
                       </p>
@@ -1095,7 +1095,7 @@ export const VendorPortal: React.FC = () => {
                     className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center space-x-2"
                   >
                     <Download className="w-4 h-4 text-sky-400" />
-                    <span>Download Signed PO PDF</span>
+                    <span>{UI_STRINGS.vendorPortal.downloadPO}</span>
                   </button>
 
                   {!ppoAccepted ? (
@@ -1107,7 +1107,7 @@ export const VendorPortal: React.FC = () => {
                       className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs shadow-md flex items-center space-x-2 transition-all"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Accept Purchase Price Offer (PPO) & Confirm Order →</span>
+                      <span>{UI_STRINGS.vendorPortal.acceptPPO}</span>
                     </button>
                   ) : (
                     <span className="text-xs font-mono font-bold text-emerald-800 bg-white px-3 py-1.5 rounded-lg border border-emerald-300">

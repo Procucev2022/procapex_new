@@ -11,7 +11,7 @@ import {
   PRData,
   CategoryManagerHubProps,
 } from '@/types';
-import { INITIAL_PRS_DATA, MASTER_VENDORS } from '@/constants';
+import { INITIAL_PRS_DATA, MASTER_VENDORS, UI_STRINGS } from '@/constants';
 
 function getVendorCommercialTerms(vendorId: string, prId?: string) {
   const TERMS_MAP: Record<string, {
@@ -391,15 +391,15 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
           <div>
             <div className="flex items-center space-x-2">
               <span className="bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
-                Role 3: Category Manager (Buyer Command Center)
+                {UI_STRINGS.categoryManagerHub.roleBadge}
               </span>
               <span className="text-xs text-slate-300 font-mono">
                 Active Requisition: {currentPR.id} ({currentPR.category})
               </span>
             </div>
-            <h1 className="text-2xl font-black mt-1">Strategic Sourcing, RFQ, Rate Card & AI Cost Studio</h1>
+            <h1 className="text-2xl font-black mt-1">{UI_STRINGS.categoryManagerHub.title}</h1>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Complete buyer workbench for <strong>Vendor Finalization</strong>: PR Summary, RFQ Float & Supplier Alteration, Master Rate Card Governance, 4-Way Automated CBA Matrix, Multi-Round Negotiation (Counter-Offer & 2nd Quote), and PPO Generation with Audited Exception Governance.
+              {UI_STRINGS.categoryManagerHub.subtitle}
             </p>
           </div>
 
@@ -409,14 +409,14 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center space-x-1.5 transition-all"
             >
               <Send className="w-4 h-4" />
-              <span>Raise / Manage RFQ</span>
+              <span>{UI_STRINGS.categoryManagerHub.raiseRFQ}</span>
             </button>
             <button 
               onClick={() => setActiveTab('commercial')}
               className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center space-x-1.5 transition-all"
             >
               <Scale className="w-4 h-4" />
-              <span>4-Way Matrix (CBA)</span>
+              <span>{UI_STRINGS.categoryManagerHub.cbaMatrix}</span>
             </button>
           </div>
         </div>
@@ -529,7 +529,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             }`}
           >
             <Send className="w-4 h-4" />
-            <span>1. RFQ & Vendor Tender Management</span>
+            <span>{UI_STRINGS.categoryManagerHub.tabRFQ}</span>
           </button>
           <button
             onClick={() => setActiveTab('ratecard')}
@@ -538,7 +538,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             }`}
           >
             <CreditCard className="w-4 h-4" />
-            <span>2. Master Rate Card Studio</span>
+            <span>{UI_STRINGS.categoryManagerHub.tabRateCard}</span>
           </button>
           <button
             onClick={() => setActiveTab('commercial')}
@@ -547,7 +547,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             }`}
           >
             <Scale className="w-4 h-4" />
-            <span>3. 4-Way Commercial Matrix & CBA</span>
+            <span>{UI_STRINGS.categoryManagerHub.tabCommercial}</span>
           </button>
           <button
             onClick={() => setActiveTab('aicost')}
@@ -556,7 +556,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             }`}
           >
             <Sparkles className="w-4 h-4 text-purple-600" />
-            <span>4. AI Cost Benchmarking & MLEO</span>
+            <span>{UI_STRINGS.categoryManagerHub.tabAICost}</span>
           </button>
           <button
             onClick={() => setActiveTab('negotiation')}
@@ -565,7 +565,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             }`}
           >
             <MessageSquareDiff className="w-4 h-4" />
-            <span>5. Vendor Negotiation Hub</span>
+            <span>{UI_STRINGS.categoryManagerHub.tabNegotiation}</span>
           </button>
           <button
             onClick={() => setActiveTab('ppogen')}
@@ -574,7 +574,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             }`}
           >
             <FileCheck2 className="w-4 h-4 text-emerald-600" />
-            <span>6. PPO Proposal & Routing</span>
+            <span>{UI_STRINGS.categoryManagerHub.tabPPO}</span>
           </button>
         </div>
 
@@ -2019,10 +2019,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
 
                 <div className="flex items-center justify-between pt-2">
                   <button onClick={() => setActiveTab('commercial')} className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-xs text-slate-700 hover:bg-slate-50">
-                    ← Back to Commercial Matrix
+                    {UI_STRINGS.categoryManagerHub.backToCommercial}
                   </button>
                   <button onClick={onRouteToPPO} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5">
-                    <span>Route PPO to Tier 1 Approval Workflow →</span>
+                    <span>{UI_STRINGS.categoryManagerHub.routePPOToWorkflow}</span>
                   </button>
                 </div>
               </div>

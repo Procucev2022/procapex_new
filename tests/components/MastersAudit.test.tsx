@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MastersAudit } from '@/components/MastersAudit';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -32,7 +33,7 @@ describe('MastersAudit Component', () => {
   it('renders standard master rate cards table', () => {
     render(<MastersAudit />);
 
-    expect(screen.getByText('Standard Master Rate Cards (FR-01)')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.mastersAudit.tableBenchmark)).toBeInTheDocument();
     expect(screen.getByText('CON-RMC-M30')).toBeInTheDocument();
     expect(screen.getByText('STL-TMT-25MM')).toBeInTheDocument();
     expect(screen.getByText('MEP-CHL-200TR')).toBeInTheDocument();
@@ -42,7 +43,7 @@ describe('MastersAudit Component', () => {
   it('renders immutable audit logs trail with user tags', () => {
     render(<MastersAudit />);
 
-    expect(screen.getByText('Immutable Audit Trail (Section 10)')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.mastersAudit.auditTrailTitle)).toBeInTheDocument();
     expect(screen.getByText('PR Created')).toBeInTheDocument();
     expect(screen.getByText('Created PR-2026-0005 for Terminal 1')).toBeInTheDocument();
     expect(screen.getByText('User: Rahul Verma (Category Mgr)')).toBeInTheDocument();

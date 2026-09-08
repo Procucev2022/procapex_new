@@ -6,6 +6,7 @@ import { useProcurement } from '../context/ProcurementContext';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { PPOModuleProps } from '@/types';
+import { UI_STRINGS, formatString } from '@/constants';
 
 export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
   const { 
@@ -100,10 +101,10 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
   };
 
   const getOverallBadge = () => {
-    if (poReleased) return { text: 'PO RELEASED', bg: 'bg-emerald-100 text-emerald-900' };
-    if (tier2Approved) return { text: 'TIER 3 IN PROGRESS', bg: 'bg-purple-100 text-purple-900' };
-    if (tier1Approved) return { text: 'TIER 2 IN PROGRESS', bg: 'bg-amber-100 text-amber-900' };
-    return { text: 'TIER 1 IN PROGRESS', bg: 'bg-amber-100 text-amber-900' };
+    if (poReleased) return { text: UI_STRINGS.ppoModule.badgePoReleased, bg: 'bg-emerald-100 text-emerald-900' };
+    if (tier2Approved) return { text: UI_STRINGS.ppoModule.badgeTier3InProgress, bg: 'bg-purple-100 text-purple-900' };
+    if (tier1Approved) return { text: UI_STRINGS.ppoModule.badgeTier2InProgress, bg: 'bg-amber-100 text-amber-900' };
+    return { text: UI_STRINGS.ppoModule.badgeTier1InProgress, bg: 'bg-amber-100 text-amber-900' };
   };
 
   const badge = getOverallBadge();
@@ -114,9 +115,9 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       <div className="bg-gradient-to-r from-emerald-950 via-brand-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-emerald-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black">Multi-Tier PPO Approval & Purchase Order Release</h1>
+            <h1 className="text-2xl font-black">{UI_STRINGS.ppoModule.title}</h1>
             <p className="text-xs text-slate-300 mt-1">
-              Tier 1: Category Manager 2 → Tier 2: Project Head → Tier 3: Finance Head & PO Release.
+              {UI_STRINGS.ppoModule.subtitle}
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -126,7 +127,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                 subTab === 'WORKFLOW' ? 'bg-emerald-500 text-brand-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
               }`}
             >
-              3-Tier Approval Workflow
+              {UI_STRINGS.ppoModule.tabWorkflow}
             </button>
             <button
               onClick={() => setSubTab('PPO')}
@@ -134,7 +135,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                 subTab === 'PPO' ? 'bg-emerald-500 text-brand-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
               }`}
             >
-              All PPOs ({ppos.length})
+              {formatString(UI_STRINGS.ppoModule.tabAllPPOsTemplate, { count: ppos.length })}
             </button>
             <button
               onClick={() => setSubTab('PO')}
@@ -142,7 +143,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                 subTab === 'PO' ? 'bg-emerald-500 text-brand-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
               }`}
             >
-              Issued POs ({pos.length})
+              {formatString(UI_STRINGS.ppoModule.tabIssuedPOsTemplate, { count: pos.length })}
             </button>
           </div>
         </div>
@@ -166,23 +167,23 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             {/* TIER 1 */}
             <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${tier1Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-amber-300 bg-white'}`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">Tier 1: Category Manager 2</span>
+                <span className="font-bold text-slate-900">{UI_STRINGS.ppoModule.tier1Title}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${tier1Approved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                  {tier1Approved ? 'APPROVED ✓' : 'PENDING'}
+                  {tier1Approved ? UI_STRINGS.ppoModule.badgeApproved : UI_STRINGS.ppoModule.badgePending}
                 </span>
               </div>
-              <p className="text-slate-500 text-[11px]">Commercial savings validation & strategic sourcing compliance.</p>
+              <p className="text-slate-500 text-[11px]">{UI_STRINGS.ppoModule.tier1Desc}</p>
               {!tier1Approved ? (
                 <button
                   onClick={approveTier1}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg shadow-sm transition-all"
                 >
-                  ✓ Sign-off Tier 1 (Cat Mgr 2)
+                  {UI_STRINGS.ppoModule.tier1SignOff}
                 </button>
               ) : (
                 <div className="text-[11px] font-bold text-emerald-700 flex items-center pt-1">
                   <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                  <span>Signed by Rajesh Singhania</span>
+                  <span>{formatString(UI_STRINGS.ppoModule.tier1SignedTemplate, { name: activeTenant.team['CATEGORY_MANAGER_2']?.name || 'Rajesh Singhania' })}</span>
                 </div>
               )}
             </div>
@@ -190,12 +191,12 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             {/* TIER 2 */}
             <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${!tier1Approved ? 'opacity-60 border-slate-200 bg-slate-50' : tier2Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-amber-300 bg-white'}`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">Tier 2: Project Head</span>
+                <span className="font-bold text-slate-900">{UI_STRINGS.ppoModule.tier2Title}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${!tier1Approved ? 'bg-slate-200 text-slate-600' : tier2Approved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                  {!tier1Approved ? 'AWAITING TIER 1' : tier2Approved ? 'APPROVED ✓' : 'PENDING SIGN-OFF'}
+                  {!tier1Approved ? UI_STRINGS.ppoModule.badgeAwaitingTier1 : tier2Approved ? UI_STRINGS.ppoModule.badgeApproved : UI_STRINGS.ppoModule.badgePendingSignOff}
                 </span>
               </div>
-              <p className="text-slate-500 text-[11px]">Site budget clearance & milestone sign-off.</p>
+              <p className="text-slate-500 text-[11px]">{UI_STRINGS.ppoModule.tier2Desc}</p>
               {!tier2Approved ? (
                 <button
                   onClick={approveTier2}
@@ -206,12 +207,12 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  ✓ Sign-off Tier 2 (Project Head)
+                  {UI_STRINGS.ppoModule.tier2SignOff}
                 </button>
               ) : (
                 <div className="text-[11px] font-bold text-emerald-700 flex items-center pt-1">
                   <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                  <span>Signed by Anil Kulkarni</span>
+                  <span>{formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, { name: activeTenant.team['PROJECT_HEAD_PR']?.name || 'Anil Kulkarni' })}</span>
                 </div>
               )}
             </div>
@@ -219,12 +220,12 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             {/* TIER 3 */}
             <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${!tier2Approved ? 'opacity-60 border-slate-200 bg-slate-50' : tier3Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-purple-300 bg-white'}`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">Tier 3: Finance Head</span>
+                <span className="font-bold text-slate-900">{UI_STRINGS.ppoModule.tier3Title}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${!tier2Approved ? 'bg-slate-200 text-slate-600' : tier3Approved ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}`}>
-                  {!tier2Approved ? 'AWAITING TIER 2' : tier3Approved ? 'APPROVED & ISSUED ✓' : 'PENDING FINAL AUDIT'}
+                  {!tier2Approved ? UI_STRINGS.ppoModule.badgeAwaitingTier2 : tier3Approved ? UI_STRINGS.ppoModule.badgeApprovedIssued : UI_STRINGS.ppoModule.badgePendingFinalAudit}
                 </span>
               </div>
-              <p className="text-slate-500 text-[11px]">Commercial audit & Release Purchase Order.</p>
+              <p className="text-slate-500 text-[11px]">{UI_STRINGS.ppoModule.tier3Desc}</p>
               {!tier3Approved ? (
                 <button
                   onClick={approveTier3AndReleasePO}
@@ -235,12 +236,12 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  ✓ Release Purchase Order (PO)
+                  {UI_STRINGS.ppoModule.tier3SignOff}
                 </button>
               ) : (
                 <div className="text-[11px] font-bold text-emerald-700 flex items-center pt-1">
                   <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                  <span>Signed by Sunil Deshmukh</span>
+                  <span>{formatString(UI_STRINGS.ppoModule.tier3SignedTemplate, { name: activeTenant.team['FINANCE_HEAD']?.name || 'Sunil Deshmukh' })}</span>
                 </div>
               )}
             </div>
@@ -252,10 +253,10 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <span className="font-black text-emerald-950 text-sm block">
-                    🎉 Purchase Order PO-2026-0089 Officially Issued!
+                    {formatString(UI_STRINGS.ppoModule.poReleasedBannerTitleTemplate, { poNumber: 'PO-2026-0089' })}
                   </span>
                   <p className="text-xs text-emerald-800">
-                    All 3 approval tiers passed. Signed contract document ready for download.
+                    {UI_STRINGS.ppoModule.poReleasedBannerDesc}
                   </p>
                 </div>
                 <button
@@ -263,7 +264,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                   className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-md flex items-center space-x-1.5 shrink-0"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Official PO-2026-0089 PDF</span>
+                  <span>{formatString(UI_STRINGS.ppoModule.downloadOfficialPdfTemplate, { poNumber: 'PO-2026-0089' })}</span>
                 </button>
               </div>
             </div>
@@ -275,14 +276,14 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       {subTab === 'PPO' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Purchase Price Offers (PPOs)</h3>
+            <h3 className="text-sm font-bold text-slate-900">{UI_STRINGS.ppoModule.allPPOsTitle}</h3>
             {onOpenCreatePPO && (
               <button
                 onClick={onOpenCreatePPO}
                 className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg flex items-center space-x-1"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Create PPO</span>
+                <span>{UI_STRINGS.ppoModule.createPPO}</span>
               </button>
             )}
           </div>
@@ -319,9 +320,9 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                       {ppo.status.includes('PENDING') && (
                         <button
                           onClick={() => approvePPO(ppo.id)}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold"
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-text-xs font-bold"
                         >
-                          Approve PPO
+                          {UI_STRINGS.ppoModule.approvePPOButton}
                         </button>
                       )}
                     </td>
@@ -336,7 +337,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       {/* PO LIST */}
       {subTab === 'PO' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <h3 className="text-sm font-bold text-slate-900">Released Purchase Orders / Work Orders</h3>
+          <h3 className="text-sm font-bold text-slate-900">{UI_STRINGS.ppoModule.issuedPOsTitle}</h3>
           <div className="overflow-x-auto border rounded-xl">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-100 font-bold border-b text-slate-800">
@@ -365,7 +366,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                         className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center space-x-1 ml-auto"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>Download PDF PO</span>
+                        <span>{UI_STRINGS.ppoModule.downloadPdfButton}</span>
                       </button>
                     </td>
                   </tr>

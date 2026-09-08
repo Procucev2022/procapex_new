@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NegotiationHub } from '@/components/NegotiationHub';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -42,8 +43,8 @@ describe('NegotiationHub Component', () => {
   it('renders negotiation hub with active rounds timeline', () => {
     render(<NegotiationHub />);
 
-    expect(screen.getByText('Vendor Negotiation Hub (2-Round BAFO)')).toBeInTheDocument();
-    expect(screen.getByText('Immutable Negotiation Audit Log & Multi-Round Timeline')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.negotiationHub.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.negotiationHub.timelineTitle)).toBeInTheDocument();
     expect(screen.getByText('Initial quote')).toBeInTheDocument();
     expect(screen.getByText('Counter offer')).toBeInTheDocument();
   });

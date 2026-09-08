@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PRApprovalQueue } from '@/components/PRApprovalQueue';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -46,18 +47,18 @@ describe('PRApprovalQueue Component', () => {
   it('renders pending PR approvals queue with correct count and status badges', () => {
     render(<PRApprovalQueue onRouteToCategoryManager={mockOnRouteToCategoryManager} />);
 
-    expect(screen.getByText('Purchase Request Review & Authorization Inbox')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.prApprovalQueue.title)).toBeInTheDocument();
     expect(screen.getByText('1 Requisition Awaiting Authorization')).toBeInTheDocument();
     expect(screen.getByText('Structural Steel Package')).toBeInTheDocument();
-    expect(screen.getByText('PENDING REVIEW')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.prApprovalQueue.pendingBadge)).toBeInTheDocument();
     expect(screen.getByText('APPROVED_BY_PROJECT_HEAD')).toBeInTheDocument();
-    expect(screen.getByText('Authorized & Routed')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.prApprovalQueue.approvedBadge)).toBeInTheDocument();
   });
 
   it('approves a pending PR and routes to category manager when callback is provided', () => {
     render(<PRApprovalQueue onRouteToCategoryManager={mockOnRouteToCategoryManager} />);
 
-    const approveBtn = screen.getByRole('button', { name: /Approve PR & Route to Category Manager/i });
+    const approveBtn = screen.getByRole('button', { name: UI_STRINGS.prApprovalQueue.approveButton });
     fireEvent.click(approveBtn);
 
     expect(mockApprovePRByProjectHead).toHaveBeenCalledWith('PR-2026-0001');
@@ -68,7 +69,7 @@ describe('PRApprovalQueue Component', () => {
   it('approves a pending PR gracefully when onRouteToCategoryManager is omitted', () => {
     render(<PRApprovalQueue />);
 
-    const approveBtn = screen.getByRole('button', { name: /Approve PR & Route to Category Manager/i });
+    const approveBtn = screen.getByRole('button', { name: UI_STRINGS.prApprovalQueue.approveButton });
     fireEvent.click(approveBtn);
 
     expect(mockApprovePRByProjectHead).toHaveBeenCalledWith('PR-2026-0001');

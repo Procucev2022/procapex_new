@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Handshake, History, Send, RefreshCw, CheckCircle2, Sparkles } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { logger } from '@/lib/logger';
+import { UI_STRINGS } from '@/constants';
 
 export const NegotiationHub: React.FC = () => {
   const { negotiations, addNegotiationRound } = useProcurement();
@@ -43,8 +44,8 @@ export const NegotiationHub: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Vendor Negotiation Hub (2-Round BAFO)</h2>
-          <p className="text-xs text-slate-500">Track multi-round counter-offers, revised 2nd quotes, target prices, and negotiation audit history.</p>
+          <h2 className="text-xl font-bold text-slate-900">{UI_STRINGS.negotiationHub.title}</h2>
+          <p className="text-xs text-slate-500">{UI_STRINGS.negotiationHub.subtitle}</p>
         </div>
         <div className="flex items-center space-x-3">
           <span className="text-xs font-semibold text-slate-600">Active Negotiation:</span>
@@ -191,7 +192,7 @@ export const NegotiationHub: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h3 className="text-sm font-bold text-slate-900 flex items-center">
               <History className="w-4 h-4 text-purple-600 mr-2" />
-              Immutable Negotiation Audit Log & Multi-Round Timeline
+              {UI_STRINGS.negotiationHub.timelineTitle}
             </h3>
             <span className="text-xs text-emerald-600 font-bold">Total Negotiated Savings: ₹ 13,760 (8.5%)</span>
           </div>

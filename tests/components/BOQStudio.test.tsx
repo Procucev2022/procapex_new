@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BOQStudio } from '@/components/BOQStudio';
+import { UI_STRINGS } from '@/constants';
 
 describe('BOQStudio Component', () => {
   const mockOnNavigateToCommercial = jest.fn();
@@ -17,7 +18,7 @@ describe('BOQStudio Component', () => {
       />
     );
 
-    expect(screen.getByText('BOQ Extraction by Drawing Name')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.boqStudio.title)).toBeInTheDocument();
     expect(screen.getByText('COUNTER ELEVATION D ONLY')).toBeInTheDocument();
     expect(screen.getByText('CNT-TOP-GRN20')).toBeInTheDocument();
     expect(screen.getByText('CNT-PLY-BWP18')).toBeInTheDocument();
@@ -31,11 +32,11 @@ describe('BOQStudio Component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText('e.g. Counter Elevation D');
+    const input = screen.getByPlaceholderText(UI_STRINGS.boqStudio.drawingNamePlaceholder);
 
     // Test 'raft' keyword
     fireEvent.change(input, { target: { value: 'Raft Slabs' } });
-    const extractBtn = screen.getByRole('button', { name: /Extract for this Drawing Name/i });
+    const extractBtn = screen.getByRole('button', { name: UI_STRINGS.boqStudio.extractButton });
     fireEvent.click(extractBtn);
     expect(screen.getByText('FOUNDATION RAFT ONLY')).toBeInTheDocument();
 
@@ -96,13 +97,13 @@ describe('BOQStudio Component', () => {
       />
     );
 
-    const specsButtons = screen.getAllByRole('button', { name: /Specs/i });
+    const specsButtons = screen.getAllByRole('button', { name: UI_STRINGS.boqStudio.specsButton });
     fireEvent.click(specsButtons[0]);
 
     expect(screen.getByText(/Technical Specifications/i)).toBeInTheDocument();
 
     // Close via close button
-    const closeBtn = screen.getByRole('button', { name: 'Close' });
+    const closeBtn = screen.getByRole('button', { name: UI_STRINGS.boqStudio.close });
     fireEvent.click(closeBtn);
     expect(screen.queryByText(/Technical Specifications/i)).not.toBeInTheDocument();
 
@@ -115,10 +116,10 @@ describe('BOQStudio Component', () => {
     // Switch to Foundation Raft and open specs on unpriced item (FND-FRM-PLY12)
     const raftPreset = screen.getByRole('button', { name: 'Foundation Raft Reinforcement' });
     fireEvent.click(raftPreset);
-    const raftSpecsButtons = screen.getAllByRole('button', { name: /Specs/i });
+    const raftSpecsButtons = screen.getAllByRole('button', { name: UI_STRINGS.boqStudio.specsButton });
     fireEvent.click(raftSpecsButtons[raftSpecsButtons.length - 1]);
     expect(screen.getByText(/Technical Specifications/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.boqStudio.close }));
   });
 
   it('triggers commercial check navigation', () => {
@@ -129,7 +130,7 @@ describe('BOQStudio Component', () => {
       />
     );
 
-    const navBtn = screen.getByRole('button', { name: /Validate & Start Commercial Check/i });
+    const navBtn = screen.getByRole('button', { name: UI_STRINGS.boqStudio.commercialCheckButton });
     fireEvent.click(navBtn);
     expect(mockOnNavigateToCommercial).toHaveBeenCalled();
   });

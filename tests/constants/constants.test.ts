@@ -63,6 +63,7 @@ import * as graphqlModule from '@/constants/graphql';
 import * as cryptoModule from '@/constants/crypto';
 import * as diagnosticsModule from '@/constants/diagnostics';
 import * as validationModule from '@/constants/validation';
+import * as stringsModule from '@/constants/strings';
 import * as indexModule from '@/constants/index';
 
 describe('Constants Architecture & Integrity Test Suite', () => {
@@ -344,6 +345,41 @@ describe('Constants Architecture & Integrity Test Suite', () => {
     });
   });
 
+  describe('UI Strings & i18n Constants', () => {
+    it('should export centralized UI_STRINGS dictionary with all required namespaces', () => {
+      expect(stringsModule.UI_STRINGS).toBeDefined();
+      expect(stringsModule.UI_STRINGS.common.appName).toBe('ProCPX');
+      expect(stringsModule.UI_STRINGS.header.clientLabel).toBe('Client:');
+      expect(stringsModule.UI_STRINGS.dashboard.defaultTitle).toBe('Procurement & AI Cost Intelligence Hub');
+      expect(stringsModule.UI_STRINGS.tenantOverview.title).toBe('Multi-Tenancy Architecture & Corporate Roster');
+      expect(stringsModule.UI_STRINGS.prApprovalQueue.title).toBe('Purchase Request Review & Authorization Inbox');
+      expect(stringsModule.UI_STRINGS.mastersAudit.title).toBe('Cost Centre Masters & Immutable Audit Trail');
+      expect(stringsModule.UI_STRINGS.commercialEval.title).toBe('Commercial Price Check & 4-Way Comparison');
+      expect(stringsModule.UI_STRINGS.negotiationHub.title).toBe('Vendor Negotiation Hub (2-Round BAFO)');
+      expect(stringsModule.UI_STRINGS.aiCostStudio.title).toBe('Bottom-Up MLEO Cost Analysis');
+      expect(stringsModule.UI_STRINGS.boqStudio.title).toBe('BOQ Extraction by Drawing Name');
+      expect(stringsModule.UI_STRINGS.ppoModule.title).toBe('Multi-Tier PPO Approval & Purchase Order Release');
+      expect(stringsModule.UI_STRINGS.vendorPortal.title).toBe('Vendor Partner Quotation & Bidding Portal');
+      expect(stringsModule.UI_STRINGS.prModule.title).toBe('Purchase Requisition Management');
+      expect(stringsModule.UI_STRINGS.categoryManagerHub.title).toBe('Category Manager Procurement Hub');
+      expect(stringsModule.UI_STRINGS.modals.newPRTitle).toBe('Raise New Purchase Requisition (PR)');
+    });
+
+    it('should format template strings with provided values using formatString', () => {
+      const template = 'Negotiation Round {round} for {item}';
+      const formatted = stringsModule.formatString(template, { round: 3, item: 'Steel' });
+      expect(formatted).toBe('Negotiation Round 3 for Steel');
+
+      // Unmatched tokens remain intact
+      const partial = stringsModule.formatString('Hello {name}, your score is {score}', { name: 'Alice' });
+      expect(partial).toBe('Hello Alice, your score is {score}');
+
+      // Handles empty values or missing template gracefully
+      expect(stringsModule.formatString('', { foo: 'bar' })).toBe('');
+      expect(stringsModule.formatString('Plain text')).toBe('Plain text');
+    });
+  });
+
   describe('Index Barrel Export', () => {
     it('should re-export all constants correctly from index', () => {
       expect(indexModule.TENANTS).toBe(tenantsModule.TENANTS);
@@ -362,6 +398,8 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(indexModule.RESOLUTION_STRATEGIES).toBe(diagnosticsModule.RESOLUTION_STRATEGIES);
       expect(indexModule.API_COST_ANALYSIS_SCHEMA).toBe(validationModule.API_COST_ANALYSIS_SCHEMA);
       expect(indexModule.PURCHASE_REQUEST_FORM_SCHEMA).toBe(validationModule.PURCHASE_REQUEST_FORM_SCHEMA);
+      expect(indexModule.UI_STRINGS).toBe(stringsModule.UI_STRINGS);
+      expect(indexModule.formatString).toBe(stringsModule.formatString);
     });
   });
 });

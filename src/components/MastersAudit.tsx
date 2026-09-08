@@ -3,7 +3,7 @@
 import React from 'react';
 import { Database, ShieldCheck } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
-import { STANDARD_MASTER_RATE_CARDS } from '@/constants';
+import { STANDARD_MASTER_RATE_CARDS, UI_STRINGS } from '@/constants';
 
 export const MastersAudit: React.FC = () => {
   const { auditLogs } = useProcurement();
@@ -13,8 +13,8 @@ export const MastersAudit: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Cost Centre Masters & Immutable Audit Trail</h2>
-        <p className="text-xs text-slate-500">Configure master data (Cost centres, categories, standard rate cards) and review tamper-proof event logs.</p>
+        <h2 className="text-xl font-bold text-slate-900">{UI_STRINGS.mastersAudit.title}</h2>
+        <p className="text-xs text-slate-500">{UI_STRINGS.mastersAudit.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -23,19 +23,19 @@ export const MastersAudit: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h3 className="text-sm font-bold text-slate-800 flex items-center">
               <Database className="w-4 h-4 text-sky-600 mr-2" />
-              Standard Master Rate Cards (FR-01)
+              {UI_STRINGS.mastersAudit.tableBenchmark}
             </h3>
-            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold">Active FY 2026-27</span>
+            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold">{UI_STRINGS.mastersAudit.tableStatus}</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 text-slate-800 font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="p-2.5">Item Code</th>
-                  <th className="p-2.5">Category</th>
-                  <th className="p-2.5">Standard Rate</th>
-                  <th className="p-2.5">UOM</th>
+                  <th className="p-2.5">{UI_STRINGS.mastersAudit.tableItem}</th>
+                  <th className="p-2.5">{UI_STRINGS.mastersAudit.tableCategory}</th>
+                  <th className="p-2.5">{UI_STRINGS.mastersAudit.tableRateCard}</th>
+                  <th className="p-2.5">{UI_STRINGS.mastersAudit.tableUOM}</th>
                   <th className="p-2.5">Region</th>
                 </tr>
               </thead>
@@ -59,7 +59,7 @@ export const MastersAudit: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h3 className="text-sm font-bold text-slate-800 flex items-center">
               <ShieldCheck className="w-4 h-4 text-emerald-600 mr-2" />
-              Immutable Audit Trail (Section 10)
+              {UI_STRINGS.mastersAudit.auditTrailTitle}
             </h3>
             <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Tamper-Proof</span>
           </div>

@@ -57,6 +57,14 @@
 - Use the centralized validation engine (`src/lib/validator.ts`): `validateSchema()`, `validateQueryParams()`, `validateHeaders()`.
 - Return HTTP 400 on validation failure in API routes; log warnings and reject invalid mutations in state/services.
 
+### 🌐 Internationalization (i18n) & UI Strings Architecture Standards (See: `.agents/rules/i18n-standards.md`)
+- Strictly enforce i18n readiness across the application: zero hardcoded user-facing strings, labels, or literals embedded directly in JSX/TSX or application code.
+- All user-facing text, titles, descriptions, button labels, input placeholders, table headers, empty state notices, ARIA labels, and dialog copy must be declared in dedicated constants modules under `src/constants/strings.ts` and referenced via the centralized `UI_STRINGS` dictionary.
+- Use template placeholders (e.g. `'{round}'`, `'{name}'`, `'{count}'`, `'{tenantName}'`) with the centralized `formatString(template, values)` helper for dynamic runtime substitution (never use inline concatenation or ad-hoc template literals).
+- All UI string types and dictionary interfaces must be declared in `src/types/strings.ts` and exported via `@/types`.
+- Modernize all unit and integration tests to assert against `UI_STRINGS` constants (and `formatString` templates) instead of hardcoded strings to prevent brittle matches during UI copy updates.
+- Maintain strict $\ge 90\%$ code coverage across all metrics for i18n modules, helpers, and components.
+
 ### ⚡ Mandatory Quality Checks After Every Change
 After every change, run the appropriate quality checks:
 - **Fast iterations on changed files**:

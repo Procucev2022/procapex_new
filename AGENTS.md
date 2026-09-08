@@ -73,6 +73,7 @@ All AI coding agents MUST strictly maintain all constant values, configuration d
      - `src/constants/ai.ts`: AI model defaults, MLEO ratios, inflators, and negotiation scripts.
      - `src/constants/logging.ts`: Logging thresholds, severity mappings, retention limits.
      - `src/constants/validation.ts`: Reusable input validation schemas for frontend forms, API routes, query parameters, and headers.
+     - `src/constants/strings.ts`: Centralized UI strings dictionary (`UI_STRINGS`), namespaces, and `formatString` template substitution helper.
      - `src/constants/index.ts`: Central barrel exporting all constants.
 
 2. **Clean Imports**:
@@ -96,6 +97,7 @@ All AI coding agents MUST strictly declare all TypeScript types, interfaces, enu
      - `src/types/ai.ts`: AI service and cost breakdown interfaces (`MLEOCostBreakdown`, `NegotiationParams`, etc.).
      - `src/types/logger.ts`: Logger domain types (`LogLevel`, `LogEntry`, `LoggerConfig`, etc.).
      - `src/types/validation.ts`: Validation schema interfaces, field rules, validation errors, and result contracts (`ValidationResult`, `ObjectSchema`, etc.).
+     - `src/types/strings.ts`: UI string dictionary interfaces, translation schemas, template placeholder parameters (`StringTemplateValues`, `UIStringsDictionary`).
      - `src/types/index.ts`: Central barrel re-exporting all types.
 
 2. **Clean Type Imports**:
@@ -230,6 +232,56 @@ All AI coding agents MUST strictly enforce input schema validation across the en
 4. **Zero Regressions & Quality Assurance**:
    - All validation schemas and engine utilities must maintain $\ge 90\%$ unit test coverage per file across all 4 metrics.
    - Every input validation change must pass the full quality check pipeline (`npm run check:all`).
+
+---
+
+## 🌐 Internationalization (i18n) & UI Strings Architecture Standards
+
+All AI coding agents MUST strictly enforce internationalization (i18n) readiness across the entire application whenever introducing, modifying, or refactoring user interfaces, components, forms, dialogs, or user-facing messaging (see dedicated rule: [`.agents/rules/i18n-standards.md`](file:///c:/Users/procu/Desktop/Code/work/procapex_new/.agents/rules/i18n-standards.md)).
+
+1. **Zero Hardcoded User-Facing Strings & Literals (Mandatory Enforcement)**:
+   - Application components, views, modals, forms, tables, badges, tooltips, dialogs, and navigation elements MUST NOT embed raw user-facing literal strings in JSX/TSX or application code.
+   - All user-facing text, titles, descriptions, button labels, form placeholders, table headers, empty state notices, ARIA labels, and error messages MUST be defined in dedicated constants modules (`src/constants/strings.ts`) and referenced via the centralized `UI_STRINGS` dictionary.
+   - Never write hardcoded copy such as `<h1>Multi-Tenancy Architecture</h1>` or `<button>Submit</button>`. Always write `<h1>{UI_STRINGS.tenantOverview.title}</h1>` or `<button>{UI_STRINGS.common.submit}</button>`.
+
+2. **Template Placeholders for Dynamic Runtime Substitution**:
+   - For strings containing dynamic or computed values (e.g. counts, names, amounts, round numbers, IDs), agents MUST NOT use inline string concatenation or ad-hoc template literals (e.g. prohibited: `"Round " + round` or `` `Showing ${count} results` ``).
+   - Dynamic strings MUST be declared as template strings using `{placeholder}` tokens (e.g. `'Negotiation Round {round}'`, `'{tenantName} – Sourcing Command'`, `'{count} Items'`).
+   - Components MUST interpolate these tokens at runtime using the centralized interpolation helper:
+     ```typescript
+     import { UI_STRINGS, formatString } from '@/constants';
+
+     const heading = formatString(UI_STRINGS.dashboard.sourcingCommandTemplate, {
+       tenantName: activeTenant.name,
+     });
+
+     const itemsLabel = formatString(UI_STRINGS.prModule.itemsCountTemplate, {
+       count: pr.items.length,
+     });
+     ```
+
+3. **Dedicated Types & Contracts Architecture (Zero Inline Types)**:
+   - All string dictionary structures, template value contracts, and locale definitions MUST be declared in `src/types/strings.ts` and re-exported via `@/types`.
+   - Each component or domain namespace (`common`, `header`, `dashboard`, `tenantOverview`, `prModule`, etc.) has a dedicated interface enforcing type safety.
+
+4. **Test Modernization & Non-Brittle Assertions**:
+   - Unit and integration tests (`tests/`) MUST NOT assert against hardcoded string literals or brittle regular expressions.
+   - All tests MUST query and assert against `UI_STRINGS` constants (and `formatString` templates when testing dynamic content):
+     ```typescript
+     import { UI_STRINGS, formatString } from '@/constants';
+
+     expect(screen.getByText(UI_STRINGS.tenantOverview.title)).toBeInTheDocument();
+     expect(screen.getByRole('button', { name: UI_STRINGS.common.submit })).toBeInTheDocument();
+     expect(
+       screen.getByText(
+         formatString(UI_STRINGS.dashboard.sourcingCommandTemplate, { tenantName: 'L&T Construction' })
+       )
+     ).toBeInTheDocument();
+     ```
+   - This ensures tests remain resilient, maintainable, and aligned with UI copy and translation changes.
+
+5. **Quality Check Pipeline & Coverage Benchmark**:
+   - All internationalization constants, helper functions, and consumer components MUST satisfy the strict $\ge 90\%$ code coverage benchmark across lines, statements, branches, and functions (`npm run test:coverage`).
 
 ---
 

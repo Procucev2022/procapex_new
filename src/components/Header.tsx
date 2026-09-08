@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import { HeaderProps, UserRole, TenantKey } from '@/types';
-import { NAV_ITEMS } from '@/constants';
+import { NAV_ITEMS, UI_STRINGS } from '@/constants';
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpenNewPR }) => {
   const { activeRole, setActiveRole, activeTenantKey, changeTenant, activeTenant } = useProcurement();
@@ -53,13 +53,13 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent">
-                  ProCPX
+                  {UI_STRINGS.header.brandName}
                 </span>
                 <span className="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  Multi-Tenant SaaS
+                  {UI_STRINGS.header.brandBadge}
                 </span>
               </div>
-              <p className="text-xs text-sky-200/80 font-medium">Enterprise Source-to-Award Procurement & AI Cost Intelligence</p>
+              <p className="text-xs text-sky-200/80 font-medium">{UI_STRINGS.header.brandDescription}</p>
             </div>
           </div>
 
@@ -69,10 +69,11 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
             {/* 1. TENANT / CLIENT SWITCHER */}
             <div className="flex items-center bg-brand-950/90 rounded-xl px-3 py-1.5 border border-sky-500/30 shadow-inner">
               <Building2 className="w-4 h-4 text-emerald-400 mr-2 shrink-0" />
-              <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">Client:</span>
+              <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">{UI_STRINGS.header.clientLabel}</span>
               <select 
                 value={activeTenantKey}
                 onChange={(e) => changeTenant(e.target.value as TenantKey)}
+                aria-label={UI_STRINGS.header.switchClientAria}
                 className="bg-brand-800 text-emerald-300 text-xs font-bold rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400 border border-brand-600 cursor-pointer"
               >
                 <option value="TNT_LNT">🏢 L&T Infra & Construction</option>
@@ -85,10 +86,11 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
             {/* 2. 7-ROLE GOVERNANCE SELECTOR */}
             <div className="flex items-center bg-brand-950/90 rounded-xl px-3 py-1.5 border border-brand-700/80 shadow-inner">
               <UserCheck className="w-4 h-4 text-sky-400 mr-2 shrink-0" />
-              <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">Role:</span>
+              <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">{UI_STRINGS.header.roleLabel}</span>
               <select
                 value={activeRole}
                 onChange={(e) => handleRoleChange(e.target.value as UserRole)}
+                aria-label={UI_STRINGS.header.switchRoleAria}
                 className="bg-brand-800 text-white text-xs font-bold rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-sky-400 border border-brand-600 cursor-pointer"
               >
                 <option value="PROJECT_TEAM">1. Project Team (PR Raiser & BOQ Studio)</option>
@@ -111,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
               className="bg-emerald-500 hover:bg-emerald-400 text-brand-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all shadow-md flex items-center space-x-1.5 shrink-0"
             >
               <PlusCircle className="w-4 h-4" />
-              <span className="hidden md:inline">Raise New PR</span>
+              <span className="hidden md:inline">{UI_STRINGS.header.raisePRButton}</span>
             </button>
           </div>
 

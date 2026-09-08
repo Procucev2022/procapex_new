@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VendorPortal } from '@/components/VendorPortal';
+import { UI_STRINGS } from '@/constants';
 
 describe('VendorPortal Component', () => {
   beforeEach(() => {
@@ -11,14 +12,14 @@ describe('VendorPortal Component', () => {
   it('renders header, handles RFQ acceptance, switches vendor and RFQ', () => {
     const { container } = render(<VendorPortal />);
 
-    expect(screen.getByText(/Role 7: Vendor Portal & Supplier Workbench/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorPortal.roleBadge)).toBeInTheDocument();
     expect(screen.getByText(/DesignCraft Millworks & Interiors Pvt Ltd/i)).toBeInTheDocument();
 
     // Test RFQ acceptance
-    expect(screen.getByText(/Pending Acceptance/i)).toBeInTheDocument();
-    const acceptRfqBtn = screen.getByRole('button', { name: /Accept RFQ/i });
+    expect(screen.getByText(UI_STRINGS.vendorPortal.pendingAcceptance)).toBeInTheDocument();
+    const acceptRfqBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.acceptRfq });
     fireEvent.click(acceptRfqBtn);
-    expect(screen.getByText(/Active Bidder/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorPortal.activeBidder)).toBeInTheDocument();
 
     // Switch Vendor to VND-002 and VND-005
     const vendorSelects = container.querySelectorAll('select');
@@ -34,7 +35,7 @@ describe('VendorPortal Component', () => {
     fireEvent.change(rfqSelect, { target: { value: 'PR-2026-0003' } });
 
     // Review Offer button in ribbon navigates to ppo tab
-    const reviewOfferBtn = screen.getByRole('button', { name: /Review Offer →/i });
+    const reviewOfferBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.reviewOffer });
     fireEvent.click(reviewOfferBtn);
     expect(screen.getAllByText(/PPO-2026-0005/i).length).toBeGreaterThan(0);
   });
@@ -43,7 +44,7 @@ describe('VendorPortal Component', () => {
     const { container } = render(<VendorPortal />);
 
     // Click Tab 1
-    fireEvent.click(screen.getByRole('button', { name: /1\. 1st Round Quote/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.vendorPortal.tabQuote1 }));
 
     // Edit rate1 inputs
     const rate1Inputs = container.querySelectorAll('input[type="number"]');
@@ -88,18 +89,18 @@ describe('VendorPortal Component', () => {
     fireEvent.change(devTextarea, { target: { value: 'No major deviations' } });
 
     // Submit 1st round quote
-    const submitBtn = screen.getByRole('button', { name: /Submit 1st Round Formal Quotation/i });
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.submitQuote1 });
     fireEvent.click(submitBtn);
 
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('1st Round Formal Quotation'));
-    expect(screen.getByText(/1st Round Quotation Submitted ✓/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorPortal.quote1Submitted)).toBeInTheDocument();
   });
 
   it('interacts with Tab 2 (2nd Quote / BAFO), rate inputs, payment presets, and submission', () => {
     const { container } = render(<VendorPortal />);
 
     // Click Tab 2
-    fireEvent.click(screen.getByRole('button', { name: /2\. 2nd Quote \/ BAFO/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.vendorPortal.tabQuote2 }));
 
     // Edit rate2 inputs (both higher and lower than target, plus zero rate1 edge case)
     const rate2Inputs = container.querySelectorAll('input[type="number"]');
@@ -148,19 +149,19 @@ describe('VendorPortal Component', () => {
     fireEvent.change(devTextarea, { target: { value: 'Special concession agreed' } });
 
     // Submit 2nd quote
-    const submitBtn = screen.getByRole('button', { name: /Submit Revised 2nd Quote/i });
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.submitQuote2 });
     fireEvent.click(submitBtn);
 
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Revised 2nd Quote'));
-    expect(screen.getByText(/Revised 2nd Quote Submitted ✓/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorPortal.quote2Submitted)).toBeInTheDocument();
   });
 
   it('renders Tab 3 (Final Quote & Multi-Round Summary)', () => {
     render(<VendorPortal />);
 
-    fireEvent.click(screen.getByRole('button', { name: /3\. Final Quote & Multi-Round Summary/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.vendorPortal.tabFinal }));
 
-    expect(screen.getByText(/Multi-Round Quotation History & Final Settlement Record/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorPortal.historyTitle)).toBeInTheDocument();
     expect(screen.getByText(/Round 1: Initial Quote/i)).toBeInTheDocument();
     expect(screen.getByText(/Round 1.5: Buyer Target/i)).toBeInTheDocument();
     expect(screen.getByText(/Round 2: 2nd Quote \(BAFO\)/i)).toBeInTheDocument();
@@ -170,7 +171,7 @@ describe('VendorPortal Component', () => {
   it('interacts with Tab 4 (PPO Award Review & Acceptance Console), downloads PDF, and accepts PPO', () => {
     const { container } = render(<VendorPortal />);
 
-    fireEvent.click(screen.getByRole('button', { name: /4\. PPO Award Review & Acceptance Console/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.vendorPortal.tabPPO }));
 
     expect(screen.getAllByText(/PPO-2026-0005/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Pending Vendor Acceptance/i)).toBeInTheDocument();
@@ -186,19 +187,19 @@ describe('VendorPortal Component', () => {
     fireEvent.change(vendorSelect, { target: { value: 'VND-001' } });
 
     // Download PO
-    const downloadBtn = screen.getByRole('button', { name: /Download Signed PO PDF/i });
+    const downloadBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.downloadPO });
     fireEvent.click(downloadBtn);
     expect(window.alert).toHaveBeenCalledWith('Downloading official signed PO PDF...');
 
     // Accept PPO
-    const acceptPpoBtn = screen.getByRole('button', { name: /Accept Purchase Price Offer \(PPO\)/i });
+    const acceptPpoBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.acceptPPO });
     fireEvent.click(acceptPpoBtn);
 
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('accepted and activated!'));
-    expect(screen.getByText(/Order Acknowledged & Binding Contract Activated ✓/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorPortal.orderAcknowledged)).toBeInTheDocument();
 
     // Verify ribbon View PO button when ppoAccepted is true
-    const viewPoBtn = screen.getByRole('button', { name: /View PO/i });
+    const viewPoBtn = screen.getByRole('button', { name: UI_STRINGS.vendorPortal.viewPO });
     fireEvent.click(viewPoBtn);
   });
 });

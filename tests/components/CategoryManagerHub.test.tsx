@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoryManagerHub } from '@/components/CategoryManagerHub';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -21,14 +22,14 @@ describe('CategoryManagerHub Component', () => {
   it('renders top banner, switches PRs in the queue, and uses banner shortcuts', () => {
     render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
-    expect(screen.getByText(/Role 3: Category Manager/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.roleBadge)).toBeInTheDocument();
 
     // Top banner shortcut buttons
-    const cbaShortcut = screen.getByRole('button', { name: /4-Way Matrix \(CBA\)/i });
+    const cbaShortcut = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.cbaMatrix });
     fireEvent.click(cbaShortcut);
     expect(screen.getByText(/Direct PPO Generation & Vendor Award Console/i)).toBeInTheDocument();
 
-    const rfqShortcut = screen.getByRole('button', { name: /Raise \/ Manage RFQ/i });
+    const rfqShortcut = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.raiseRFQ });
     fireEvent.click(rfqShortcut);
     expect(screen.getByText(/Active RFQ: RFQ-2026-0005/i)).toBeInTheDocument();
 
@@ -52,7 +53,7 @@ describe('CategoryManagerHub Component', () => {
   it('interacts with Tab 1 (RFQ Management), adds rate cards, toggles dropdown and chips', () => {
     const { container } = render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /1\. RFQ & Vendor Tender Management/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRFQ }));
 
     // Reset to raiser selection
     const resetBtn = screen.getByRole('button', { name: /Reset to Raiser Selection/i });
@@ -96,7 +97,7 @@ describe('CategoryManagerHub Component', () => {
     if (cbaMatrixBtns.length > 0) {
       fireEvent.click(cbaMatrixBtns[0]);
       expect(screen.getByText(/4-Way Commercial Matrix/i)).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: /1\. RFQ & Vendor Tender Management/i }));
+      fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRFQ }));
     }
 
     // Award PPO L1 from Tab 1 table
@@ -111,12 +112,12 @@ describe('CategoryManagerHub Component', () => {
     const { container } = render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
     // Standard mode (PR-2026-0005)
-    fireEvent.click(screen.getByRole('button', { name: /2\. Master Rate Card Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRateCard }));
     expect(screen.getAllByText(/Master Rate Card/i).length).toBeGreaterThan(0);
 
     // Switch to PR-2026-0003 (Method 2)
     fireEvent.click(screen.getByText('PR-2026-0003'));
-    fireEvent.click(screen.getByRole('button', { name: /2\. Master Rate Card Studio/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRateCard }));
     expect(screen.getByText(/Multi-Vendor Contracted Rate Card Comparison Matrix/i)).toBeInTheDocument();
 
     // Direct Award L1 from Method 2 Rate Card view
@@ -128,7 +129,7 @@ describe('CategoryManagerHub Component', () => {
   it('interacts with Tab 3 (4-Way Commercial Matrix), L1 award, and Non-L1 Governance Modal', () => {
     const { container } = render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /3\. 4-Way Commercial Matrix/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabCommercial }));
     expect(screen.getByText(/Direct PPO Generation & Vendor Award Console/i)).toBeInTheDocument();
 
     // Click Non-L1 award button to open governance modal
@@ -152,7 +153,7 @@ describe('CategoryManagerHub Component', () => {
       fireEvent.change(justTextarea, { target: { value: 'Demonstrated superior craftsmanship on Phase 1' } });
 
       // Cancel modal first to test cancel button
-      const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
+      const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.common.cancel });
       fireEvent.click(cancelBtn);
 
       // Re-open and confirm
@@ -166,7 +167,7 @@ describe('CategoryManagerHub Component', () => {
     }
 
     // Return to commercial tab and award L1
-    fireEvent.click(screen.getByRole('button', { name: /← Back to Commercial Matrix/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.backToCommercial }));
 
     const l1AwardBtn = screen.getByRole('button', { name: /Award & Generate PPO \(L1 Winner\)/i });
     fireEvent.click(l1AwardBtn);
@@ -178,10 +179,10 @@ describe('CategoryManagerHub Component', () => {
   it('interacts with MLEO Breakdown Modal on Tab 3 and Tab 4 and applies Should-Cost target', () => {
     render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /3\. 4-Way Commercial Matrix/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabCommercial }));
 
     // Open MLEO modal from table button
-    const mleoButtons = screen.getAllByRole('button', { name: /MLEO BREAKDOWN/i });
+    const mleoButtons = screen.getAllByRole('button', { name: UI_STRINGS.categoryManagerHub.mleoBreakdown });
     expect(mleoButtons.length).toBeGreaterThan(0);
     fireEvent.click(mleoButtons[0]);
 
@@ -192,7 +193,7 @@ describe('CategoryManagerHub Component', () => {
     expect(screen.getByText(/4\. Overheads \(O\)/i)).toBeInTheDocument();
 
     // Close via close button
-    const closeBtn = screen.getByRole('button', { name: /Close/i });
+    const closeBtn = screen.getByRole('button', { name: UI_STRINGS.common.close });
     fireEvent.click(closeBtn);
 
     // Re-open and apply Should-Cost to negotiation console
@@ -201,7 +202,7 @@ describe('CategoryManagerHub Component', () => {
     fireEvent.click(applyTargetBtn);
 
     // Open via Tab 4 (AI Cost)
-    fireEvent.click(screen.getByRole('button', { name: /4\. AI Cost Benchmarking & MLEO/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabAICost }));
     expect(screen.getAllByText(/AI Cost Benchmarking/i).length).toBeGreaterThan(0);
 
     const mleoCardButtons = screen.queryAllByRole('button', { name: /MLEO Breakdown/i });
@@ -219,20 +220,20 @@ describe('CategoryManagerHub Component', () => {
     // Select PR-2026-0003 (Method 2)
     fireEvent.click(screen.getByText('PR-2026-0003'));
 
-    fireEvent.click(screen.getByRole('button', { name: /3\. 4-Way Commercial Matrix/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabCommercial }));
     expect(screen.getByText(/Vendor 14 Rate Card Rate/i)).toBeInTheDocument();
 
     // Open MLEO Modal from row
-    const rowMleoBtns = screen.getAllByRole('button', { name: /MLEO BREAKDOWN/i });
+    const rowMleoBtns = screen.getAllByRole('button', { name: UI_STRINGS.categoryManagerHub.mleoBreakdown });
     if (rowMleoBtns.length > 0) {
       fireEvent.click(rowMleoBtns[0]);
-      fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+      fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.close }));
     }
 
     // Open MLEO Modal from table footer
     const footerMleoBtn = screen.getByRole('button', { name: /Open MLEO Modal/i });
     fireEvent.click(footerMleoBtn);
-    fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.close }));
 
     // Award Method 2 PPO
     const awardButtons = screen.getAllByRole('button', { name: /Award/i });
@@ -244,7 +245,7 @@ describe('CategoryManagerHub Component', () => {
   it('interacts with Tab 5 (Vendor Negotiation Hub), line counter rates, and simulates BAFO', () => {
     const { container } = render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /5\. Vendor Negotiation Hub/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabNegotiation }));
     expect(screen.getByText(/Multi-round line-item negotiation workbench/i)).toBeInTheDocument();
 
     // Edit line counter rate
@@ -273,7 +274,7 @@ describe('CategoryManagerHub Component', () => {
     const tableMleoBtns = screen.getAllByRole('button', { name: /MLEO Breakdown/i });
     if (tableMleoBtns.length > 0) {
       fireEvent.click(tableMleoBtns[0]);
-      fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+      fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.close }));
     }
 
     // Simulate vendor 2nd quote / BAFO receipt
@@ -294,7 +295,7 @@ describe('CategoryManagerHub Component', () => {
     render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
     // Initially Tab 6 has no awarded PPO
-    fireEvent.click(screen.getByRole('button', { name: /6\. PPO Proposal & Routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabPPO }));
     expect(screen.getByText(/No Vendor Finalized Yet for PPO Drafting/i)).toBeInTheDocument();
 
     // Click link to commercial matrix
@@ -306,7 +307,7 @@ describe('CategoryManagerHub Component', () => {
     fireEvent.click(l1AwardBtn);
 
     // Route PPO to Tier 1
-    const routePpoBtn = screen.getByRole('button', { name: /Route PPO to Tier 1 Approval Workflow →/i });
+    const routePpoBtn = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.routePPOToWorkflow });
     fireEvent.click(routePpoBtn);
     expect(mockOnRouteToPPO).toHaveBeenCalled();
   });
@@ -314,12 +315,12 @@ describe('CategoryManagerHub Component', () => {
   it('tests PR-2026-0004 with default vendor commercial terms and Method 4 footer MLEO', () => {
     render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
     fireEvent.click(screen.getByText('PR-2026-0004'));
-    fireEvent.click(screen.getByRole('button', { name: /3\. 4-Way Commercial Matrix/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabCommercial }));
     expect(screen.getAllByText(/Standard Terms/i).length).toBeGreaterThan(0);
 
     // Open MLEO Modal from footer in Method 4
     const footerMleoBtn = screen.getByRole('button', { name: /Open MLEO Modal/i });
     fireEvent.click(footerMleoBtn);
-    fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.close }));
   });
 });

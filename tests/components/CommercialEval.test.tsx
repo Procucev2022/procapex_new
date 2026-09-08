@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CommercialEval } from '@/components/CommercialEval';
+import { UI_STRINGS } from '@/constants';
 
 describe('CommercialEval Component', () => {
   const mockOnNavigateToAICost = jest.fn();
@@ -18,11 +19,11 @@ describe('CommercialEval Component', () => {
       />
     );
 
-    expect(screen.getByText('Commercial Price Check & 4-Way Comparison')).toBeInTheDocument();
-    expect(screen.getByText('1. Master Rate Card Baseline')).toBeInTheDocument();
-    expect(screen.getByText('2. Lowest Vendor Quote (L1)')).toBeInTheDocument();
-    expect(screen.getByText('3. AI Market Benchmark')).toBeInTheDocument();
-    expect(screen.getByText('4. Internal Historical Std')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.commercialEval.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.commercialEval.card1)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.commercialEval.card2)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.commercialEval.card3)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.commercialEval.card4)).toBeInTheDocument();
 
     expect(screen.getByText('CNT-TOP-GRN20')).toBeInTheDocument();
     expect(screen.getByText('CNT-SKT-SS304')).toBeInTheDocument();
@@ -36,7 +37,7 @@ describe('CommercialEval Component', () => {
       />
     );
 
-    const ppoBtn = screen.getByRole('button', { name: /Proceed to PPO/i });
+    const ppoBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.commercialEval.proceedToPPO, 'i') });
     expect(ppoBtn).toBeInTheDocument();
     fireEvent.click(ppoBtn);
 
@@ -52,13 +53,13 @@ describe('CommercialEval Component', () => {
     );
 
     // Row button
-    const invokeAiButtons = screen.getAllByRole('button', { name: /Invoke AI Costing/i });
+    const invokeAiButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.commercialEval.invokeAICosting, 'i') });
     expect(invokeAiButtons.length).toBeGreaterThan(0);
     fireEvent.click(invokeAiButtons[0]);
     expect(mockOnNavigateToAICost).toHaveBeenCalledTimes(1);
 
     // Footer button
-    const footerBtn = screen.getByRole('button', { name: /Detailed MLEO Analysis/i });
+    const footerBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.commercialEval.detailedAnalysis, 'i') });
     fireEvent.click(footerBtn);
     expect(mockOnNavigateToAICost).toHaveBeenCalledTimes(2);
 

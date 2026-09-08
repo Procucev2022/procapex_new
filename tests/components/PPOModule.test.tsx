@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PPOModule } from '@/components/PPOModule';
 import { useProcurement } from '@/context/ProcurementContext';
+import { UI_STRINGS, formatString } from '@/constants';
 
 jest.mock('@/context/ProcurementContext', () => ({
   useProcurement: jest.fn(),
@@ -81,10 +82,10 @@ describe('PPOModule Component', () => {
   it('renders workflow subtab with Tier 1 in progress', () => {
     render(<PPOModule onOpenCreatePPO={mockOnOpenCreatePPO} />);
 
-    expect(screen.getByText('Multi-Tier PPO Approval & Purchase Order Release')).toBeInTheDocument();
-    expect(screen.getByText('TIER 1 IN PROGRESS')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.badgeTier1InProgress)).toBeInTheDocument();
 
-    const tier1Btn = screen.getByRole('button', { name: /Sign-off Tier 1/i });
+    const tier1Btn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.tier1SignOff });
     fireEvent.click(tier1Btn);
     expect(mockApproveTier1).toHaveBeenCalled();
   });
@@ -106,10 +107,10 @@ describe('PPOModule Component', () => {
 
     render(<PPOModule />);
 
-    expect(screen.getByText('TIER 2 IN PROGRESS')).toBeInTheDocument();
-    expect(screen.getByText('Signed by Rajesh Singhania')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.badgeTier2InProgress)).toBeInTheDocument();
+    expect(screen.getByText(formatString(UI_STRINGS.ppoModule.tier1SignedTemplate, { name: 'Rajesh Singhania' }))).toBeInTheDocument();
 
-    const tier2Btn = screen.getByRole('button', { name: /Sign-off Tier 2/i });
+    const tier2Btn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.tier2SignOff });
     fireEvent.click(tier2Btn);
     expect(mockApproveTier2).toHaveBeenCalled();
   });
@@ -131,10 +132,10 @@ describe('PPOModule Component', () => {
 
     render(<PPOModule />);
 
-    expect(screen.getByText('TIER 3 IN PROGRESS')).toBeInTheDocument();
-    expect(screen.getByText('Signed by Anil Kulkarni')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.badgeTier3InProgress)).toBeInTheDocument();
+    expect(screen.getByText(formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, { name: 'Anil Kulkarni' }))).toBeInTheDocument();
 
-    const tier3Btn = screen.getByRole('button', { name: /Release Purchase Order/i });
+    const tier3Btn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.tier3SignOff });
     fireEvent.click(tier3Btn);
     expect(mockApproveTier3AndReleasePO).toHaveBeenCalled();
   });
@@ -156,10 +157,12 @@ describe('PPOModule Component', () => {
 
     render(<PPOModule />);
 
-    expect(screen.getByText('PO RELEASED')).toBeInTheDocument();
-    expect(screen.getByText('Signed by Sunil Deshmukh')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.badgePoReleased)).toBeInTheDocument();
+    expect(screen.getByText(formatString(UI_STRINGS.ppoModule.tier3SignedTemplate, { name: 'Sunil Deshmukh' }))).toBeInTheDocument();
 
-    const downloadBannerBtn = screen.getByRole('button', { name: /Download Official PO-2026-0089 PDF/i });
+    const downloadBannerBtn = screen.getByRole('button', {
+      name: formatString(UI_STRINGS.ppoModule.downloadOfficialPdfTemplate, { poNumber: 'PO-2026-0089' }),
+    });
     fireEvent.click(downloadBannerBtn);
   });
 
@@ -169,19 +172,19 @@ describe('PPOModule Component', () => {
     const ppoTabBtn = screen.getByRole('button', { name: /All PPOs/i });
     fireEvent.click(ppoTabBtn);
 
-    expect(screen.getByText('Purchase Price Offers (PPOs)')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.allPPOsTitle)).toBeInTheDocument();
     expect(screen.getByText('PPO-2026-0015')).toBeInTheDocument();
 
-    const createPpoBtn = screen.getByRole('button', { name: /Create PPO/i });
+    const createPpoBtn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.createPPO });
     fireEvent.click(createPpoBtn);
     expect(mockOnOpenCreatePPO).toHaveBeenCalled();
 
-    const approveBtn = screen.getByRole('button', { name: /Approve PPO/i });
+    const approveBtn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.approvePPOButton });
     fireEvent.click(approveBtn);
     expect(mockApprovePPO).toHaveBeenCalledWith('PPO-2026-0015');
 
     // Click back to 3-Tier Approval Workflow tab
-    const workflowBtn = screen.getByRole('button', { name: /3-Tier Approval Workflow/i });
+    const workflowBtn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.tabWorkflow });
     fireEvent.click(workflowBtn);
   });
 
@@ -191,10 +194,10 @@ describe('PPOModule Component', () => {
     const poTabBtn = screen.getByRole('button', { name: /Issued POs/i });
     fireEvent.click(poTabBtn);
 
-    expect(screen.getByText('Released Purchase Orders / Work Orders')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ppoModule.issuedPOsTitle)).toBeInTheDocument();
     expect(screen.getByText('PO-2026-0089')).toBeInTheDocument();
 
-    const downloadButtons = screen.getAllByRole('button', { name: /Download PDF PO/i });
+    const downloadButtons = screen.getAllByRole('button', { name: UI_STRINGS.ppoModule.downloadPdfButton });
     // First PO with valid amount and date
     fireEvent.click(downloadButtons[0]);
     // Second PO testing fallback values
