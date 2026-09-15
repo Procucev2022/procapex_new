@@ -5,30 +5,45 @@ import {
   Building2, 
   UserCheck, 
   PlusCircle, 
+  Calculator,
+  Lock,
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import type { HeaderProps, UserRole, TenantKey } from '@/types';
-import { NAV_ITEMS, UI_STRINGS } from '@/constants';
+import { NAV_ITEMS, UI_STRINGS, PRICING_TIERS } from '@/constants';
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpenNewPR }) => {
-  const { activeRole, setActiveRole, activeTenantKey, changeTenant } = useProcurement();
+  const {
+    activeRole,
+    setActiveRole,
+    activeTenantKey,
+    changeTenant,
+    activeTenantTier,
+    isModuleAllowed,
+    isRoleAllowed,
+  } = useProcurement();
+
+  const currentTierConfig = PRICING_TIERS[activeTenantTier ?? 'MODULE_3'] ?? PRICING_TIERS.MODULE_3;
+  const checkModuleAllowed = isModuleAllowed ?? (() => true);
+  const checkRoleAllowed = isRoleAllowed ?? (() => true);
 
   const handleRoleChange = (role: UserRole): void => {
     setActiveRole(role);
     switch (role) {
+      case 'BOQ_RFQ_MANAGER':
       case 'PROJECT_TEAM':
-        setCurrentTab('boq_raiser_studio');
-        break;
-      case 'PROJECT_HEAD_PR':
-        setCurrentTab('pr_approval_queue');
-        break;
       case 'CATEGORY_MANAGER':
-        setCurrentTab('category_manager_hub');
+        setCurrentTab('boq_rfq_management');
+        break;
+      case 'VENDOR_NEGOTIATION_HUB':
+        setCurrentTab('vendor_negotiation_hub');
         break;
       case 'CATEGORY_MANAGER_2':
       case 'PROJECT_HEAD_PPO':
-      case 'FINANCE_HEAD':
         setCurrentTab('ppo_workorders');
+        break;
+      case 'FINANCE_HEAD':
+        setCurrentTab('budget_planning');
         break;
       case 'VENDOR':
         setCurrentTab('vendor_portal');
@@ -46,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
         <div className="flex items-center justify-between h-16">
           
           {/* Logo & Title */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setCurrentTab('dashboard')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setCurrentTab('budget_planning')}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 via-sky-500 to-brand-600 flex items-center justify-center shadow-md font-black text-xl tracking-wider text-white">
               PX
             </div>
@@ -63,8 +78,8 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
             </div>
           </div>
 
-          {/* Multi-Tenancy Controls: Tenant Selector + 7-Role Governance */}
-          <div className="flex items-center space-x-3">
+          {/* Multi-Tenancy Controls: Tenant Selector + 5-Role Governance + Quick Login */}
+          <div className="flex items-center space-x-2.5">
             
             {/* 1. TENANT / CLIENT SWITCHER */}
             <div className="flex items-center bg-brand-950/90 rounded-xl px-3 py-1.5 border border-sky-500/30 shadow-inner">
@@ -83,31 +98,74 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
               </select>
             </div>
 
-            {/* 2. 7-ROLE GOVERNANCE SELECTOR */}
+            {/* 1B. ACTIVE CLIENT PRICING TIER BADGE */}
+            <div 
+              onClick={() => setCurrentTab('tenant_overview')}
+              title={`Active Subscription: ${currentTierConfig.name}`}
+              className="flex items-center bg-brand-950/90 rounded-xl px-2.5 py-1.5 border border-amber-400/40 shadow-inner cursor-pointer hover:border-amber-400 transition-all shrink-0"
+            >
+              <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 mr-1.5 border border-amber-400/30">
+                {currentTierConfig.code}
+              </span>
+              <span className="text-xs font-black text-amber-300">
+                {currentTierConfig.priceFormatted}
+                <span className="text-[10px] text-amber-200/60 font-normal">/mo</span>
+              </span>
+            </div>
+
+            {/* 2. 5-ROLE GOVERNANCE SELECTOR */}
             <div className="flex items-center bg-brand-950/90 rounded-xl px-3 py-1.5 border border-brand-700/80 shadow-inner">
               <UserCheck className="w-4 h-4 text-sky-400 mr-2 shrink-0" />
               <span className="text-xs text-slate-300 font-medium mr-2 hidden sm:inline">{UI_STRINGS.header.roleLabel}</span>
               <select
-                value={activeRole}
+                value={
+                  activeRole === 'PROJECT_TEAM' || activeRole === 'CATEGORY_MANAGER'
+                    ? 'BOQ_RFQ_MANAGER'
+                    : activeRole
+                }
                 onChange={(e) => handleRoleChange(e.target.value as UserRole)}
                 aria-label={UI_STRINGS.header.switchRoleAria}
                 className="bg-brand-800 text-white text-xs font-bold rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-sky-400 border border-brand-600 cursor-pointer"
               >
-                <option value="PROJECT_TEAM">1. Project Team (PR Raiser & BOQ Studio)</option>
-                <option value="PROJECT_HEAD_PR">2. Project Head (PR Approver)</option>
-                <option value="CATEGORY_MANAGER">3. Category Manager (Buyer Command Center)</option>
-                <option value="CATEGORY_MANAGER_2">4. Category Manager 2 (Procurement Head / PPO Approver)</option>
-                <option value="PROJECT_HEAD_PPO">5. Project Head (PPO Approver)</option>
-                <option value="FINANCE_HEAD">6. Finance Head (PPO Approver & PO Release)</option>
-                <option value="VENDOR">7. Vendor (Supplier Portal & Quotations)</option>
+                <option value="BOQ_RFQ_MANAGER" disabled={!checkRoleAllowed('BOQ_RFQ_MANAGER')}>
+                  {UI_STRINGS.header.roleOptionBOQRFQManager} {!checkRoleAllowed('BOQ_RFQ_MANAGER') ? '🔒 (Req. M2)' : ''}
+                </option>
+                <option value="VENDOR_NEGOTIATION_HUB" disabled={!checkRoleAllowed('VENDOR_NEGOTIATION_HUB')}>
+                  {UI_STRINGS.header.roleOptionVendorNegotiationHub} {!checkRoleAllowed('VENDOR_NEGOTIATION_HUB') ? '🔒 (Req. M3)' : ''}
+                </option>
+                <option value="CATEGORY_MANAGER_2" disabled={!checkRoleAllowed('CATEGORY_MANAGER_2')}>
+                  {UI_STRINGS.header.roleOptionCategoryManager2} {!checkRoleAllowed('CATEGORY_MANAGER_2') ? '🔒 (Req. M3)' : ''}
+                </option>
+                <option value="PROJECT_HEAD_PPO" disabled={!checkRoleAllowed('PROJECT_HEAD_PPO')}>
+                  {UI_STRINGS.header.roleOptionProjectHeadPPO} {!checkRoleAllowed('PROJECT_HEAD_PPO') ? '🔒 (Req. M3)' : ''}
+                </option>
+                <option value="FINANCE_HEAD">{UI_STRINGS.header.roleOptionFinanceHead}</option>
+                <option value="VENDOR">{UI_STRINGS.header.roleOptionVendor}</option>
               </select>
             </div>
 
-            {/* Quick Action Button */}
+            {/* 3. QUICK ACTION: FINANCE MANAGER LOGIN */}
+            <button
+              onClick={() => handleRoleChange('FINANCE_HEAD')}
+              className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1.5 shrink-0 ${
+                activeRole === 'FINANCE_HEAD' && currentTab === 'budget_planning'
+                  ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                  : 'bg-indigo-950/90 hover:bg-indigo-900 text-indigo-200 border border-indigo-500/40'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">
+                {activeRole === 'FINANCE_HEAD' && currentTab === 'budget_planning'
+                  ? UI_STRINGS.header.financeManagerActiveLabel
+                  : UI_STRINGS.header.financeManagerLoginButton}
+              </span>
+            </button>
+
+            {/* 4. Quick Action: Raise PR */}
             <button
               onClick={() => {
-                setActiveRole('PROJECT_TEAM');
-                setCurrentTab('boq_raiser_studio');
+                setActiveRole('BOQ_RFQ_MANAGER');
+                setCurrentTab('boq_rfq_management');
                 onOpenNewPR();
               }}
               className="bg-emerald-500 hover:bg-emerald-400 text-brand-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all shadow-md flex items-center space-x-1.5 shrink-0"
@@ -124,18 +182,45 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
+            const isAllowed = checkModuleAllowed(item.id);
+
             return (
               <button
                 key={item.id}
                 onClick={() => setCurrentTab(item.id)}
                 className={`px-3 py-2 rounded-md flex items-center space-x-1.5 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'bg-brand-800 text-white font-bold'
-                    : 'hover:text-white hover:bg-brand-800/60'
+                    ? item.id === 'budget_planning'
+                      ? 'bg-indigo-600 text-white font-bold ring-2 ring-indigo-400'
+                      : 'bg-brand-800 text-white font-bold'
+                    : item.id === 'budget_planning'
+                      ? 'bg-indigo-950/80 text-indigo-200 border border-indigo-500/40 hover:bg-indigo-900'
+                      : 'hover:text-white hover:bg-brand-800/60'
                 }`}
               >
                 <Icon className={`w-4 h-4 ${item.highlight ? 'text-amber-300' : ''}`} />
                 <span>{item.label}</span>
+                {!isAllowed && (
+                  <span className="text-[9px] bg-slate-800 text-amber-400 border border-amber-500/30 font-bold px-1.5 py-0.2 rounded-full ml-1 flex items-center">
+                    <Lock className="w-2.5 h-2.5 mr-0.5" />
+                    LOCK
+                  </span>
+                )}
+                {item.id === 'budget_planning' && isAllowed && (
+                  <span className="text-[9px] bg-indigo-500 text-white font-black px-1.5 py-0.5 rounded-full ml-1">
+                    FINANCE
+                  </span>
+                )}
+                {item.id === 'vendor_management' && isAllowed && (
+                  <span className="text-[9px] bg-emerald-500 text-brand-950 font-black px-1.5 py-0.5 rounded-full ml-1">
+                    DIRECTORY
+                  </span>
+                )}
+                {item.id === 'vendor_negotiation_hub' && isAllowed && (
+                  <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full ml-1">
+                    NEGOTIATOR
+                  </span>
+                )}
               </button>
             );
           })}

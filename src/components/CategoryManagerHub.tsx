@@ -1,15 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Send, CreditCard, Scale, Sparkles, MessageSquareDiff, FileCheck2, Users, AlertTriangle, CheckCircle2, RefreshCw, FileText, ChevronDown, Check, Truck, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Send, 
+  CreditCard, 
+  Scale, 
+  Sparkles, 
+  MessageSquareDiff, 
+  FileCheck2, 
+  Users, 
+  AlertTriangle, 
+  CheckCircle2, 
+  RefreshCw, 
+  FileText, 
+  ChevronDown, 
+  Check, 
+  Truck, 
+  ShieldCheck,
+  Clock,
+  Calendar,
+  Layers,
+} from 'lucide-react';
+import { useProcurement } from '../context/ProcurementContext';
+import { logger } from '@/lib/logger';
 import type {
   NonL1Justification,
   BOQItemWithMLEO,
   PRData,
   CategoryManagerHubProps,
   VendorCommercialTerms,
+  PurchaseRequest,
+  VendorQuoteDetail,
 } from '@/types';
-import { INITIAL_PRS_DATA, MASTER_VENDORS, UI_STRINGS } from '@/constants';
+import { INITIAL_PRS_DATA, MASTER_VENDORS, SEED_MANAGED_VENDORS, UI_STRINGS } from '@/constants';
+import { RFQCirculationHistoryTable } from './category-manager/RFQCirculationHistoryTable';
 
 function getVendorCommercialTerms(vendorId: string, _prId?: string): VendorCommercialTerms {
   const TERMS_MAP: Record<string, VendorCommercialTerms> = {
@@ -93,6 +117,22 @@ function getVendorCommercialTerms(vendorId: string, _prId?: string): VendorComme
       complianceClass: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
       complianceNote: 'Standard credit terms, 2 days faster factory dispatch',
     },
+    'CLT-VND-003': {
+      paymentTerms: '10% Adv | 80% Progress RA | 10% Handover (30D Credit)',
+      advancePct: '10%',
+      retentionPct: '10%',
+      creditDays: '30 Days',
+      paymentBadge: '✓ Matches Client Empanelled Baseline',
+      paymentBadgeClass: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+      leadTime: '7 - 10 Calendar Days',
+      deliveryDate: '2026-09-24 (Within Schedule)',
+      deliveryBadge: '✓ Meets Target Date',
+      deliveryBadgeClass: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+      complianceStatus: 'COMPLIANT',
+      complianceBadge: '✓ 100% Empanelled Compliant',
+      complianceClass: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      complianceNote: 'Empanelled client partner terms with verified workshop inspection',
+    },
   };
 
   return TERMS_MAP[vendorId] ?? {
@@ -113,8 +153,69 @@ function getVendorCommercialTerms(vendorId: string, _prId?: string): VendorComme
   };
 }
 
-export function getMasterVendor(vid: string): (typeof MASTER_VENDORS)[number] {
-  return MASTER_VENDORS.find((v) => v.id === vid) ?? MASTER_VENDORS[0];
+export interface MasterVendorDisplayItem {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  isRateCard: boolean;
+  city: string;
+  leadTime: string;
+  source?: string;
+}
+
+export function matchVendorToPRCategory(
+  vendorCategory: string,
+  prCategoryMajor: string,
+  prCategory?: string
+): boolean {
+  if (!vendorCategory) return true;
+  const vCat = vendorCategory.toUpperCase().trim();
+  const major = (prCategoryMajor || '').toUpperCase().trim();
+  const full = (prCategory || '').toUpperCase().trim();
+
+  if (!major && !full) return true;
+  if (major && (vCat.includes(major) || major.includes(vCat))) return true;
+  if (full && (vCat.includes(full) || full.includes(vCat))) return true;
+  if ((major.includes('INTERIOR') || full.includes('INTERIOR')) && vCat.includes('INTERIOR')) return true;
+  if ((major.includes('CIVIL') || full.includes('CIVIL')) && vCat.includes('CIVIL')) return true;
+  if ((major.includes('MEP') || full.includes('MEP')) && vCat.includes('MEP')) return true;
+  if ((major.includes('STEEL') || full.includes('STEEL')) && (vCat.includes('STEEL') || vCat.includes('CIVIL'))) return true;
+  return false;
+}
+
+export function getMasterVendor(
+  vid: string,
+  extraVendors?: MasterVendorDisplayItem[]
+): MasterVendorDisplayItem {
+  if (extraVendors && extraVendors.length > 0) {
+    const foundExtra = extraVendors.find((v) => v.id === vid);
+    if (foundExtra) return foundExtra;
+  }
+  const seedFound = SEED_MANAGED_VENDORS.find((v) => v.id === vid);
+  if (seedFound) {
+    return {
+      id: seedFound.id,
+      name: seedFound.name,
+      category: seedFound.category,
+      rating: seedFound.rating,
+      isRateCard: seedFound.isRateCard,
+      city: seedFound.city,
+      leadTime: seedFound.leadTime,
+      source: seedFound.source,
+    };
+  }
+  const masterFound = MASTER_VENDORS.find((v) => v.id === vid);
+  if (masterFound) {
+    return {
+      ...masterFound,
+      source: 'PROCAPX_PLATFORM',
+    };
+  }
+  return {
+    ...MASTER_VENDORS[0],
+    source: 'PROCAPX_PLATFORM',
+  };
 }
 
 export function getItemRateCard(it: BOQItemWithMLEO, vendorId: string): number {
@@ -131,13 +232,248 @@ export function getItemVendorQuote(
   };
 }
 
-export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteToPPO }) => {
-  const [prsData, setPrsData] = useState<Record<string, PRData>>(INITIAL_PRS_DATA);
-  const [activePRId, setActivePRId] = useState<string>('PR-2026-0005');
-  const [activeTab, setActiveTab] = useState<'rfq' | 'ratecard' | 'commercial' | 'aicost' | 'negotiation' | 'ppogen'>('rfq');
-  
-  const currentPR = prsData[activePRId];
-  const [rfqVendors, setRfqVendors] = useState<string[]>(currentPR.nominatedVendors);
+export function syncPRsToPRData(
+  contextPRs: PurchaseRequest[],
+  basePRsData: Record<string, PRData>
+): Record<string, PRData> {
+  const merged: Record<string, PRData> = { ...basePRsData };
+
+  contextPRs.forEach(pr => {
+    const existing = merged[pr.id];
+    if (existing) {
+      const updatedItems = pr.items && pr.items.length > 0
+        ? pr.items.map((it, idx) => {
+            const exItem = existing.items.find(ei => ei.code === it.code) ?? existing.items[idx];
+            const bench = it.benchmark || it.rateCard || exItem?.benchmark || 1450;
+            return {
+              code: it.code || exItem?.code || `ITEM-${idx + 1}`,
+              desc: it.desc || exItem?.desc || 'Scope Item',
+              uom: it.uom || exItem?.uom || 'Nos',
+              qty: it.qty || exItem?.qty || 1,
+              rateCard: it.rateCard || exItem?.rateCard || bench,
+              benchmark: bench,
+              bestHistoricalPrice: exItem?.bestHistoricalPrice || bench,
+              prevPo: exItem?.prevPo || 'PO-2025-0819 (Metro Underground)',
+              mleo: exItem?.mleo || {
+                m: Math.round(bench * 0.55),
+                l: Math.round(bench * 0.20),
+                e: Math.round(bench * 0.12),
+                o: Math.round(bench * 0.13),
+                conf: it.aiConf || '96%',
+              },
+              vendorRateCards: exItem?.vendorRateCards,
+              vendorQuotes: (() => {
+                const combined: Record<string, VendorQuoteDetail> = {};
+                const allKeys = Array.from(new Set([
+                  ...Object.keys(exItem?.vendorQuotes || {}),
+                  ...Object.keys(it.vendorQuotes || {}),
+                ]));
+                allKeys.forEach((vKey) => {
+                  const ex = exItem?.vendorQuotes?.[vKey];
+                  const cur = it.vendorQuotes?.[vKey];
+                  combined[vKey] = {
+                    initialRate: cur?.initialRate ?? ex?.initialRate ?? Math.round(bench * 1.10),
+                    revisedRate: cur?.revisedRate !== undefined ? cur?.revisedRate : (ex?.revisedRate ?? null),
+                    finalRate: cur?.finalRate !== undefined ? cur?.finalRate : (ex?.finalRate ?? null),
+                    buyerOffer1: cur?.buyerOffer1 !== undefined ? cur?.buyerOffer1 : (ex?.buyerOffer1 ?? null),
+                    buyerOffer2: cur?.buyerOffer2 !== undefined ? cur?.buyerOffer2 : (ex?.buyerOffer2 ?? null),
+                  };
+                });
+                return Object.keys(combined).length > 0
+                  ? combined
+                  : {
+                      'VND-001': { initialRate: Math.round(bench * 1.10), revisedRate: null },
+                      'VND-002': { initialRate: Math.round(bench * 1.15), revisedRate: null },
+                      'VND-005': { initialRate: Math.round(bench * 1.12), revisedRate: null },
+                    };
+              })(),
+            };
+          })
+        : existing.items;
+
+      const estBaseline = updatedItems.reduce(
+        (acc, it) => acc + ((it.rateCard || it.benchmark || 1500) * it.qty),
+        0
+      );
+
+      merged[pr.id] = {
+        ...existing,
+        title: pr.title || existing.title,
+        project: pr.projectName || existing.project,
+        costCenter: pr.costCentre || existing.costCenter,
+        category: pr.category || existing.category,
+        items: updatedItems,
+        estBaseline: estBaseline > 0 ? estBaseline : existing.estBaseline,
+        nominatedVendors: pr.nominatedVendors && pr.nominatedVendors.length > 0
+          ? pr.nominatedVendors
+          : existing.nominatedVendors,
+        site: pr.deliveryAddress || existing.site,
+      };
+    } else {
+      const categoryMajor = pr.category?.toUpperCase().includes('STEEL')
+        ? 'STEEL'
+        : pr.category?.toUpperCase().includes('CONCRETE') || pr.category?.toUpperCase().includes('CIVIL')
+        ? 'CIVIL'
+        : 'INTERIOR';
+
+      const enrichedItems: BOQItemWithMLEO[] = (pr.items || []).map((it, idx) => {
+        const bench = it.benchmark || it.rateCard || 1450;
+        return {
+          code: it.code || `ITEM-${idx + 1}`,
+          desc: it.desc || 'Requisition Scope Item',
+          uom: it.uom || 'Nos',
+          qty: it.qty || 1,
+          rateCard: it.rateCard || bench,
+          benchmark: bench,
+          bestHistoricalPrice: bench,
+          prevPo: 'PO-2025-0819 (Metro Underground)',
+          mleo: {
+            m: Math.round(bench * 0.55),
+            l: Math.round(bench * 0.20),
+            e: Math.round(bench * 0.12),
+            o: Math.round(bench * 0.13),
+            conf: it.aiConf || '96%',
+          },
+          vendorQuotes: {
+            'VND-001': { initialRate: Math.round(bench * 1.10), revisedRate: null },
+            'VND-002': { initialRate: Math.round(bench * 1.15), revisedRate: null },
+            'VND-005': { initialRate: Math.round(bench * 1.12), revisedRate: null },
+          },
+        };
+      });
+
+      const estBaseline = enrichedItems.reduce(
+        (acc, it) => acc + ((it.rateCard || it.benchmark || 1500) * it.qty),
+        0
+      );
+
+      merged[pr.id] = {
+        id: pr.id,
+        title: pr.title,
+        project: pr.projectName || 'Metro Line 4 Underground',
+        costCenter: pr.costCentre || 'CC-104 (Finishing)',
+        category: pr.category || 'Interior & Fitouts',
+        categoryMajor,
+        method: 'METHOD_3',
+        methodName: 'Method 3: Drawing / PDF AI Scope Extraction',
+        methodBadgeClass: 'bg-purple-100 text-purple-900 border border-purple-300',
+        sourceFile: 'Technical Scope & Drawing Sheet.pdf',
+        raiser: pr.requester || 'Rahul Verma (Site Lead)',
+        estBaseline: estBaseline > 0 ? estBaseline : 148500,
+        targetDate: pr.reqDate || '2026-09-28',
+        site: pr.deliveryAddress || 'Metro Line 4 Underground Site / Depot',
+        contact: 'Rahul Verma (+91 98201 44520)',
+        docCount: 4,
+        nominatedVendors: pr.nominatedVendors && pr.nominatedVendors.length > 0
+          ? pr.nominatedVendors
+          : ['VND-001', 'VND-002', 'VND-005'],
+        items: enrichedItems,
+      };
+    }
+  });
+
+  return merged;
+}
+
+export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({
+  initialPRId,
+  onRouteToPPO,
+  onRouteToNegotiation,
+}) => {
+  const { prs, createPPO, managedVendors, circulateRFQ, circulatedRFQs, submitBuyerCounterOffer } = useProcurement();
+  const [prsData, setPrsData] = useState<Record<string, PRData>>(() =>
+    syncPRsToPRData(prs || [], INITIAL_PRS_DATA)
+  );
+
+  // Unified vendor roster combining managedVendors and MASTER_VENDORS
+  const allAvailableVendors: MasterVendorDisplayItem[] = useMemo(() => {
+    const list: MasterVendorDisplayItem[] = [];
+    const seenIds = new Set<string>();
+
+    (managedVendors || []).forEach((mv) => {
+      seenIds.add(mv.id);
+      list.push({
+        id: mv.id,
+        name: mv.name,
+        category: mv.category,
+        rating: mv.rating,
+        isRateCard: mv.isRateCard,
+        city: mv.city,
+        leadTime: mv.leadTime,
+        source: mv.source,
+      });
+    });
+
+    MASTER_VENDORS.forEach((master) => {
+      if (!seenIds.has(master.id)) {
+        seenIds.add(master.id);
+        list.push({
+          ...master,
+          source: 'PROCAPX_PLATFORM',
+        });
+      }
+    });
+
+    return list;
+  }, [managedVendors]);
+  const [activePRId, setActivePRId] = useState<string>(initialPRId ?? 'PR-2026-0005');
+  const [activeTab, setActiveTab] = useState<'rfq' | 'commercial' | 'aicost' | 'negotiation' | 'ppogen'>('rfq');
+  const [rfqClosureDate, setRfqClosureDate] = useState<string>('2026-09-30');
+  const [rfqSubmittedMap, setRfqSubmittedMap] = useState<
+    Record<string, { isSubmitted: boolean; submittedAt: string }>
+  >({
+    'PR-2026-0005': { isSubmitted: false, submittedAt: '' },
+  });
+
+  const currentRfqId = `RFQ-2026-${activePRId.split('-')[2] || '0005'}`;
+  const isCurrentRFQSubmitted = Boolean(
+    rfqSubmittedMap[activePRId]?.isSubmitted ||
+    circulatedRFQs?.[activePRId] ||
+    circulatedRFQs?.[currentRfqId]
+  );
+
+  const handlePublishRFQ = (): void => {
+    setRfqSubmittedMap(prev => ({
+      ...prev,
+      [activePRId]: {
+        isSubmitted: true,
+        submittedAt: new Date().toLocaleTimeString(),
+      },
+    }));
+    if (circulateRFQ) {
+      circulateRFQ(activePRId, rfqVendors, rfqClosureDate);
+    }
+    logger.info('components/CategoryManagerHub', 'RFQ Tender Submitted to Nominated Vendors', {
+      prId: activePRId,
+      rfqId: `RFQ-2026-${activePRId.split('-')[2] || '0005'}`,
+      closureDate: rfqClosureDate,
+      vendorCount: rfqVendors.length,
+      vendors: rfqVendors,
+    });
+  };
+
+  useEffect(() => {
+    if (prs && prs.length > 0) {
+      setPrsData(prev => syncPRsToPRData(prs, prev));
+    }
+  }, [prs]);
+
+  useEffect(() => {
+    if (initialPRId && prsData[initialPRId]) {
+      setActivePRId(initialPRId);
+    }
+  }, [initialPRId, prsData]);
+
+  const currentPR = prsData[activePRId] ?? Object.values(prsData)[0] ?? INITIAL_PRS_DATA['PR-2026-0005'];
+  const [rfqVendors, setRfqVendors] = useState<string[]>(currentPR?.nominatedVendors ?? ['VND-001', 'VND-002']);
+
+  useEffect(() => {
+    if (currentPR?.nominatedVendors) {
+      setRfqVendors([...currentPR.nominatedVendors]);
+      const benchTot = currentPR.items.reduce((acc, it) => acc + (it.qty * it.benchmark), 0);
+      setCounterOfferInput(Math.round(benchTot * 1.04));
+    }
+  }, [activePRId]);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
   // MLEO Breakdown Modal State
@@ -213,7 +549,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
   };
 
   const addAllRateCard = (): void => {
-    const matching = MASTER_VENDORS.filter(v => v.category === currentPR.categoryMajor && v.isRateCard).map(v => v.id);
+    const matching = allAvailableVendors
+      .filter((v) => matchVendorToPRCategory(v.category, currentPR.categoryMajor, currentPR.category) && v.isRateCard)
+      .map((v) => v.id);
     const merged = Array.from(new Set([...rfqVendors, ...matching]));
     setRfqVendors(merged);
   };
@@ -238,6 +576,50 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     const vid = targetVid || selectedOfferVendorId;
     setSelectedOfferVendorId(vid);
     setNegRound(1.5);
+
+    const lineRates: Record<string, number> = {};
+    let totalAmt = 0;
+    currentPR.items.forEach((it) => {
+      const r = lineCounterRates[it.code] !== undefined
+        ? lineCounterRates[it.code]
+        : (it.vendorQuotes?.[vid === 'ALL' ? (participatingVendors[0]?.id || 'VND-001') : vid]?.buyerOffer1 ?? Math.round(it.benchmark * 1.04));
+      lineRates[it.code] = r;
+      totalAmt += it.qty * r;
+    });
+
+    const round = hasReceived2ndQuote ? 2 : 1;
+    const vendorName = vid === 'ALL' ? 'All Vendors' : (getMasterVendor(vid, allAvailableVendors).name);
+
+    submitBuyerCounterOffer?.(
+      activePRId,
+      vid,
+      round,
+      Math.round(totalAmt),
+      `Category Manager Counter-Offer for Round ${round} to ${vendorName}`,
+      lineRates
+    );
+
+    setPrsData((prev) => {
+      const updated = { ...prev };
+      const pr = updated[activePRId];
+      if (pr) {
+        const targetVids = vid === 'ALL' ? rfqVendors : [vid];
+        pr.items = pr.items.map((it) => {
+          const vq = { ...(it.vendorQuotes || {}) };
+          targetVids.forEach((v) => {
+            const currentQ = vq[v] || { initialRate: Math.round(it.benchmark * 1.15), revisedRate: null };
+            vq[v] = {
+              ...currentQ,
+              ...(round === 1 ? { buyerOffer1: lineRates[it.code] } : { buyerOffer2: lineRates[it.code] }),
+            };
+          });
+          return { ...it, vendorQuotes: vq };
+        });
+      }
+      return updated;
+    });
+
+    alert(`Counter-Offer for Round ${round} (₹ ${Math.round(totalAmt).toLocaleString()}) dispatched successfully to ${vendorName}!`);
   };
 
   const handleSimulate2ndQuote = (): void => {
@@ -315,7 +697,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
   };
 
   const executePPOAward = (vendorId: string, isNonL1: boolean, justification?: NonL1Justification): void => {
-    const v = getMasterVendor(vendorId);
+    const v = getMasterVendor(vendorId, allAvailableVendors);
     const isMethod2 = currentPR.method === 'METHOD_2';
 
     let netTotal = 0;
@@ -331,8 +713,9 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     });
 
     const gst = Math.round(netTotal * 0.18);
-    const grandTotal = Math.round(netTotal + gst);
-    const ppoNumber = `PPO-2026-${currentPR.id.split('-')[2]}`;
+    const grandTotal = Math.round(netTotal) + gst;
+    const ppoSuffix = (currentPR?.id || 'PR-2026-0005').split('-')[2] || '0005';
+    const ppoNumber = `PPO-2026-${ppoSuffix}`;
 
     setAwardedPPO({
       ppoNumber,
@@ -348,8 +731,19 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
     setActiveTab('ppogen');
   };
 
-  // Participating Vendors
-  const participatingVendors = rfqVendors.map(vid => getMasterVendor(vid));
+  const participatingVendors = rfqVendors.map(vid => getMasterVendor(vid, allAvailableVendors));
+
+  useEffect(() => {
+    const hasAnyRevised = currentPR.items.some((it) =>
+      participatingVendors.some(
+        (v) => it.vendorQuotes?.[v.id]?.revisedRate !== null && it.vendorQuotes?.[v.id]?.revisedRate !== undefined
+      )
+    );
+    if (hasAnyRevised) {
+      setHasReceived2ndQuote(true);
+      if (negRound < 2) setNegRound(2);
+    }
+  }, [currentPR, participatingVendors, negRound]);
 
   const isMethod2 = currentPR.method === 'METHOD_2';
 
@@ -375,10 +769,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
   const sortedVendorIds = Object.keys(vendorTotals).sort((a, b) => vendorTotals[a].total - vendorTotals[b].total);
   const l1VendorId = sortedVendorIds[0];
   const l1MinTotal = vendorTotals[l1VendorId].total;
-  const l1VendorObj = getMasterVendor(l1VendorId);
+  const l1VendorObj = getMasterVendor(l1VendorId, allAvailableVendors);
 
   // For Non-L1 modal calculations
-  const pendingVendorObj = getMasterVendor(pendingAwardVendorId || '');
+  const pendingVendorObj = getMasterVendor(pendingAwardVendorId || '', allAvailableVendors);
   const pendingVendorTotal = pendingAwardVendorId ? vendorTotals[pendingAwardVendorId].total : 0;
   const nonL1DeltaAmt = pendingVendorTotal - l1MinTotal;
   const nonL1DeltaPct = l1MinTotal > 0 ? ((nonL1DeltaAmt / l1MinTotal) * 100).toFixed(1) : '0.0';
@@ -424,40 +818,107 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
         </div>
       </div>
 
-      {/* PR Requisition Selection Queue Bar */}
+      {/* PR Requisition Selection Queue Bar (Single-Line Each RFQ) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
         <div className="flex items-center justify-between border-b pb-2">
-          <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">Approved Purchase Requests Queue (Category Manager Ingestion):</span>
-          <span className="text-xs font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">4 PRs Available</span>
+          <div className="flex items-center space-x-2">
+            <Layers className="w-4 h-4 text-amber-600" />
+            <span className="text-xs font-bold uppercase text-slate-700 tracking-wider">
+              {UI_STRINGS.categoryManagerHub.rfqQueueTitle}
+            </span>
+          </div>
+          <span className="text-xs font-mono font-bold bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full">
+            {Object.keys(prsData).length} RFQ Requisitions Available
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {Object.values(prsData).map(pr => {
-            const isSelected = pr.id === activePRId;
-            return (
-              <div 
-                key={pr.id}
-                onClick={() => selectPR(pr.id)}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  isSelected 
-                    ? 'bg-amber-50/80 border-amber-400 shadow-md ring-2 ring-amber-300' 
-                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono font-black text-xs text-slate-900">{pr.id}</span>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${pr.methodBadgeClass}`}>
-                    {pr.method.replace('_', ' ')}
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{pr.title}</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5">{pr.project}</p>
-                <div className="mt-2 flex items-center justify-between text-[11px] font-mono pt-1 border-t border-slate-200/60">
-                  <span className="text-slate-500">Est: ₹ {pr.estBaseline.toLocaleString()}</span>
-                  <span className="font-bold text-emerald-700">{pr.items.length} Line Items</span>
-                </div>
-              </div>
-            );
-          })}
+
+        <div className="overflow-x-auto border border-slate-200 rounded-xl">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-100 font-bold border-b text-slate-800">
+              <tr>
+                <th className="p-3 w-36">RFQ / PR ID</th>
+                <th className="p-3">Requisition Package &amp; Scope</th>
+                <th className="p-3 w-36">Category</th>
+                <th className="p-3 w-28 text-center">BOQ Scope</th>
+                <th className="p-3 w-32 text-right">Est. Baseline</th>
+                <th className="p-3 w-36 text-center">Tender Status</th>
+                <th className="p-3 w-28 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 font-sans">
+              {Object.values(prsData).map((pr) => {
+                const isSelected = pr.id === activePRId;
+                const contextPR = prs?.find(p => p.id === pr.id);
+                const isSubmitted = contextPR?.status === 'SUBMITTED' || pr.id === 'PR-2026-0005';
+                const prRfqId = `RFQ-2026-${pr.id.split('-')[2] || '0005'}`;
+                const rfqSubmitted = Boolean(
+                  rfqSubmittedMap[pr.id]?.isSubmitted ||
+                  circulatedRFQs?.[pr.id] ||
+                  circulatedRFQs?.[prRfqId]
+                );
+                return (
+                  <tr
+                    key={pr.id}
+                    onClick={() => selectPR(pr.id)}
+                    className={`cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-amber-50/90 font-semibold border-l-4 border-l-amber-500'
+                        : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <td className="p-3 font-mono font-bold">
+                      <div className="text-amber-950">RFQ-2026-{pr.id.split('-')[2] || '0005'}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">Linked: <span>{pr.id}</span></div>
+                    </td>
+                    <td className="p-3">
+                      <div className="font-bold text-slate-900">{pr.title}</div>
+                      <div className="text-[11px] text-slate-500">{pr.project} • {pr.costCenter}</div>
+                    </td>
+                    <td className="p-3 text-slate-600 font-medium">
+                      {pr.category}
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold">
+                      {pr.items.length} Lines
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-slate-900">
+                      ₹ {pr.estBaseline.toLocaleString()}
+                    </td>
+                    <td className="p-3 text-center">
+                      {rfqSubmitted ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                          RFQ Dispatched
+                        </span>
+                      ) : isSubmitted ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-900 border border-sky-300">
+                          SUBMITTED
+                        </span>
+                      ) : (
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${pr.methodBadgeClass}`}>
+                          {pr.method.replace('_', ' ')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectPR(pr.id);
+                        }}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                          isSelected
+                            ? 'bg-amber-600 text-white shadow-sm'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+                        }`}
+                      >
+                        {isSelected ? '✓ Active' : 'Select'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -507,7 +968,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
             <span className="font-bold text-amber-300 uppercase text-[10px] block">PR Raiser Nominated Suppliers (Step 4)</span>
             <div className="flex flex-wrap gap-1.5 pt-0.5">
               {currentPR.nominatedVendors.map(vid => {
-                const v = getMasterVendor(vid);
+                const v = getMasterVendor(vid, allAvailableVendors);
                 return (
                   <span key={vid} className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-bold border ${v.isRateCard ? 'bg-emerald-900/60 text-emerald-200 border-emerald-500/40' : 'bg-sky-900/60 text-sky-200 border-sky-500/40'}`}>
                     <span>{v.isRateCard ? '🟢' : '🔵'}</span>
@@ -521,7 +982,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
         </div>
       </div>
 
-      {/* 6 Buyer Functionality Tabs */}
+      {/* 5 Buyer Functionality Tabs (Master Rate Card Studio Removed) */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
           <button
@@ -532,15 +993,6 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
           >
             <Send className="w-4 h-4" />
             <span>{UI_STRINGS.categoryManagerHub.tabRFQ}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('ratecard')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              activeTab === 'ratecard' ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-sm' : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <CreditCard className="w-4 h-4" />
-            <span>{UI_STRINGS.categoryManagerHub.tabRateCard}</span>
           </button>
           <button
             onClick={() => setActiveTab('commercial')}
@@ -580,22 +1032,85 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
           </button>
         </div>
 
-        {/* Tab 1: RFQ Management & Alter Suppliers */}
+        {/* Tab 1: RFQ Management & Alter Suppliers (No Price Comparison) */}
         {activeTab === 'rfq' && (
           <div className="space-y-6 pt-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-amber-50/80 rounded-xl border border-amber-200 text-xs">
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="font-black text-amber-950 text-sm">Active RFQ: RFQ-2026-{currentPR.id.split('-')[2]}</span>
-                  <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-mono font-bold text-[10px]">Linked PR: {currentPR.id}</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Tender Circulated ✓</span>
+                  <span className="font-black text-amber-950 text-sm">
+                    Active RFQ: RFQ-2026-{(currentPR?.id || 'PR-2026-0005').split('-')[2] || '0005'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-mono font-bold text-[10px]">
+                    Linked PR: {currentPR?.id || 'PR-2026-0005'}
+                  </span>
+                  {isCurrentRFQSubmitted ? (
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-300">
+                      Tender Submitted &amp; Circulated ✓
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold text-[10px] border border-sky-300">
+                      Draft RFQ Package
+                    </span>
+                  )}
                 </div>
                 <p className="text-amber-800 mt-1">Inviting nominated suppliers for competitive electronic quotation.</p>
               </div>
               <div className="flex items-center space-x-2 shrink-0">
                 <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-1.5 rounded-lg border border-emerald-300">
-                  {rfqVendors.length} of {rfqVendors.length} Bids Received
+                  {rfqVendors.length} Suppliers in Scope
                 </span>
+              </div>
+            </div>
+
+            {/* RFQ Tender Dispatch & Closure Date Provision Controls */}
+            <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider block">
+                  Tender Schedule &amp; Commercial Governance
+                </span>
+                <h4 className="text-sm font-black text-white flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-amber-400" />
+                  <span>RFQ Tender Closure &amp; Submission Provisions</span>
+                </h4>
+                <p className="text-xs text-slate-300 max-w-xl">
+                  Set the formal quotation submission deadline for all nominated vendors.
+                  Submit the RFQ package to dispatch RFP notifications.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
+                <div className="flex items-center space-x-2 bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl">
+                  <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">
+                      {UI_STRINGS.categoryManagerHub.rfqClosureDateLabel}
+                    </span>
+                    <input
+                      type="date"
+                      value={rfqClosureDate}
+                      onChange={(e) => setRfqClosureDate(e.target.value)}
+                      className="text-xs font-mono font-bold bg-transparent text-white border-0 focus:outline-none focus:ring-0 p-0"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePublishRFQ}
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center space-x-2 transition-all ${
+                    isCurrentRFQSubmitted
+                      ? 'bg-emerald-700 text-white shadow-emerald-900/50'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white hover:shadow-lg'
+                  }`}
+                >
+                  <Send className="w-4 h-4" />
+                  <span>
+                    {isCurrentRFQSubmitted
+                      ? UI_STRINGS.categoryManagerHub.rfqSubmittedNotice
+                      : UI_STRINGS.categoryManagerHub.rfqSubmitTender}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -605,7 +1120,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                 <div>
                   <h4 className="text-xs font-black text-slate-900 flex items-center space-x-1.5">
                     <Users className="w-4 h-4 text-sky-600" />
-                    <span>Category Manager Supplier Review & Alteration Studio</span>
+                    <span>Category Manager Supplier Review &amp; Alteration Studio</span>
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">Vendors initially nominated by PR Raiser (Step 4) are loaded below. CM can add more suppliers or alter circulation list.</p>
                 </div>
@@ -629,12 +1144,13 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                 <div className="relative">
                   <button 
                     type="button"
+                    data-testid="rfq-supplier-dropdown-trigger"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="w-full text-left bg-white border border-slate-300 rounded-xl p-3 text-xs font-semibold text-slate-800 shadow-sm flex items-center justify-between hover:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
                   >
                     <div className="flex items-center space-x-2 overflow-hidden flex-1">
                       {rfqVendors.slice(0, 3).map(vid => {
-                        const v = getMasterVendor(vid);
+                        const v = getMasterVendor(vid, allAvailableVendors);
                         return (
                           <span key={vid} className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${v.isRateCard ? 'bg-emerald-50 text-emerald-900 border-emerald-300' : 'bg-sky-50 text-sky-900 border-sky-300'}`}>
                             <span>{v.isRateCard ? '🟢' : '🔵'}</span>
@@ -650,39 +1166,47 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                     </div>
                   </button>
 
-                  {isDropdownOpen && (
+                    {isDropdownOpen && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-30 max-h-64 overflow-y-auto divide-y divide-slate-100">
-                      {MASTER_VENDORS.filter(v => v.category === currentPR.categoryMajor).map(v => {
-                        const isChecked = rfqVendors.includes(v.id);
-                        const isNominatedByRaiser = currentPR.nominatedVendors.includes(v.id);
-                        return (
-                          <div 
-                            key={v.id} 
-                            onClick={() => toggleVendorSelection(v.id)}
-                            className={`p-3 flex items-center justify-between gap-3 cursor-pointer transition-all hover:bg-slate-100 ${isChecked ? (v.isRateCard ? 'bg-emerald-50/60' : 'bg-sky-50/60') : 'bg-white'}`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <input 
-                                type="checkbox" 
-                                checked={isChecked} 
-                                onChange={() => {}}
-                                className="w-4 h-4 rounded text-amber-600 border-slate-300"
-                              />
-                              <div className="flex items-center space-x-2">
-                                <span className="font-bold text-slate-900 text-xs font-mono">{v.name} ({v.id})</span>
-                                {isNominatedByRaiser && <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300">★ Raiser Nominated</span>}
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${v.isRateCard ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-sky-100 text-sky-900 border border-sky-300'}`}>
-                                  {v.isRateCard ? '🟢 Rate Card' : '🔵 Non-Rate Card'}
-                                </span>
+                      {allAvailableVendors
+                        .filter(v => matchVendorToPRCategory(v.category, currentPR.categoryMajor, currentPR.category))
+                        .map(v => {
+                          const isChecked = rfqVendors.includes(v.id);
+                          const isNominatedByRaiser = currentPR.nominatedVendors.includes(v.id);
+                          const isClientBoarded = v.source === 'CLIENT_ONBOARDED';
+                          return (
+                            <div 
+                              key={v.id} 
+                              onClick={() => toggleVendorSelection(v.id)}
+                              className={`p-3 flex items-center justify-between gap-3 cursor-pointer transition-all hover:bg-slate-100 ${isChecked ? (v.isRateCard ? 'bg-emerald-50/60' : 'bg-sky-50/60') : 'bg-white'}`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <input 
+                                  type="checkbox" 
+                                  checked={isChecked} 
+                                  onChange={() => {}} 
+                                  className="w-4 h-4 rounded text-amber-600 border-slate-300"
+                                />
+                                <div className="flex items-center space-x-2 flex-wrap">
+                                  <span className="font-bold text-slate-900 text-xs font-mono">{v.name} ({v.id})</span>
+                                  {isClientBoarded && (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white border border-emerald-700 shadow-2xs">
+                                      🏢 Client Boarded
+                                    </span>
+                                  )}
+                                  {isNominatedByRaiser && <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300">★ Raiser Nominated</span>}
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${v.isRateCard ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-sky-100 text-sky-900 border border-sky-300'}`}>
+                                    {v.isRateCard ? '🟢 Rate Card' : '🔵 Non-Rate Card'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2 text-xs shrink-0">
+                                <span className="text-amber-500 font-bold">★ {v.rating.toFixed(1)}</span>
+                                <span className="text-slate-400 font-mono">{v.leadTime}</span>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2 text-xs">
-                              <span className="text-amber-500 font-bold">★ {v.rating.toFixed(1)}</span>
-                              <span className="text-slate-400 font-mono">{v.leadTime}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   )}
                 </div>
@@ -690,12 +1214,18 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                 {/* Selected Chips */}
                 <div className="flex flex-wrap gap-2 items-center min-h-[36px] p-2.5 bg-white rounded-xl border border-slate-200">
                   {rfqVendors.map(vid => {
-                    const v = MASTER_VENDORS.find(item => item.id === vid) ?? MASTER_VENDORS[0];
+                    const v = getMasterVendor(vid, allAvailableVendors);
                     const isNominatedByRaiser = currentPR.nominatedVendors.includes(vid);
+                    const isClientBoarded = v.source === 'CLIENT_ONBOARDED';
                     return (
                       <div key={vid} className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${v.isRateCard ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-sky-100 text-sky-950 border-sky-300'}`}>
                         <span>{v.isRateCard ? '🟢' : '🔵'}</span>
                         <span>{v.name} ({v.id})</span>
+                        {isClientBoarded && (
+                          <span className="text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded font-extrabold shadow-2xs">
+                            Client Boarded
+                          </span>
+                        )}
                         {isNominatedByRaiser && <span className="text-[9px] bg-purple-200 text-purple-950 px-1 py-0.2 rounded font-extrabold">PR Raiser</span>}
                         <span className="text-amber-600 font-mono text-[11px]">★ {v.rating.toFixed(1)}</span>
                         <button onClick={() => toggleVendorSelection(vid)} className="ml-1 text-slate-500 hover:text-rose-600 font-black">✕</button>
@@ -706,76 +1236,87 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
               </div>
             </div>
 
-            {/* Quotation Comparative Statement */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-800 flex items-center">
-                <Users className="w-4 h-4 text-sky-600 mr-1.5" />
-                Vendor Quotation Comparative Statement (L1 / L2 / L3 Rankings):
-              </h4>
-              <div className="overflow-x-auto border rounded-xl">
+            {/* Nominated Suppliers Scope Roster (No Price Comparison) */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 flex items-center">
+                    <Users className="w-4 h-4 text-sky-600 mr-1.5" />
+                    Nominated Suppliers for RFQ Tender Circulation ({rfqVendors.length} Suppliers):
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Commercial comparative statements and L1/L2/L3 evaluation are processed under
+                    &ldquo;2. 4-Way Commercial Matrix &amp; CBA&rdquo;.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('commercial')}
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold text-xs shadow-sm flex items-center space-x-1.5 transition-all"
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>View 4-Way Commercial Matrix &amp; CBA →</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
                 <table className="w-full text-left text-xs text-slate-700">
                   <thead className="bg-slate-100 font-bold border-b text-slate-800">
                     <tr>
-                      <th className="p-3">Rank</th>
-                      <th className="p-3">Vendor</th>
-                      <th className="p-3">Vendor Type</th>
-                      <th className="p-3 text-right">Quoted Net Amount (₹)</th>
-                      <th className="p-3 text-center">Variance vs Est Baseline</th>
+                      <th className="p-3 w-12">#</th>
+                      <th className="p-3">Supplier Name &amp; Code</th>
+                      <th className="p-3">Supplier Type</th>
+                      <th className="p-3">Nomination Source</th>
+                      <th className="p-3">Supplier Rating</th>
                       <th className="p-3">Lead Time</th>
-                      <th className="p-3">Compliance</th>
+                      <th className="p-3 text-center">Tender Status</th>
                       <th className="p-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {sortedVendorIds.slice(0, 3).map((vid, idx) => {
-                      const v = getMasterVendor(vid);
-                      const data = vendorTotals[vid];
-                      const varPct = (((data.total - currentPR.estBaseline) / currentPR.estBaseline) * 100).toFixed(1);
-
+                    {rfqVendors.map((vid, idx) => {
+                      const v = getMasterVendor(vid, allAvailableVendors);
+                      const isNominatedByRaiser = currentPR.nominatedVendors.includes(vid);
                       return (
-                        <tr key={vid} className={idx === 0 ? 'bg-emerald-50/40' : ''}>
-                          <td className="p-3 font-bold text-emerald-700">
-                            <span className={`px-2 py-0.5 rounded font-bold font-mono ${idx === 0 ? 'bg-emerald-200 text-emerald-950 font-black' : 'bg-slate-200 text-slate-800'}`}>L{idx + 1}</span>
+                        <tr key={vid} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-3 font-mono text-slate-400">{idx + 1}</td>
+                          <td className="p-3 font-bold text-slate-900">
+                            <div>{v.name}</div>
+                            <div className="text-[10px] text-slate-400 font-mono font-normal">{v.id} • {v.city}</div>
                           </td>
-                          <td className="p-3 font-bold text-slate-900">{v.name} ({v.id})</td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${v.isRateCard ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-sky-100 text-sky-900 border border-sky-300'}`}>
                               {v.isRateCard ? '🟢 Rate Card' : '🔵 Non-Rate Card'}
                             </span>
                           </td>
-                          <td className="p-3 text-right font-mono font-bold text-emerald-950">₹ {data.total.toLocaleString()}</td>
-                          <td className={`p-3 text-center font-bold font-mono ${parseFloat(varPct) >= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                            {parseFloat(varPct) >= 0 ? '+' : ''}{varPct}%
+                          <td className="p-3">
+                            {isNominatedByRaiser ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300">
+                                ★ PR Raiser Nominated
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 text-[11px]">CM Added</span>
+                            )}
                           </td>
-                          <td className="p-3">{v.leadTime}</td>
-                          <td className="p-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">100% Compliant</span></td>
+                          <td className="p-3 text-amber-500 font-bold font-mono">
+                            ★ {v.rating.toFixed(1)}
+                          </td>
+                          <td className="p-3 font-mono text-slate-600">
+                            {v.leadTime}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              {isCurrentRFQSubmitted ? 'Tender Circulated' : 'Ready to Dispatch'}
+                            </span>
+                          </td>
                           <td className="p-3 text-right">
-                            <div className="flex items-center justify-end space-x-1.5 flex-wrap gap-1">
-                              {idx === 0 ? (
-                                <button 
-                                  onClick={() => initiatePPOAward(vid, false)} 
-                                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-sm flex items-center space-x-1"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Award PPO (L1) →</span>
-                                </button>
-                              ) : (
-                                <button 
-                                  onClick={() => initiatePPOAward(vid, true)} 
-                                  className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shadow-sm flex items-center space-x-1"
-                                >
-                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-200" />
-                                  <span>Award PPO (Non-L1) →</span>
-                                </button>
-                              )}
-                              <button 
-                                onClick={() => setActiveTab('commercial')} 
-                                className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs shadow-sm"
-                                title="View in 4-Way CBA Matrix"
-                              >
-                                CBA Matrix →
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleVendorSelection(vid)}
+                              className="text-rose-500 hover:text-rose-700 font-bold text-xs"
+                            >
+                              Remove
+                            </button>
                           </td>
                         </tr>
                       );
@@ -784,166 +1325,22 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                 </table>
               </div>
             </div>
+
+            {/* RFQ Tender Circulation History Across Enterprise */}
+            <RFQCirculationHistoryTable
+              circulatedRFQs={circulatedRFQs}
+              prs={prs}
+              activePRId={activePRId}
+              onSelectPR={selectPR}
+              onOpenCommercialTab={(targetPrId) => {
+                selectPR(targetPrId);
+                setActiveTab('commercial');
+              }}
+            />
           </div>
         )}
 
-        {/* Tab 2: Master Rate Card Studio & Multi-Vendor Comparison (Method 2) */}
-        {activeTab === 'ratecard' && (
-          <div className="space-y-5 pt-2">
-            {isMethod2 ? (
-              // Method 2 Vendor Rate Card Comparison (Vendor 14 vs Vendor 15)
-              <div className="space-y-4">
-                <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase bg-teal-200 text-teal-900 px-2 py-0.5 rounded font-mono">Method 2 Corporate Standard Template</span>
-                      <h4 className="text-sm font-black text-slate-900 mt-1">Multi-Vendor Contracted Rate Card Comparison Matrix</h4>
-                      <p className="text-xs text-slate-600">Side-by-side comparison of contracted schedule rates agreed with Tier-1 MEP OEM partners.</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Overall Lowest Rate Card (L1)</span>
-                      <span className="text-sm font-mono font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 inline-block mt-0.5">Vendor 14 (VND-014)</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                    <div className="p-3 bg-white rounded-xl border border-emerald-300 shadow-sm flex items-center justify-between">
-                      <div>
-                        <span className="font-bold text-slate-900">🟢 Vendor 14 (RC-2026-MEP-01)</span>
-                        <p className="text-[11px] text-slate-500">Contract: Valid till Dec 2026 • 15 Days Lead Time</p>
-                      </div>
-                      <span className="text-base font-mono font-black text-emerald-700">₹ {vendorTotals['VND-014'].total.toLocaleString()}</span>
-                    </div>
-                    <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                      <div>
-                        <span className="font-bold text-slate-900">🟢 Vendor 15 (RC-2026-MEP-02)</span>
-                        <p className="text-[11px] text-slate-500">Contract: Valid till Jan 2027 • 14 Days Lead Time</p>
-                      </div>
-                      <span className="text-base font-mono font-black text-slate-800">₹ {vendorTotals['VND-015'].total.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-                  <table className="w-full text-left text-xs text-slate-700">
-                    <thead className="bg-slate-100 font-bold border-b text-slate-800">
-                      <tr>
-                        <th className="p-3">#</th>
-                        <th className="p-3">Specification & Item Code</th>
-                        <th className="p-3 text-right">Qty & UOM</th>
-                        <th className="p-3 text-right bg-blue-50/80 font-mono text-blue-950">Best Historical Price (₹)</th>
-                        <th className="p-3 text-right bg-purple-50/80 font-mono">AI Should-Cost</th>
-                        <th className="p-3 text-right bg-emerald-50/80 font-mono text-emerald-950">Vendor 14 Rate Card</th>
-                        <th className="p-3 text-right bg-slate-50 font-mono text-slate-800">Vendor 15 Rate Card</th>
-                        <th className="p-3 text-center font-mono">Rate Delta</th>
-                        <th className="p-3 text-center">L1 Winner</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 font-mono">
-                      {currentPR.items.map((it, idx) => {
-                        const rc14 = getItemRateCard(it, 'VND-014');
-                        const rc15 = getItemRateCard(it, 'VND-015');
-                        const amt14 = it.qty * rc14;
-                        const amt15 = it.qty * rc15;
-                        const isL1Package14 = rc14 <= rc15;
-                        const delta = Math.abs(rc14 - rc15);
-
-                        return (
-                          <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 text-slate-400">{idx + 1}</td>
-                            <td className="p-3">
-                              <span className="font-bold text-slate-900 block font-sans">{it.desc}</span>
-                              <span className="text-[10px] text-sky-700">{it.code}</span>
-                            </td>
-                            <td className="p-3 text-right font-bold">{it.qty} {it.uom}</td>
-                            <td className="p-3 text-right bg-blue-50/50 text-blue-950 font-bold">
-                              <div>₹ {it.bestHistoricalPrice.toLocaleString()}</div>
-                              <div className="text-[9px] text-slate-400 font-normal font-sans">{it.prevPo}</div>
-                            </td>
-                            <td className="p-3 text-right bg-purple-50/50 text-purple-900 font-bold">₹ {it.benchmark.toLocaleString()}</td>
-                            <td className={`p-3 text-right ${isL1Package14 ? 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-300' : 'bg-slate-50 text-slate-800'}`}>
-                              <div>₹ {rc14.toLocaleString()} / {it.uom}</div>
-                              <div className="text-[10px] text-slate-500 font-normal">Tot: ₹ {amt14.toLocaleString()}</div>
-                              {isL1Package14 && <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-200 text-emerald-900">★ L1 RATE</span>}
-                            </td>
-                            <td className={`p-3 text-right ${!isL1Package14 ? 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-300' : 'bg-slate-50 text-slate-800'}`}>
-                              <div>₹ {rc15.toLocaleString()} / {it.uom}</div>
-                              <div className="text-[10px] text-slate-500 font-normal">Tot: ₹ {amt15.toLocaleString()}</div>
-                              {!isL1Package14 && <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-200 text-emerald-900">★ L1 RATE</span>}
-                            </td>
-                            <td className="p-3 text-center font-bold text-slate-700">₹ {delta.toLocaleString()}</td>
-                            <td className="p-3 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isL1Package14 ? 'bg-emerald-100 text-emerald-900' : 'bg-sky-100 text-sky-900'}`}>
-                                {isL1Package14 ? 'Vendor 14 L1' : 'Vendor 15 L1'}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot className="bg-slate-100 font-black border-t-2 border-slate-300 text-slate-900 font-mono">
-                      <tr>
-                        <td colSpan={3} className="p-3 text-right font-sans uppercase">Total Package Commitment:</td>
-                        <td className="p-3 text-right text-blue-950 bg-blue-100/70 font-bold">₹ {currentPR.items.reduce((acc, it) => acc + (it.qty * it.bestHistoricalPrice), 0).toLocaleString()}</td>
-                        <td className="p-3 text-right text-purple-900 font-bold">₹ {currentPR.items.reduce((acc, it) => acc + (it.qty * it.benchmark), 0).toLocaleString()}</td>
-                        <td className="p-3 text-right text-emerald-950 bg-emerald-100/70 font-black">₹ {vendorTotals['VND-014'].total.toLocaleString()}</td>
-                        <td className="p-3 text-right text-slate-900 font-bold">₹ {vendorTotals['VND-015'].total.toLocaleString()}</td>
-                        <td className="p-3 text-center text-emerald-700 font-bold">₹ {Math.abs(vendorTotals['VND-014'].total - vendorTotals['VND-015'].total).toLocaleString()}</td>
-                        <td className="p-3 text-center">
-                          <button onClick={() => initiatePPOAward('VND-014', false)} className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] shadow-sm">
-                            Direct Award L1 →
-                          </button>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              // Standard Tenant Rate Card
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Tenant Contracted Master Rate Cards ({currentPR.category})</h4>
-                    <p className="text-[11px] text-slate-500">Agreed schedule of rates with empanelled vendors for {currentPR.project}.</p>
-                  </div>
-                  <span className="text-xs font-mono bg-blue-50 text-blue-800 font-bold px-2.5 py-1 rounded-lg border border-blue-200">Active Rate Agreement: RC-2026-{currentPR.categoryMajor}-01</span>
-                </div>
-
-                <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-                  <table className="w-full text-left text-xs text-slate-700">
-                    <thead className="bg-slate-100 font-bold border-b text-slate-800">
-                      <tr>
-                        <th className="p-3">Item Code</th>
-                        <th className="p-3">Specification</th>
-                        <th className="p-3 w-20">UOM</th>
-                        <th className="p-3 w-36 text-right bg-blue-50 font-mono font-bold text-blue-950">Best Historical Price (₹)</th>
-                        <th className="p-3 w-40 text-left font-sans">Previous Award Reference</th>
-                        <th className="p-3 w-32 text-right font-mono">AI Benchmark (₹)</th>
-                        <th className="p-3 w-28 text-center">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 font-mono">
-                      {currentPR.items.map((it, idx) => (
-                        <tr key={idx}>
-                          <td className="p-3 font-bold text-sky-800">{it.code}</td>
-                          <td className="p-3 font-sans font-semibold text-slate-800">{it.desc}</td>
-                          <td className="p-3 font-bold">{it.uom}</td>
-                          <td className="p-3 text-right bg-blue-50/60 font-bold text-blue-950">₹ {it.bestHistoricalPrice.toLocaleString()}</td>
-                          <td className="p-3 font-sans text-xs text-slate-600">{it.prevPo}</td>
-                          <td className="p-3 text-right font-bold text-emerald-700">₹ {it.benchmark.toLocaleString()}</td>
-                          <td className="p-3 text-center"><span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">ACTIVE</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 3: 4-Way Commercial Matrix & CBA with Line-Item Rate, Amount, MLEO & PPO Direct Award */}
+        {/* Tab 2: 4-Way Commercial Matrix & CBA with Line-Item Rate, Amount, MLEO & PPO Direct Award */}
         {activeTab === 'commercial' && (
           <div className="space-y-6 pt-2">
             
@@ -994,8 +1391,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {sortedVendorIds.map((vid, rankIdx) => {
                   const v = participatingVendors.find(item => item.id === vid)
-                    ?? participatingVendors[0]
-                    ?? MASTER_VENDORS[0];
+                    ?? getMasterVendor(vid, allAvailableVendors);
                   const data = vendorTotals[vid];
                   const isL1 = rankIdx === 0;
                   const diffOverL1 = data.total - l1MinTotal;
@@ -1253,11 +1649,11 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                               <td className={`p-3 text-right font-mono ${isItemL1 ? 'bg-emerald-50/70 font-black text-emerald-950' : 'text-slate-800 font-bold'}`}>
                                 {isRevised ? (
                                   <div>
-                                    <div className="line-through text-[10px] text-slate-400">₹ {vData.initialRate.toLocaleString()}</div>
-                                    <div className="text-xs text-emerald-700 font-black">₹ {vData.revisedRate?.toLocaleString()}</div>
+                                    <div className="line-through text-[10px] text-slate-400">₹ {vData.initialRate.toLocaleString()} <span className="text-[8px] font-sans font-normal">(Q1)</span></div>
+                                    <div className="text-xs text-emerald-700 font-black">₹ {vData.revisedRate?.toLocaleString()} <span className="text-[8px] font-sans font-bold text-emerald-800">(Q2 BAFO)</span></div>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-slate-900">₹ {vData.initialRate.toLocaleString()}</div>
+                                  <div className="text-xs text-slate-900">₹ {vData.initialRate.toLocaleString()} <span className="text-[8px] font-sans text-slate-400 font-normal">(Q1)</span></div>
                                 )}
                                 {isItemL1 && <span className="inline-block px-1 py-0.2 rounded text-[8px] font-black bg-emerald-200 text-emerald-900">★ L1 Rate</span>}
                               </td>
@@ -1404,8 +1800,7 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                           <div className="text-[9px] text-slate-500 font-mono mt-0.5">
                             {sortedVendorIds.map((vid, rIdx) => {
                               const vObj = participatingVendors.find(v => v.id === vid)
-                                ?? participatingVendors[0]
-                                ?? MASTER_VENDORS[0];
+                                ?? getMasterVendor(vid, allAvailableVendors);
                               return `L${rIdx + 1}: ${vObj.name}`;
                             }).join(' < ')}
                           </div>
@@ -1666,6 +2061,21 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
         {/* Tab 5: Vendor Negotiation Hub (Multi-Round with 2nd Quote) */}
         {activeTab === 'negotiation' && (
           <div className="space-y-6 pt-2">
+            {onRouteToNegotiation && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 shadow-xs">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-amber-800">⚡ Dedicated Role & Module:</span>
+                  <span>Vendor Negotiation Hub is now separated into an independent governance role and dedicated module.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onRouteToNegotiation}
+                  className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-xs transition-colors shrink-0 text-xs"
+                >
+                  Open Dedicated Hub →
+                </button>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-slate-900 text-white rounded-xl border border-slate-800 text-xs">
               <div>
                 <div className="flex items-center space-x-2">
@@ -1783,9 +2193,10 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                   <tbody className="divide-y divide-slate-200 font-mono">
                     {currentPR.items.map((it, idx) => {
                       const shouldCostAmt = it.qty * it.benchmark;
+                      const selectedVendorDetail = it.vendorQuotes?.[selectedOfferVendorId === 'ALL' ? (participatingVendors[0]?.id || 'VND-001') : selectedOfferVendorId];
                       const currentCounterRate = lineCounterRates[it.code] !== undefined
                         ? lineCounterRates[it.code]
-                        : Math.round(it.benchmark * 1.04);
+                        : (selectedVendorDetail?.buyerOffer1 ?? Math.round(it.benchmark * 1.04));
                       const currentCounterAmt = it.qty * currentCounterRate;
 
                       return (
@@ -2060,7 +2471,29 @@ export const CategoryManagerHub: React.FC<CategoryManagerHubProps> = ({ onRouteT
                   <button onClick={() => setActiveTab('commercial')} className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-xs text-slate-700 hover:bg-slate-50">
                     {UI_STRINGS.categoryManagerHub.backToCommercial}
                   </button>
-                  <button onClick={onRouteToPPO} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5">
+                  <button
+                    onClick={() => {
+                      if (awardedPPO && typeof createPPO === 'function') {
+                        createPPO({
+                          prId: currentPR.id,
+                          vendor: awardedPPO.vendorName,
+                          itemDesc: `${currentPR.title} Package Scope Execution`,
+                          unitRate: awardedPPO.netTotal,
+                          qty: 1,
+                          totalVal: awardedPPO.netTotal,
+                          taxRate: 18,
+                          taxAmount: awardedPPO.gst,
+                          grandTotal: awardedPPO.grandTotal,
+                          paymentTerms: '30 Days Net from delivery & QC signoff',
+                          leadTime: '14 Calendar Days',
+                        });
+                      }
+                      if (onRouteToPPO) {
+                        onRouteToPPO();
+                      }
+                    }}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5"
+                  >
                     <span>{UI_STRINGS.categoryManagerHub.routePPOToWorkflow}</span>
                   </button>
                 </div>

@@ -2,24 +2,41 @@
 
 import React, { useState } from 'react';
 import { Header } from '../components/Header';
-import { Dashboard } from '../components/Dashboard';
-import { PRModule } from '../components/PRModule';
 import { PRApprovalQueue } from '../components/PRApprovalQueue';
-import { CategoryManagerHub } from '../components/CategoryManagerHub';
 import { PPOModule } from '../components/PPOModule';
 import { VendorPortal } from '../components/VendorPortal';
 import { TenantOverview } from '../components/TenantOverview';
 import { MastersAudit } from '../components/MastersAudit';
+import { BudgetPlanningModule, CategoryStandardBOQMaster } from '../components/budget';
+import { BOQAndRFQManagementModule } from '../components/BOQAndRFQManagementModule';
+import { NegotiationHub } from '../components/NegotiationHub';
+import { ModuleAccessGate } from '../components/pricing';
+import { VendorManagementModule } from '../components/vendor-management';
 import { PlusCircle, X } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 
 export default function Home(): JSX.Element {
-  const { createPR, createPPO, prs } = useProcurement();
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
+  const { createPR, createPPO, prs, setActiveRole, projectCategories } = useProcurement();
+  const [currentTab, setCurrentTab] = useState<string>('budget_planning');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      if (hash.includes('budget') || search.includes('budget')) {
+        setActiveRole('FINANCE_HEAD');
+        setCurrentTab('budget_planning');
+      } else if (hash.includes('negotiat') || search.includes('negotiat')) {
+        setActiveRole('VENDOR_NEGOTIATION_HUB');
+        setCurrentTab('vendor_negotiation_hub');
+      }
+    }
+  }, [setActiveRole]);
   
   // Modals state
   const [isNewPRModalOpen, setIsNewPRModalOpen] = useState<boolean>(false);
   const [isNewPPOModalOpen, setIsNewPPOModalOpen] = useState<boolean>(false);
+  const [boqSubTab, setBoqSubTab] = useState<'boq_studio' | 'rfq_hub'>('boq_studio');
 
   // Form states
   const [prTitle, setPrTitle] = useState<string>('');
@@ -43,17 +60,27 @@ export default function Home(): JSX.Element {
       projectName: prProject || 'Metro Line 4 Underground',
       costCentre: prCostCentre,
       category: prCategory,
-      requester: 'Site Procurement Engineer',
+      requester: 'Rahul Verma (Category Manager)',
       reqDate: prDate,
       remarks: prRemarks,
       items: [
-        { code: 'GEN-ITEM-001', desc: prTitle || 'Custom Scope Item', uom: 'Nos', qty: 100, rateCard: 1000, benchmark: 950, std: 980, aiConf: '92%' },
+        {
+          code: 'GEN-ITEM-001',
+          desc: prTitle || 'Custom Scope Item',
+          uom: 'Nos',
+          qty: 100,
+          rateCard: 1000,
+          benchmark: 950,
+          std: 980,
+          aiConf: '92%',
+        },
       ],
     });
     setIsNewPRModalOpen(false);
     setPrTitle('');
     setPrProject('');
-    setCurrentTab('pr_approval_queue');
+    setBoqSubTab('boq_studio');
+    setCurrentTab('boq_rfq_management');
   };
 
   const handleCreatePPOSubmit = (e: React.FormEvent): void => {
@@ -89,47 +116,76 @@ export default function Home(): JSX.Element {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-        {/* VIEW 0: DASHBOARD */}
-        {currentTab === 'dashboard' && (
-          <Dashboard 
-            onNavigate={(tab) => {
-              if (tab === 'prs') setCurrentTab('boq_raiser_studio');
-              else if (tab === 'commercial' || tab === 'ai-cost' || tab === 'negotiation') setCurrentTab('category_manager_hub');
-              else if (tab === 'ppo') setCurrentTab('ppo_workorders');
-              else setCurrentTab(tab);
-            }} 
-          />
+        {/* VIEW 1: BUDGET PLANNING (FINANCE MANAGER) */}
+        {currentTab === 'budget_planning' && (
+          <ModuleAccessGate moduleId="budget_planning">
+            <BudgetPlanningModule
+              onRouteToPR={() => setCurrentTab('boq_rfq_management')}
+              onRouteToMaster={() => setCurrentTab('category_standard_boq_master')}
+            />
+          </ModuleAccessGate>
         )}
 
-        {/* VIEW 1: BOQ STUDIO & PR REQUISITIONS (PR RAISER SCOPE) */}
-        {(currentTab === 'boq_raiser_studio' || currentTab === 'prs' || currentTab === 'boq') && (
-          <PRModule
-            onNavigateToBOQ={(_prId: string) => {
-              setCurrentTab('pr_approval_queue');
-            }}
-            onOpenNewPRModal={() => setIsNewPRModalOpen(true)}
-          />
+        {/* VIEW 1: BOQ & RFQ MANAGEMENT MODULE (CLUBBED PROJECT TEAM & CATEGORY MANAGER) */}
+        {(currentTab === 'boq_rfq_management' || currentTab === 'boq_raiser_studio' || currentTab === 'category_manager_hub' || currentTab === 'prs' || currentTab === 'boq' || currentTab === 'commercial' || currentTab === 'ai-cost') && (
+          <ModuleAccessGate moduleId="boq_rfq_management">
+            <BOQAndRFQManagementModule
+              initialSubTab={
+                currentTab === 'category_manager_hub' || currentTab === 'commercial' || currentTab === 'ai-cost'
+                  ? 'rfq_hub'
+                  : boqSubTab
+              }
+              onOpenNewPRModal={() => setIsNewPRModalOpen(true)}
+              onRouteToPPO={() => setCurrentTab('ppo_workorders')}
+              onRouteToNegotiation={() => setCurrentTab('vendor_negotiation_hub')}
+            />
+          </ModuleAccessGate>
         )}
 
-        {/* VIEW 2: PR APPROVALS (PROJECT HEAD) */}
+        {/* VIEW: CATEGORY & STANDARD BOQ MASTER (MODULE 2 & 3) */}
+        {currentTab === 'category_standard_boq_master' && (
+          <ModuleAccessGate moduleId="category_standard_boq_master">
+            <CategoryStandardBOQMaster
+              onRouteToBudget={() => setCurrentTab('budget_planning')}
+            />
+          </ModuleAccessGate>
+        )}
+
+        {/* VIEW 3: VENDOR DIRECTORY & EVALUATION (MODULE 2 & 3) */}
+        {currentTab === 'vendor_management' && (
+          <ModuleAccessGate moduleId="vendor_management">
+            <VendorManagementModule
+              onRouteToVendorPortal={() => {
+                setActiveRole('VENDOR');
+                setCurrentTab('vendor_portal');
+              }}
+            />
+          </ModuleAccessGate>
+        )}
+
+        {/* VIEW 4: VENDOR NEGOTIATION HUB (SEPARATE GOVERNANCE ROLE & MODULE) */}
+        {(currentTab === 'vendor_negotiation_hub' || currentTab === 'negotiation') && (
+          <ModuleAccessGate moduleId="vendor_negotiation_hub">
+            <NegotiationHub />
+          </ModuleAccessGate>
+        )}
+
+        {/* VIEW 2: PR APPROVALS (PROJECT HEAD AUDIT QUEUE) */}
         {currentTab === 'pr_approval_queue' && (
-          <PRApprovalQueue
-            onRouteToCategoryManager={() => setCurrentTab('category_manager_hub')}
-          />
-        )}
-
-        {/* VIEW 3: FULL CATEGORY MANAGER SOURCING COMMAND CENTER */}
-        {(currentTab === 'category_manager_hub' || currentTab === 'commercial' || currentTab === 'ai-cost' || currentTab === 'negotiation') && (
-          <CategoryManagerHub
-            onRouteToPPO={() => setCurrentTab('ppo_workorders')}
-          />
+          <ModuleAccessGate moduleId="pr_approval_queue">
+            <PRApprovalQueue
+              onRouteToCategoryManager={() => setCurrentTab('boq_rfq_management')}
+            />
+          </ModuleAccessGate>
         )}
 
         {/* VIEW 4-6: PPO APPROVAL & PO RELEASE */}
         {(currentTab === 'ppo_workorders' || currentTab === 'ppo') && (
-          <PPOModule
-            onOpenCreatePPO={() => setIsNewPPOModalOpen(true)}
-          />
+          <ModuleAccessGate moduleId="ppo_workorders">
+            <PPOModule
+              onOpenCreatePPO={() => setIsNewPPOModalOpen(true)}
+            />
+          </ModuleAccessGate>
         )}
 
         {/* VIEW 7: VENDOR PORTAL */}
@@ -209,10 +265,20 @@ export default function Home(): JSX.Element {
                     onChange={(e) => setPrCategory(e.target.value)}
                     className="w-full border rounded-lg p-2.5 bg-slate-50 font-semibold"
                   >
-                    <option value="Interior & Fitouts">Interior & Fitouts</option>
-                    <option value="Civil Materials">Civil Materials</option>
-                    <option value="Structural Steel">Structural Steel</option>
-                    <option value="MEP Equipment">MEP Equipment</option>
+                    {projectCategories && projectCategories.length > 0 ? (
+                      projectCategories.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Interior & Fitouts">Interior & Fitouts</option>
+                        <option value="Civil Materials">Civil Materials</option>
+                        <option value="Structural Steel">Structural Steel</option>
+                        <option value="MEP Equipment">MEP Equipment</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>

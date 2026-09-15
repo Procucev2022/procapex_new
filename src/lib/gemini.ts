@@ -1,10 +1,23 @@
 import type { GenerativeModel } from '@google/generative-ai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from './logger';
-import type { MLEOCostBreakdown, NegotiationParams, NegotiationTactic } from '@/types';
+import type {
+  MLEOCostBreakdown,
+  NegotiationParams,
+  NegotiationTactic,
+  DrawingExtractionRequest,
+  DrawingExtractionResult,
+} from '@/types';
 import { DEFAULT_GEMINI_MODEL } from '@/constants';
+import { cleanDrawingTitle, extractBOQItemsFromDrawing } from './boq-extractor';
 
-export type { MLEOCostBreakdown, NegotiationParams, NegotiationTactic };
+export type {
+  MLEOCostBreakdown,
+  NegotiationParams,
+  NegotiationTactic,
+  DrawingExtractionRequest,
+  DrawingExtractionResult,
+};
 
 export interface GeminiModelContext {
   model: GenerativeModel;
@@ -287,3 +300,176 @@ Provide a tactical counter-offer. Respond ONLY with valid JSON in this structure
     isLiveAi: false,
   };
 }
+
+function buildDrawingPrompt(params: DrawingExtractionRequest): string {
+  const { fileName = '', fileType = '', drawingTitleHint = '', categoryHint = '', textContent = '' } = params;
+  return `You are a chief construction estimation engineer and CAD drawing reader.
+A user has uploaded a technical engineering drawing for procurement.
+Drawing Details:
+File Name: "${fileName}"
+File Type: "${fileType}"
+Drawing Title / Elevation Hint: "${drawingTitleHint}"
+Project Trade / Category Context: "${categoryHint}"
+${textContent ? `OCR / Drawing Text Block: "${textContent}"` : ''}
+
+CRITICAL ARCHITECTURAL RULES:
+1. If the drawing is for interior woodwork, joinery, or millwork (such as "Full Height Storage", "Storage - 1 Elevation", "Wardrobe", "Cabinet", "Counter", "Shelving Unit"):
+   - Inspect drawing callouts carefully (e.g. "PLY as 20mm thick", "21066 Black laminate lam-01 for inside", "Magas Walnut 10510 lam-02 for outside", "75mm gap between shutter and R.F.L").
+   - Extract specifications for:
+     a. Carcass & shelves substrate (e.g. 20mm BWP Plywood IS 710)
+     b. Internal finish (e.g. 1.0mm 21066 Black Laminate lam-01)
+     c. External finish (e.g. 1.0mm Magas Walnut 10510 Decorative Laminate lam-02)
+     d. Full height shutter door leaf with matching PVC edge banding
+     e. Joinery hardware (soft-close 3D concealed hinges, handle, magnetic catch)
+     f. Plinth / base skirting (75mm with waterproof silicone sealing)
+   - STRICT PROHIBITION: Under NO circumstance should industrial warehouse slotted angle pallet racks, steel shelving, or wire mesh decking be generated for an interior millwork / wardrobe drawing.
+2. Only generate industrial pallet racking if the drawing explicitly depicts heavy industrial warehouse racking.
+
+Analyze the drawing and provide:
+1. "drawingTitle": The clean, official drawing sheet name or elevation title.
+2. "category": The primary engineering trade (e.g. "Interior & Fitouts", "Civil & Structural", "Electrical & ELV", "HVAC & Mechanical", "Plumbing & Sanitary", "Facade & Glazing").
+3. "subCategory": The specialized sub-trade.
+4. "confidence": AI extraction confidence percentage (e.g. "96%").
+5. "items": An array of 4 to 8 itemized engineering specifications strictly corresponding to this drawing. Each item MUST have:
+   - "code": Unique uppercase specification code (e.g. "DWG-SPEC-001")
+   - "desc": Detailed technical specification with material grades, dimensions, hardware, or finish
+   - "uom": Standard engineering unit (one of: "Sqm", "Rmt", "Nos", "Kg", "Set", "Cum", "Ton", "Sqft")
+   - "qty": Calculated quantity (number) based on drawing dimensions/scope
+   - "benchmark": Fair unit rate in INR (number)
+   - "rateCard": Rate card rate in INR (number)
+   - "status": "Active"
+
+Respond ONLY with valid JSON in this exact structure without markdown backticks:
+{
+  "drawingTitle": "<string>",
+  "category": "<string>",
+  "subCategory": "<string>",
+  "confidence": "<string>",
+  "items": [
+    {
+      "code": "<string>",
+      "desc": "<string>",
+      "uom": "<string>",
+      "qty": 10,
+      "benchmark": 1500,
+      "rateCard": 1500,
+      "status": "Active"
+    }
+  ]
+}`;
+}
+
+export async function extractDrawingWithAI(
+  params: DrawingExtractionRequest,
+): Promise<DrawingExtractionResult> {
+  const gemini = getGeminiModel();
+  const { fileName = '', drawingTitleHint = '', categoryHint = '' } = params;
+
+  logger.info('lib/gemini', 'Initiating AI drawing extraction', {
+    fileName,
+    drawingTitleHint,
+    categoryHint,
+    hasApiKey: Boolean(gemini),
+    hasBase64: Boolean(params.fileBase64),
+  });
+
+  if (gemini) {
+    const startTime = Date.now();
+    try {
+      const prompt = buildDrawingPrompt(params);
+      let contentPayload: string | Array<string | { inlineData: { data: string; mimeType: string } }> = prompt;
+
+      if (params.fileBase64) {
+        const cleanBase64 = params.fileBase64.replace(/^data:[^;]+;base64,/, '');
+        const mimeType = params.fileMimeType || (params.fileName?.endsWith('.pdf') ? 'application/pdf' : 'image/png');
+        contentPayload = [
+          prompt,
+          {
+            inlineData: {
+              data: cleanBase64,
+              mimeType,
+            },
+          },
+        ];
+      }
+
+      const result = await gemini.model.generateContent(contentPayload);
+      const text = result.response.text();
+      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+        logger.info('lib/gemini', 'Gemini AI drawing extraction succeeded', {
+          durationMs: Date.now() - startTime,
+          drawingTitle: parsed.drawingTitle,
+          itemCount: parsed.items.length,
+          modelUsed: gemini.displayModelName,
+        });
+
+        const resolvedTitle = parsed.drawingTitle || drawingTitleHint || cleanDrawingTitle(fileName);
+        return {
+          drawingTitle: resolvedTitle,
+          category: parsed.category || categoryHint || 'Interior & Fitouts',
+          subCategory: parsed.subCategory,
+          items: parsed.items.map((
+            it: {
+              code?: string;
+              desc?: string;
+              uom?: string;
+              qty?: number;
+              benchmark?: number;
+              rateCard?: number;
+            },
+            idx: number,
+          ) => ({
+            code: it.code || `DWG-SPEC-00${idx + 1}`,
+            desc: it.desc || `Specification ${idx + 1} for ${resolvedTitle}`,
+            uom: it.uom || 'Sqm',
+            qty: Number(it.qty) || 1,
+            benchmark: Number(it.benchmark) || 1500,
+            rateCard: Number(it.rateCard) || Number(it.benchmark) || 1500,
+            status: 'Active',
+            drawingElevation: resolvedTitle,
+          })),
+          modelUsed: gemini.displayModelName,
+          isLiveAi: true,
+          confidence: parsed.confidence || '96%',
+        };
+      }
+    } catch (err: unknown) {
+      logger.warn('lib/gemini', 'Gemini drawing extraction failed, falling back to engineering extractor', {
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - startTime,
+      });
+    }
+  }
+
+  // Offline intelligent engineering fallback
+  const resolvedTitle = drawingTitleHint?.trim() || cleanDrawingTitle(fileName || 'Technical Drawing');
+  const items = extractBOQItemsFromDrawing(resolvedTitle, categoryHint);
+
+  logger.info('lib/gemini', 'Generated engineering drawing specifications via offline engine', {
+    resolvedTitle,
+    itemCount: items.length,
+    isLiveAi: false,
+  });
+
+  return {
+    drawingTitle: resolvedTitle,
+    category: categoryHint || 'Interior & Fitouts',
+    items: items.map(it => ({
+      code: it.code,
+      desc: it.desc,
+      uom: it.uom,
+      qty: it.qty,
+      benchmark: it.benchmark || 1500,
+      rateCard: it.rateCard || 1500,
+      status: 'Active',
+      drawingElevation: resolvedTitle,
+    })),
+    modelUsed: `${getConfiguredModelName()} (Demo Mode - Add GEMINI_API_KEY to .env for live AI)`,
+    isLiveAi: false,
+    confidence: '95%',
+  };
+}
+

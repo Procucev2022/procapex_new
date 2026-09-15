@@ -1,3 +1,5 @@
+import type { PricingTierId } from './pricing';
+
 export type TenantKey = 'TNT_LNT' | 'TNT_TATA' | 'TNT_GODREJ' | 'TNT_SHAPOORJI';
 
 export interface TenantUser {
@@ -10,18 +12,21 @@ export interface TenantConfig {
   name: string;
   short: string;
   project: string;
+  tier: PricingTierId;
   vendor?: string;
   team: Record<string, TenantUser>;
 }
 
 export type UserRole = 
-  | 'PROJECT_TEAM'          // 1. Project Team (PR Raiser)
-  | 'PROJECT_HEAD_PR'       // 2. Project Head (PR Approver)
-  | 'CATEGORY_MANAGER'      // 3. Category Manager (Buyer / Procurement / PPO Raiser)
-  | 'CATEGORY_MANAGER_2'    // 4. Category Manager 2 (Procurement Head Approver / PPO Approver)
-  | 'PROJECT_HEAD_PPO'      // 5. Project Head (PPO Approver)
-  | 'FINANCE_HEAD'          // 6. Finance Head (PPO Approver & PO Release)
-  | 'VENDOR'                // 7. Vendor (Supplier Portal)
+  | 'BOQ_RFQ_MANAGER'       // 1. BOQ & RFQ Management (Project Team & Category Manager)
+  | 'VENDOR_NEGOTIATION_HUB' // 2. Vendor Negotiation Hub
+  | 'CATEGORY_MANAGER_2'    // 3. Category Manager 2 (Procurement Head Approver / PPO Approver)
+  | 'PROJECT_HEAD_PPO'      // 4. Project Head (PPO Approver)
+  | 'FINANCE_HEAD'          // 5. Finance Head (Budget Planning)
+  | 'VENDOR'                // 6. Vendor (Supplier Portal)
+  | 'PROJECT_TEAM'          // Project Team (Legacy / Sub-role)
+  | 'PROJECT_HEAD_PR'       // Legacy Project Head (PR Approver)
+  | 'CATEGORY_MANAGER'      // Category Manager (Legacy / Sub-role)
   | 'BUYER'
   | 'REQUESTER'
   | 'ESTIMATOR'
@@ -49,6 +54,9 @@ export interface MLEOBreakdown {
 export interface VendorQuoteDetail {
   initialRate: number;
   revisedRate?: number | null;
+  finalRate?: number | null;
+  buyerOffer1?: number | null;
+  buyerOffer2?: number | null;
 }
 
 export interface BOQItem {
@@ -81,6 +89,8 @@ export interface PurchaseRequest {
   status: PRStatus | string;
   buyer?: string;
   remarks?: string;
+  nominatedVendors?: string[];
+  deliveryAddress?: string;
   items: BOQItem[];
 }
 
@@ -182,3 +192,19 @@ export interface AuditLog {
   details?: string;
   detail?: string;
 }
+
+export interface VendorRFQItem {
+  id: string;
+  prId: string;
+  title: string;
+  projectName: string;
+  category: string;
+  closureDate: string;
+  site?: string;
+  contact?: string;
+  invitedVendors: string[];
+  status: 'PENDING' | 'ACCEPTED' | 'QUOTED' | 'CLOSED';
+  itemsCount: number;
+  items: BOQItem[];
+}
+

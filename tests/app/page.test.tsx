@@ -9,6 +9,8 @@ jest.mock('../../src/components/Header', () => ({
     <header data-testid="header">
       <span data-testid="active-tab">{currentTab}</span>
       <button onClick={() => setCurrentTab('dashboard')}>Tab Dashboard</button>
+      <button onClick={() => setCurrentTab('budget_planning')}>Tab Budget</button>
+      <button onClick={() => setCurrentTab('boq_rfq_management')}>Tab BOQ RFQ</button>
       <button onClick={() => setCurrentTab('boq_raiser_studio')}>Tab BOQ</button>
       <button onClick={() => setCurrentTab('prs')}>Tab PRS</button>
       <button onClick={() => setCurrentTab('boq')}>Tab BOQ Alias</button>
@@ -17,6 +19,7 @@ jest.mock('../../src/components/Header', () => ({
       <button onClick={() => setCurrentTab('commercial')}>Tab Commercial</button>
       <button onClick={() => setCurrentTab('ai-cost')}>Tab AICost</button>
       <button onClick={() => setCurrentTab('negotiation')}>Tab Negotiation</button>
+      <button onClick={() => setCurrentTab('vendor_negotiation_hub')}>Tab Vendor Negotiation Hub</button>
       <button onClick={() => setCurrentTab('ppo_workorders')}>Tab PPO</button>
       <button onClick={() => setCurrentTab('ppo')}>Tab PPO Alias</button>
       <button onClick={() => setCurrentTab('vendor_portal')}>Tab Vendor</button>
@@ -27,40 +30,33 @@ jest.mock('../../src/components/Header', () => ({
   )
 }));
 
-jest.mock('../../src/components/Dashboard', () => ({
-  Dashboard: ({ onNavigate }: any) => (
-    <div data-testid="dashboard">
-      <button onClick={() => onNavigate('prs')}>Dash Nav PRS</button>
-      <button onClick={() => onNavigate('commercial')}>Dash Nav Commercial</button>
-      <button onClick={() => onNavigate('ai-cost')}>Dash Nav AICost</button>
-      <button onClick={() => onNavigate('negotiation')}>Dash Nav Negotiation</button>
-      <button onClick={() => onNavigate('ppo')}>Dash Nav PPO</button>
-      <button onClick={() => onNavigate('custom_tab')}>Dash Nav Other</button>
+jest.mock('../../src/components/budget', () => ({
+  BudgetPlanningModule: ({ onRouteToPR }: any) => (
+    <div data-testid="budget-planning-module">
+      <button onClick={onRouteToPR}>Budget Route to PR</button>
     </div>
   )
 }));
 
-jest.mock('../../src/components/PRModule', () => ({
-  PRModule: ({ onNavigateToBOQ, onOpenNewPRModal }: any) => (
-    <div data-testid="pr-module">
-      <button onClick={() => onNavigateToBOQ('PR-2026-0005')}>PR Module Nav to BOQ</button>
-      <button onClick={onOpenNewPRModal}>PR Module Open PR Modal</button>
+jest.mock('../../src/components/BOQAndRFQManagementModule', () => ({
+  BOQAndRFQManagementModule: ({ initialSubTab, onOpenNewPRModal, onRouteToPPO, onRouteToNegotiation }: any) => (
+    <div data-testid="boq-rfq-module">
+      <span data-testid="sub-tab">{initialSubTab}</span>
+      <button onClick={onOpenNewPRModal}>BOQ/RFQ Open Modal</button>
+      <button onClick={onRouteToPPO}>BOQ/RFQ Route to PPO</button>
+      <button onClick={onRouteToNegotiation}>BOQ/RFQ Route to Neg</button>
     </div>
   )
+}));
+
+jest.mock('../../src/components/NegotiationHub', () => ({
+  NegotiationHub: () => <div data-testid="negotiation-hub">Negotiation Hub</div>
 }));
 
 jest.mock('../../src/components/PRApprovalQueue', () => ({
   PRApprovalQueue: ({ onRouteToCategoryManager }: any) => (
     <div data-testid="pr-approval-queue">
       <button onClick={onRouteToCategoryManager}>Queue Route to CM</button>
-    </div>
-  )
-}));
-
-jest.mock('../../src/components/CategoryManagerHub', () => ({
-  CategoryManagerHub: ({ onRouteToPPO }: any) => (
-    <div data-testid="cm-hub">
-      <button onClick={onRouteToPPO}>CM Route to PPO</button>
     </div>
   )
 }));
@@ -86,65 +82,56 @@ jest.mock('../../src/components/MastersAudit', () => ({
 }));
 
 describe('Home Page (src/app/page.tsx)', () => {
-  it('renders dashboard by default and navigates across all view tabs', () => {
+  it('renders budget_planning by default and navigates across all view tabs', () => {
     render(
       <ProcurementProvider>
         <Home />
       </ProcurementProvider>
     );
 
-    // Initial view: dashboard
-    expect(screen.getByTestId('dashboard')).toBeInTheDocument();
-    expect(screen.getByTestId('active-tab').textContent).toBe('dashboard');
+    // Initial view: budget_planning
+    expect(screen.getByTestId('budget-planning-module')).toBeInTheDocument();
+    expect(screen.getByTestId('active-tab').textContent).toBe('budget_planning');
 
-    // Dashboard navigation callbacks
-    fireEvent.click(screen.getByText('Dash Nav PRS'));
-    expect(screen.getByTestId('pr-module')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('Tab Dashboard'));
-    fireEvent.click(screen.getByText('Dash Nav Commercial'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('Tab Dashboard'));
-    fireEvent.click(screen.getByText('Dash Nav AICost'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('Tab Dashboard'));
-    fireEvent.click(screen.getByText('Dash Nav Negotiation'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('Tab Dashboard'));
-    fireEvent.click(screen.getByText('Dash Nav PPO'));
-    expect(screen.getByTestId('ppo-module')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('Tab Dashboard'));
-    fireEvent.click(screen.getByText('Dash Nav Other'));
-    expect(screen.getByTestId('active-tab').textContent).toBe('custom_tab');
+    // Route from budget to PR
+    fireEvent.click(screen.getByText('Budget Route to PR'));
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     // Test tab switching via Header
+    fireEvent.click(screen.getByText('Tab Budget'));
+    expect(screen.getByTestId('budget-planning-module')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Tab BOQ RFQ'));
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
+
     fireEvent.click(screen.getByText('Tab BOQ'));
-    expect(screen.getByTestId('pr-module')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
+    expect(screen.getByTestId('sub-tab').textContent).toBe('boq_studio');
 
     fireEvent.click(screen.getByText('Tab PRS'));
-    expect(screen.getByTestId('pr-module')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab BOQ Alias'));
-    expect(screen.getByTestId('pr-module')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab PR Queue'));
     expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab CM'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
+    expect(screen.getByTestId('sub-tab').textContent).toBe('rfq_hub');
 
     fireEvent.click(screen.getByText('Tab Commercial'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab AICost'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab Negotiation'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('negotiation-hub')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Tab Vendor Negotiation Hub'));
+    expect(screen.getByTestId('negotiation-hub')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab PPO'));
     expect(screen.getByTestId('ppo-module')).toBeInTheDocument();
@@ -162,25 +149,31 @@ describe('Home Page (src/app/page.tsx)', () => {
     expect(screen.getByTestId('masters-audit')).toBeInTheDocument();
   });
 
-  it('tests PRModule and PRApprovalQueue callbacks', () => {
+  it('tests BOQAndRFQManagementModule and PRApprovalQueue callbacks', () => {
     render(
       <ProcurementProvider>
         <Home />
       </ProcurementProvider>
     );
 
-    // Switch to PR Module
-    fireEvent.click(screen.getByText('Tab BOQ'));
-    fireEvent.click(screen.getByText('PR Module Nav to BOQ'));
-    expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
+    // Switch to BOQ & RFQ Module
+    fireEvent.click(screen.getByText('Tab BOQ RFQ'));
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
-    // From Queue to CM
-    fireEvent.click(screen.getByText('Queue Route to CM'));
-    expect(screen.getByTestId('cm-hub')).toBeInTheDocument();
-
-    // From CM to PPO
-    fireEvent.click(screen.getByText('CM Route to PPO'));
+    // From BOQ & RFQ to PPO
+    fireEvent.click(screen.getByText('BOQ/RFQ Route to PPO'));
     expect(screen.getByTestId('ppo-module')).toBeInTheDocument();
+
+    // From BOQ & RFQ to Negotiation Hub
+    fireEvent.click(screen.getByText('Tab BOQ RFQ'));
+    fireEvent.click(screen.getByText('BOQ/RFQ Route to Neg'));
+    expect(screen.getByTestId('negotiation-hub')).toBeInTheDocument();
+
+    // Directly test Queue tab and route to BOQ/RFQ
+    fireEvent.click(screen.getByText('Tab PR Queue'));
+    expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Queue Route to CM'));
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
   });
 
   it('interacts with New PR Modal, inputs, cancel, X button, and form submit with/without custom fields', () => {
@@ -198,9 +191,9 @@ describe('Home Page (src/app/page.tsx)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
     expect(screen.queryByText(/Create New Purchase Request \(PR\)/i)).not.toBeInTheDocument();
 
-    // Open via PRModule button
-    fireEvent.click(screen.getByText('Tab BOQ'));
-    fireEvent.click(screen.getByText('PR Module Open PR Modal'));
+    // Open via BOQ/RFQ module button
+    fireEvent.click(screen.getByText('Tab BOQ RFQ'));
+    fireEvent.click(screen.getByText('BOQ/RFQ Open Modal'));
     expect(screen.getByText(/Create New Purchase Request \(PR\)/i)).toBeInTheDocument();
 
     // Close via X button
@@ -234,13 +227,13 @@ describe('Home Page (src/app/page.tsx)', () => {
 
     const submitBtn = screen.getByRole('button', { name: /Submit PR Requisition/i });
     fireEvent.submit(submitBtn.closest('form')!);
-    expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     // Reopen and submit with empty title/project using fireEvent.submit to test fallback strings
     fireEvent.click(screen.getByText('Open New PR Header'));
     const submitBtn2 = screen.getByRole('button', { name: /Submit PR Requisition/i });
     fireEvent.submit(submitBtn2.closest('form')!);
-    expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
   });
 
   it('interacts with New PPO Modal, inputs, cancel, X button, and form submit', () => {
@@ -299,5 +292,26 @@ describe('Home Page (src/app/page.tsx)', () => {
     // Submit form
     fireEvent.click(screen.getByRole('button', { name: /Issue PPO to Approval Queue/i }));
     expect(screen.getByTestId('ppo-module')).toBeInTheDocument();
+  });
+
+  it('activates budget_planning or vendor_negotiation_hub role and tab on hash/search match', async () => {
+    window.location.hash = '#budget';
+
+    const { unmount } = render(
+      <ProcurementProvider>
+        <Home />
+      </ProcurementProvider>
+    );
+    expect(await screen.findByTestId('budget-planning-module')).toBeInTheDocument();
+    unmount();
+
+    window.location.hash = '#negotiation';
+    render(
+      <ProcurementProvider>
+        <Home />
+      </ProcurementProvider>
+    );
+    expect(await screen.findByTestId('negotiation-hub')).toBeInTheDocument();
+    window.location.hash = '';
   });
 });

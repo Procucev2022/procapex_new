@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   UploadCloud, 
   Download, 
   Sparkles, 
   Edit3, 
   Plus, 
+  PlusCircle,
   Trash2, 
   Send, 
   CheckCircle2, 
+  AlertCircle,
   FileSpreadsheet, 
   ChevronRight, 
   ChevronLeft, 
@@ -24,31 +26,114 @@ import {
   Users, 
   Truck, 
   ShieldCheck, 
+  CheckSquare,
+  FolderPlus,
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
+import { logger } from '@/lib/logger';
 
 import type {
   PRModuleProps,
   RequesterBOQItem,
   AttachedDoc,
+  AddCategoryInput,
+  BudgetCategory,
 } from '@/types';
 import {
   DEFAULT_COUNTER_ITEMS,
   INITIAL_DOCS,
   VENDOR_DATABASE,
   UI_STRINGS,
-  BLANK_BOQ_TEMPLATE_CSV_URI,
-  STANDARD_PACKAGE_TEMPLATE_CSV_URI,
+  formatString,
 } from '@/constants';
+import { extractBOQItemsFromDrawing } from '@/lib/boq-extractor';
+import { parseUploadedBOQFile } from '@/lib/boq-csv-parser';
+import { AddCategoryModal } from './budget/AddCategoryModal';
+import { AmendBOQModal } from './AmendBOQModal';
+import { generateStandardBOQTemplateCSV, getCSVDataUri } from '@/lib/budget-utils';
+import { PRHistoryTable } from './pr-history/PRHistoryTable';
 
 export const PRModule: React.FC<PRModuleProps> = ({
   onSelectPRForBOQ,
   onNavigateToBOQ,
   onOpenNewPRModal: _onOpenNewPRModal,
+  onViewPRSummary,
 }) => {
-  const { createPR } = useProcurement();
+  const {
+    prs,
+    createPR,
+    approvePRByProjectHead,
+    projectCategories,
+    addCategory,
+    addStandardBOQItem,
+    managedVendors,
+    circulateRFQ,
+    circulatedRFQs,
+  } = useProcurement();
+  const safeProjectCategories = projectCategories ?? [];
+  const allVendors = (managedVendors && managedVendors.length > 0) ? managedVendors : VENDOR_DATABASE;
+
+  const computeNextPRId = (): string => {
+    const maxNum = (prs || []).reduce((max, p) => {
+      const match = p.id.match(/PR-\d{4}-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        return num > max ? num : max;
+      }
+      return max;
+    }, 5);
+    return `PR-2026-${String(maxNum + 1).padStart(4, '0')}`;
+  };
+
+  const [currentPRId, setCurrentPRId] = useState<string>('PR-2026-0005');
+  const [activeViewMode, setActiveViewMode] = useState<'wizard' | 'history'>('wizard');
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [activeMethod, setActiveMethod] = useState<number>(3);
+  const prSummaryRef = useRef<HTMLDivElement>(null);
+  const [submittedPR, setSubmittedPR] = useState<{
+    id: string;
+    title: string;
+    projectName: string;
+    costCentre: string;
+    category: string;
+    requester: string;
+    reqDate: string;
+    itemsCount: number;
+    estBaseline: number;
+    status: string;
+    deliveryAddress: string;
+    nominatedVendors: string[];
+    docsCount: number;
+  } | null>(null);
+
+  const handleStartNewPR = (): void => {
+    const nextId = computeNextPRId();
+    setCurrentPRId(nextId);
+    setSubmittedPR(null);
+    setCurrentStep(1);
+    setActiveViewMode('wizard');
+    setPrDescription('');
+    setDepartmentName('');
+    setCostCentre('');
+    setSquareFeet('');
+    setPriority('');
+    setExpectedDate('');
+    setMajorCategory('');
+    setSubCategory('');
+    setPackageCode('');
+    setItems([]); // All columns blank
+    setDrawingInput('');
+    setUploadedDrawingFile(null);
+    setUploadedBOQFile(null);
+    setExtractionFeedback(null);
+    setItemsSourceName('');
+    setSelectedSupplierIds([]);
+    setDeliveryAddress('');
+    setSiteContact('');
+    setStagingPlan('');
+    setUnloadingReq('');
+    setDocuments([]);
+  };
   
   // Step 1: General Form State
   const [prCorresponds, setPrCorresponds] = useState<string>('Product');
@@ -61,12 +146,182 @@ export const PRModule: React.FC<PRModuleProps> = ({
 
   // Step 2: Category State
   const [majorCategory, setMajorCategory] = useState<string>('Interior & Fitouts');
-  const [subCategory, setSubCategory] = useState<string>('Millwork, Joinery & Counter Fabrication');
-  const [packageCode, setPackageCode] = useState<string>('PKG-2026-INT-001 (Reception Counter & Lobby Joinery Package)');
+  const [subCategory, setSubCategory] = useState<string>(
+    safeProjectCategories[0]?.subCategories?.[0]?.name ?? 'Earthwork & Excavation'
+  );
+  const [packageCode, setPackageCode] = useState<string>(
+    'PKG-2026-INT-001 (Reception Counter & Lobby Joinery Package)'
+  );
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState<boolean>(false);
+  const [selectedStandardCategoryId, setSelectedStandardCategoryId] = useState<string>(
+    safeProjectCategories[0]?.id ?? 'CAT-CIVIL'
+  );
+
+  const currentPRCategory = useMemo(() => {
+    return (
+      safeProjectCategories.find(
+        (c) =>
+          c.name.trim().toLowerCase() === majorCategory.trim().toLowerCase() ||
+          c.name.toLowerCase().includes(majorCategory.toLowerCase()) ||
+          majorCategory.toLowerCase().includes(c.name.toLowerCase())
+      ) ??
+      safeProjectCategories.find(
+        (c) => c.id === selectedStandardCategoryId
+      ) ??
+      safeProjectCategories[0]
+    );
+  }, [safeProjectCategories, majorCategory, selectedStandardCategoryId]);
+
+  useEffect(() => {
+    const matched = safeProjectCategories.find(
+      (c) =>
+        c.name.trim().toLowerCase() === majorCategory.trim().toLowerCase() ||
+        c.name.toLowerCase().includes(majorCategory.toLowerCase()) ||
+        majorCategory.toLowerCase().includes(c.name.toLowerCase())
+    );
+    if (matched && matched.id !== selectedStandardCategoryId) {
+      setSelectedStandardCategoryId(matched.id);
+    }
+  }, [majorCategory, safeProjectCategories, selectedStandardCategoryId]);
+
+  const handleAddCategoryFromPR = (input: AddCategoryInput): void => {
+    let createdCat: BudgetCategory | undefined;
+    if (addCategory) {
+      createdCat = addCategory(input);
+    }
+    const majorName = input.majorCategory?.trim() || input.name.trim();
+    setMajorCategory(majorName);
+    if (createdCat) {
+      setSelectedStandardCategoryId(createdCat.id);
+      if (createdCat.subCategories && createdCat.subCategories.length > 0) {
+        setSubCategory(createdCat.subCategories[0].name);
+      }
+    } else {
+      const firstMinor = input.subCategories?.[0] ?? input.subCategory?.trim();
+      if (firstMinor) {
+        setSubCategory(firstMinor);
+      }
+    }
+    setIsAddCategoryModalOpen(false);
+  };
+
+  const handleLoadStandardPackage = (catId: string): void => {
+    const targetCat = safeProjectCategories.find((c) => c.id === catId);
+    if (!targetCat || targetCat.items.length === 0) {
+      setBoqUploadError('Selected package has no standard BOQ items configured.');
+      return;
+    }
+    const mappedItems: RequesterBOQItem[] = targetCat.items.map((it) => ({
+      id: it.code,
+      code: it.code,
+      desc: it.desc,
+      uom: it.uom,
+      qty: 0,
+      benchmark: it.benchmarkRate,
+      rateCard: it.benchmarkRate,
+      status: 'Active',
+    }));
+    setItems(mappedItems);
+    setItemsSourceName(`Standard Package: ${targetCat.name} (Blank Quantities)`);
+    setBoqUploadSuccess(
+      `Loaded ${mappedItems.length} items from ${targetCat.name} standard catalog into BOQ schedule without quantity.`
+    );
+    setBoqUploadError(null);
+    setIsNewlyGenerated(true);
+  };
 
   // Step 3: BOQ Items State
   const [items, setItems] = useState<RequesterBOQItem[]>(DEFAULT_COUNTER_ITEMS);
   const [drawingInput, setDrawingInput] = useState<string>('Counter Elevation D');
+  const drawingFileInputRef = useRef<HTMLInputElement>(null);
+  const boqScheduleRef = useRef<HTMLDivElement>(null);
+  const [isExtractingDrawing, setIsExtractingDrawing] = useState<boolean>(false);
+  const [extractionStage, setExtractionStage] = useState<string>('');
+  const [isNewlyGenerated, setIsNewlyGenerated] = useState<boolean>(false);
+  const [uploadedDrawingFile, setUploadedDrawingFile] = useState<AttachedDoc | null>({
+    name: 'Counter_Elevation_D_Approved_Drawing.pdf',
+    type: 'Architectural Drawing (.pdf)',
+    size: '2.4 MB',
+    date: '2026-09-06',
+    status: 'Attached',
+  });
+  const [extractionFeedback, setExtractionFeedback] = useState<string | null>(
+    'Extracted from Counter Elevation D: 6 itemized specifications with benchmark rates hidden.'
+  );
+  const method1FileInputRef = useRef<HTMLInputElement>(null);
+  const method2FileInputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef<boolean>(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const [uploadedBOQFile, setUploadedBOQFile] = useState<{
+    name: string;
+    size: string;
+    lineCount: number;
+  } | null>(null);
+  const [isUploadingBOQ, setIsUploadingBOQ] = useState<boolean>(false);
+  const [boqUploadError, setBoqUploadError] = useState<string | null>(null);
+  const [boqUploadSuccess, setBoqUploadSuccess] = useState<string | null>(null);
+  const [itemsSourceName, setItemsSourceName] = useState<string>('Drawing: Counter Elevation D');
+  const [editingItem, setEditingItem] = useState<{ item: RequesterBOQItem; index: number } | null>(null);
+  const [isAmendModalOpen, setIsAmendModalOpen] = useState<boolean>(false);
+
+  const handleOpenAmend = (it: RequesterBOQItem, idx: number): void => {
+    setEditingItem({ item: it, index: idx });
+    setIsAmendModalOpen(true);
+  };
+
+  const handleSaveAmendedItem = (
+    amendedItem: RequesterBOQItem,
+    idx: number,
+    addToStandardBOQ: boolean,
+    categoryId?: string,
+    subCategoryId?: string,
+  ): void => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[idx] = amendedItem;
+      return copy;
+    });
+
+    if (addToStandardBOQ && categoryId && addStandardBOQItem) {
+      try {
+        addStandardBOQItem({
+          categoryId,
+          subCategoryId: subCategoryId || undefined,
+          desc: amendedItem.desc,
+          uom: amendedItem.uom,
+          defaultQty: amendedItem.qty,
+          benchmarkRate: amendedItem.benchmark || amendedItem.rateCard || 1500,
+          notes: `Amended from Requisition ${currentPRId} (Drawing Scope)`,
+        });
+
+        const catName = safeProjectCategories.find((c) => c.id === categoryId)?.name || categoryId;
+        setExtractionFeedback(
+          formatString(UI_STRINGS.prModule.itemAddedToStandardBOQSuccessTemplate, {
+            code: amendedItem.code,
+            category: catName,
+          }),
+        );
+      } catch (err: unknown) {
+        logger.warn('components/PRModule', 'Failed to add item to standard BOQ master', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  };
+
+  const handleClearDrawing = (): void => {
+    setUploadedDrawingFile(null);
+    setDrawingInput('');
+    setItems([]);
+    setExtractionFeedback(UI_STRINGS.prModule.drawingClearedNotice);
+    setItemsSourceName('');
+    setIsNewlyGenerated(false);
+  };
 
   // Step 4: Supplier Selection State
   const [selectedRegion, setSelectedRegion] = useState<string>('WEST');
@@ -173,22 +428,46 @@ export const PRModule: React.FC<PRModuleProps> = ({
   const [documents, setDocuments] = useState<AttachedDoc[]>(INITIAL_DOCS);
 
   // Filter vendors based on category, region, and type
-  const getFilteredVendors = (): typeof VENDOR_DATABASE => {
-    let list = VENDOR_DATABASE.filter(v => v.category === majorCategory);
-    if (list.length === 0) list = VENDOR_DATABASE;
+  const getFilteredVendors = (): typeof allVendors => {
+    const targetCat = (majorCategory || '').toLowerCase().trim();
+    let list = allVendors.filter((v) => {
+      if (!targetCat) return true;
+      const vCat = (v.category || '').toLowerCase().trim();
+      const vSub = (v.subCategory || '').toLowerCase().trim();
+      return (
+        vCat === targetCat ||
+        vCat.includes(targetCat) ||
+        targetCat.includes(vCat) ||
+        vSub.includes(targetCat) ||
+        (targetCat.includes('interior') && vCat.includes('interior')) ||
+        (targetCat.includes('civil') && vCat.includes('civil')) ||
+        (targetCat.includes('mep') && vCat.includes('mep')) ||
+        (targetCat.includes('steel') && (vCat.includes('steel') || vCat.includes('civil')))
+      );
+    });
+    if (list.length === 0) list = allVendors;
 
     if (selectedRegion !== 'ALL') {
-      const regFiltered = list.filter(v => v.region === selectedRegion);
+      const regFiltered = list.filter((v) => v.region === selectedRegion);
       if (regFiltered.length > 0) list = regFiltered;
     }
 
     if (selectedTypeFilter === 'RATE_CARD') {
-      list = list.filter(v => v.isRateCard);
+      list = list.filter((v) => v.isRateCard);
     } else if (selectedTypeFilter === 'NON_RATE_CARD') {
-      list = list.filter(v => !v.isRateCard);
+      list = list.filter((v) => !v.isRateCard);
     }
 
-    return list;
+    // Sort client-onboarded vendors to the top so they are immediately visible
+    return [...list].sort((a, b) => {
+      const aClient = a.source === 'CLIENT_ONBOARDED';
+      const bClient = b.source === 'CLIENT_ONBOARDED';
+      if (aClient && !bClient) return -1;
+      if (!aClient && bClient) return 1;
+      if (a.isRateCard && !b.isRateCard) return -1;
+      if (!a.isRateCard && b.isRateCard) return 1;
+      return (b.rating || 0) - (a.rating || 0);
+    });
   };
 
   const filteredVendors = getFilteredVendors();
@@ -248,30 +527,309 @@ export const PRModule: React.FC<PRModuleProps> = ({
     }
   };
 
+  const triggerDrawingExtraction = async (
+    titleOrFileName: string,
+    fileName?: string,
+    fileBase64?: string,
+    fileMimeType?: string,
+  ): Promise<void> => {
+    setIsExtractingDrawing(true);
+    setExtractionStage(UI_STRINGS.prModule.drawingScanningState);
+    setItems([]);
+
+    const cleanTitle = titleOrFileName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+    const targetName = fileName ?? cleanTitle;
+
+    try {
+      const res = await fetch('/api/ai/extract-drawing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: targetName,
+          fileType: targetName.endsWith('.pdf') ? 'application/pdf' : 'application/acad',
+          drawingTitleHint: cleanTitle,
+          categoryHint: majorCategory,
+          fileBase64,
+          fileMimeType,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (!isMountedRef.current) return;
+        const resolvedTitle = data.drawingTitle || cleanTitle;
+        setDrawingInput(resolvedTitle);
+        setItems(data.items || []);
+        setItemsSourceName(`Drawing: ${resolvedTitle}`);
+        setExtractionFeedback(
+          `AI Vision analyzed "${targetName}" and automatically generated ${data.items.length} BOQ specifications below.`
+        );
+        setIsNewlyGenerated(true);
+
+        if (resolvedTitle && resolvedTitle.toLowerCase() !== 'counter elevation d') {
+          setPrDescription(`Scope Execution & Material Procurement for Drawing: ${resolvedTitle}`);
+        }
+
+        logger.info('components/PRModule', 'AI Drawing extraction completed', {
+          fileName: targetName,
+          resolvedTitle,
+          itemCount: data.items.length,
+          isLiveAi: data.isLiveAi,
+        });
+      } else {
+        const fallback = extractBOQItemsFromDrawing(cleanTitle, majorCategory);
+        if (!isMountedRef.current) return;
+        setDrawingInput(cleanTitle);
+        setItems(fallback);
+        setItemsSourceName(`Drawing: ${cleanTitle}`);
+        setExtractionFeedback(
+          `AI Vision analyzed "${targetName}" and automatically generated ${fallback.length} BOQ specifications below.`
+        );
+        setIsNewlyGenerated(true);
+      }
+    } catch {
+      const fallback = extractBOQItemsFromDrawing(cleanTitle, majorCategory);
+      if (!isMountedRef.current) return;
+      setDrawingInput(cleanTitle);
+      setItems(fallback);
+      setItemsSourceName(`Drawing: ${cleanTitle}`);
+      setExtractionFeedback(
+        `AI Vision analyzed "${targetName}" and automatically generated ${fallback.length} BOQ specifications below.`
+      );
+      setIsNewlyGenerated(true);
+    } finally {
+      if (isMountedRef.current) {
+        setIsExtractingDrawing(false);
+        setExtractionStage('');
+        boqScheduleRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setIsNewlyGenerated(false);
+          }
+        }, 3000);
+      }
+    }
+  };
+
+  const processDrawingFile = (file: File): void => {
+    // 1. Immediately wipe previous BOQ and drawing name!
+    setItems([]);
+    setDrawingInput('');
+    setExtractionFeedback(null);
+
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    const isCad = file.name.endsWith('.dwg') || file.name.endsWith('.dxf');
+    const isPdf = file.name.endsWith('.pdf');
+    const docType = isPdf
+      ? 'Architectural Drawing (.pdf)'
+      : isCad
+      ? 'CAD Engineering Drawing (.dwg)'
+      : 'Technical Drawing Sheet';
+    const newDoc: AttachedDoc = {
+      name: file.name,
+      type: docType,
+      size: `${sizeMB} MB`,
+      date: new Date().toISOString().slice(0, 10),
+      status: 'Attached',
+    };
+    setUploadedDrawingFile(newDoc);
+    const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+    setDocuments((prev) => {
+      if (!prev.some((d) => d.name === file.name)) {
+        return [newDoc, ...prev];
+      }
+      return prev;
+    });
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!isMountedRef.current) return;
+      const base64 = typeof reader.result === 'string' ? reader.result : undefined;
+      triggerDrawingExtraction(cleanName, file.name, base64, file.type);
+    };
+    reader.onerror = () => {
+      if (!isMountedRef.current) return;
+      triggerDrawingExtraction(cleanName, file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrawingFileUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    if (e.target.files && e.target.files.length > 0) {
+      processDrawingFile(e.target.files[0]);
+    }
+    e.target.value = '';
+  };
+
+  const handleExtractSpecsFromDrawing = (): void => {
+    if (!drawingInput.trim()) {
+      alert('Please enter a drawing title or upload a drawing sheet.');
+      return;
+    }
+    setItems([]);
+    triggerDrawingExtraction(drawingInput.trim());
+  };
+
+  const handleExtractFromStep7Doc = (doc: AttachedDoc): void => {
+    setUploadedDrawingFile(doc);
+    const cleanName = doc.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+    setDrawingInput(cleanName);
+    setCurrentStep(3);
+    setActiveMethod(3);
+    triggerDrawingExtraction(cleanName, doc.name);
+  };
+
+  const processBOQSpreadsheetFile = async (file: File): Promise<void> => {
+    setIsUploadingBOQ(true);
+    setBoqUploadError(null);
+    setBoqUploadSuccess(null);
+
+    try {
+      const result = await parseUploadedBOQFile(file);
+      if (result.error || result.items.length === 0) {
+        const errorMsg = result.error || 'No valid line items found in spreadsheet.';
+        setBoqUploadError(errorMsg);
+        logger.warn('components/PRModule', 'BOQ file parsing error', {
+          fileName: file.name,
+          error: errorMsg,
+        });
+      } else {
+        setItems(result.items);
+        const sizeKB = `${(file.size / 1024).toFixed(1)} KB`;
+        setUploadedBOQFile({
+          name: file.name,
+          size: sizeKB,
+          lineCount: result.count,
+        });
+        setItemsSourceName(`Uploaded: ${file.name}`);
+        setBoqUploadSuccess(`Successfully parsed and loaded ${result.count} line items from ${file.name}`);
+        setIsNewlyGenerated(true);
+
+        const boqDoc: AttachedDoc = {
+          name: file.name,
+          type: 'Site BOQ Spreadsheet (.csv)',
+          size: sizeKB,
+          date: new Date().toISOString().slice(0, 10),
+          status: 'Attached',
+        };
+        setDocuments(prev => (!prev.some(d => d.name === file.name) ? [boqDoc, ...prev] : prev));
+
+        logger.info('components/PRModule', 'BOQ file parsed and loaded into schedule', {
+          fileName: file.name,
+          count: result.count,
+        });
+
+        setTimeout(() => {
+          boqScheduleRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+
+        setTimeout(() => {
+          setIsNewlyGenerated(false);
+        }, 3000);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown file error';
+      setBoqUploadError(msg);
+      logger.error('components/PRModule', 'Exception in processBOQSpreadsheetFile', {
+        fileName: file.name,
+        error: msg,
+      });
+    } finally {
+      setIsUploadingBOQ(false);
+    }
+  };
+
+  const handleBOQSpreadsheetUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    if (e.target.files && e.target.files.length > 0) {
+      void processBOQSpreadsheetFile(e.target.files[0]);
+    }
+    e.target.value = '';
+  };
+
+  const handleStandardTemplateUpload = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      try {
+        const result = await parseUploadedBOQFile(file);
+        if (result.items.length > 0) {
+          setItems(result.items);
+          setItemsSourceName(`Template: ${file.name}`);
+          setIsNewlyGenerated(true);
+          setTimeout(() => {
+            boqScheduleRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 150);
+          setTimeout(() => {
+            setIsNewlyGenerated(false);
+          }, 3000);
+        }
+      } catch (err) {
+        logger.error('components/PRModule', 'Error uploading standard template', {
+          fileName: file.name,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    }
+    e.target.value = '';
+  };
+
   const handleSubmitPR = (): void => {
-    const selectedVendorObjs = VENDOR_DATABASE.filter(v => selectedSupplierIds.includes(v.id));
+    const selectedVendorObjs = allVendors.filter(v => selectedSupplierIds.includes(v.id));
     const vendorSummary = selectedVendorObjs.map(v => `${v.name} (${v.isRateCard ? 'Rate Card' : 'Non-Rate Card'})`).join(', ');
+    const estBaseline = items.reduce((acc, it) => acc + ((it.rateCard || it.benchmark || 1500) * it.qty), 0);
+    const targetPrId = currentPRId || 'PR-2026-0005';
+
     const newPR = {
+      id: targetPrId,
       title: prDescription,
       projectName: 'Metro Line 4 Underground',
       costCentre: costCentre === 'CC-104' ? 'CC-104 (Finishing & Interior)' : costCentre,
       category: majorCategory,
-      requester: 'Rahul Verma (PR Raiser)',
+      requester: 'Rahul Verma (Category Manager)',
       reqDate: expectedDate,
       remarks: `Preferred Vendors: ${vendorSummary || 'None Selected'} | Delivery: ${deliveryAddress}`,
+      nominatedVendors: selectedSupplierIds,
+      deliveryAddress,
       items: items.map(it => ({
         ...it,
-        rateCard: 0,
-        benchmark: 0,
-        std: 0,
-        aiConf: '98%',
+        rateCard: it.rateCard || 1500,
+        benchmark: it.benchmark || 1450,
+        std: it.std || 1480,
+        aiConf: it.aiConf || '98%',
       })),
     };
+
     createPR(newPR);
+    if (circulateRFQ && selectedSupplierIds.length > 0) {
+      circulateRFQ(targetPrId, selectedSupplierIds, expectedDate);
+    }
+
+    setSubmittedPR({
+      id: targetPrId,
+      title: newPR.title,
+      projectName: newPR.projectName,
+      costCentre: newPR.costCentre,
+      category: newPR.category,
+      requester: newPR.requester,
+      reqDate: newPR.reqDate,
+      itemsCount: items.length,
+      estBaseline,
+      status: 'SUBMITTED',
+      deliveryAddress,
+      nominatedVendors: selectedSupplierIds,
+      docsCount: documents.length,
+    });
+
+    logger.info('components/PRModule', 'Purchase Requisition Submitted', {
+      prId: targetPrId,
+      title: newPR.title,
+      itemsCount: items.length,
+      estBaseline,
+    });
+
     if (onSelectPRForBOQ) {
-      onSelectPRForBOQ('PR-2026-0005');
+      onSelectPRForBOQ(targetPrId);
     } else if (onNavigateToBOQ) {
-      onNavigateToBOQ('PR-2026-0005');
+      onNavigateToBOQ(targetPrId);
     }
   };
 
@@ -292,8 +850,46 @@ export const PRModule: React.FC<PRModuleProps> = ({
 
   return (
     <div className="space-y-6">
-      
-      {/* Main Multi-Step Form Card */}
+      {/* Top View Mode Switcher */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-2 flex items-center justify-between gap-2">
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => setActiveViewMode('wizard')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeViewMode === 'wizard'
+                ? 'bg-brand-900 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Edit3 className="w-4 h-4" />
+            <span>1. Requisition Wizard ({currentPRId})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveViewMode('history')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeViewMode === 'history'
+                ? 'bg-purple-700 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <CheckSquare className="w-4 h-4" />
+            <span>2. All Raised PRs &amp; History ({prs.length})</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={handleStartNewPR}
+          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center space-x-1.5 transition-all"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Raise New PR</span>
+        </button>
+      </div>
+
+      {activeViewMode === 'wizard' && (
+      /* Main Multi-Step Form Card */
       <div className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
         
         {/* Header: Create New Procurement Request CAPEX */}
@@ -312,11 +908,113 @@ export const PRModule: React.FC<PRModuleProps> = ({
             </h1>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="px-3 py-1.5 rounded-xl bg-slate-800 border border-sky-500/30 text-xs font-mono text-emerald-300 font-bold">
-              Draft ID: PR-2026-0005
-            </span>
+            {submittedPR ? (
+              <>
+                <span className="px-3 py-1.5 rounded-xl bg-emerald-900/80 border border-emerald-400 text-xs font-mono text-emerald-300 font-bold flex items-center space-x-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{UI_STRINGS.prModule.prSuccessfullySubmitted}: {submittedPR.id} (SUBMITTED)</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleStartNewPR}
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-sm flex items-center space-x-1 transition-all"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>{UI_STRINGS.prModule.raiseNewPR}</span>
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="px-3 py-1.5 rounded-xl bg-slate-800 border border-sky-500/30 text-xs font-mono text-emerald-300 font-bold">
+                  Draft ID: {currentPRId}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleStartNewPR}
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-sm flex items-center space-x-1 transition-all"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>{UI_STRINGS.prModule.raiseNewPR}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* PR Submitted Feedback Banner */}
+        {submittedPR && (
+          <div className="mx-6 my-4 p-4 bg-emerald-50 border border-emerald-300 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-sm">
+                ✓
+              </div>
+              <div>
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <span className="font-mono font-black text-xs bg-emerald-200 text-emerald-950 px-2 py-0.5 rounded">
+                    {submittedPR.id}
+                  </span>
+                  <span className="text-xs font-black text-emerald-900">
+                    {UI_STRINGS.prModule.prSuccessfullySubmitted}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-700 text-white">
+                    Status: {submittedPR.status}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 mt-1 font-medium">
+                  Requisition has been successfully submitted and listed in the{' '}
+                  <strong>PRs Master Summary</strong> below and ingested into the{' '}
+                  <strong>RFQ &amp; Commercial Command Center</strong>.
+                </p>
+                <div className="flex items-center space-x-3 text-[11px] text-slate-600 mt-1 font-mono">
+                  <span>Items: <strong>{submittedPR.itemsCount}</strong></span>
+                  <span>•</span>
+                  <span>Est Baseline: <strong>₹ {submittedPR.estBaseline.toLocaleString()}</strong></span>
+                  <span>•</span>
+                  <span>Docs: <strong>{submittedPR.docsCount} Attached</strong></span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 shrink-0 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  prSummaryRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  if (onViewPRSummary) onViewPRSummary(submittedPR.id);
+                }}
+                className={
+                  'px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold ' +
+                  'rounded-xl shadow-sm flex items-center space-x-1.5 transition-all'
+                }
+              >
+                <span>{UI_STRINGS.prModule.viewInPRSummary}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToBOQ) onNavigateToBOQ(submittedPR.id);
+                  else if (onSelectPRForBOQ) onSelectPRForBOQ(submittedPR.id);
+                }}
+                className={
+                  'px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold ' +
+                  'rounded-xl shadow-sm flex items-center space-x-1.5 transition-all'
+                }
+              >
+                <span>Proceed to RFQ Hub →</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleStartNewPR}
+                className={
+                  'px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold ' +
+                  'rounded-xl shadow-sm flex items-center space-x-1 transition-all'
+                }
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>{UI_STRINGS.prModule.createAnotherPR}</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 7 Process Tabs */}
         <div className="border-b border-slate-200 bg-slate-50/80 px-4 sm:px-6">
@@ -457,6 +1155,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
                   onChange={(e) => setCostCentre(e.target.value)}
                   className="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-lg px-3.5 py-2 focus:ring-2 focus:ring-sky-500"
                 >
+                  <option value="">-- Select Cost Centre --</option>
                   <option value="CC-101">CC-101 (Civil Substructure & Foundations)</option>
                   <option value="CC-102">CC-102 (RCC Superstructure & Framing)</option>
                   <option value="CC-103">CC-103 (MEP & HVAC Installation)</option>
@@ -472,6 +1171,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
                   onChange={(e) => setPriority(e.target.value)}
                   className="w-full bg-white text-slate-900 font-semibold border border-slate-300 rounded-lg px-3.5 py-2 focus:ring-2 focus:ring-sky-500"
                 >
+                  <option value="">-- Select Priority --</option>
                   <option value="Normal">Normal</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High Priority</option>
@@ -501,60 +1201,150 @@ export const PRModule: React.FC<PRModuleProps> = ({
         {/* ========================================================================= */}
         {/* STEP 2: CATEGORY SELECTION */}
         {/* ========================================================================= */}
-        {currentStep === 2 && (
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="p-4 bg-sky-50 rounded-xl border border-sky-200 text-xs">
-              <span className="font-bold text-sky-950 block text-sm">Enterprise Category & Package Taxonomy:</span>
-              <p className="text-sky-800 mt-0.5">Selecting the category will automatically route this PR to the assigned Category Manager (Role 3) upon Project Head sign-off.</p>
-            </div>
+        {currentStep === 2 && (() => {
+          const selectedCatConfig = currentPRCategory;
+          const availableSubCats = selectedCatConfig?.subCategories ?? [];
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-              <div className="space-y-1.5">
-                <label className="block font-bold text-slate-900">Major Category :*</label>
-                <select 
-                  value={majorCategory} 
-                  onChange={(e) => setMajorCategory(e.target.value)}
-                  className="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-lg px-3.5 py-2"
-                >
-                  <option value="Interior & Fitouts">Interior & Fitouts</option>
-                  <option value="Civil Infrastructure">Civil Infrastructure & Concrete</option>
-                  <option value="MEP & HVAC">MEP, HVAC & Electrical</option>
-                  <option value="Heavy Plant & Equipment">Heavy Plant & Equipment</option>
-                </select>
+          return (
+            <div className="p-6 sm:p-8 space-y-6">
+              <div className="p-4 bg-sky-50 rounded-xl border border-sky-200 text-xs">
+                <span className="font-bold text-sky-950 block text-sm">
+                  Enterprise Category & Package Taxonomy:
+                </span>
+                <p className="text-sky-800 mt-0.5">
+                  Selecting the category will link this PR directly to the Category Manager command center.
+                </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block font-bold text-slate-900">Sub-Category :*</label>
-                <select 
-                  value={subCategory} 
-                  onChange={(e) => setSubCategory(e.target.value)}
-                  className="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-lg px-3.5 py-2"
-                >
-                  <option value="Millwork, Joinery & Counter Fabrication">Millwork, Joinery & Counter Fabrication</option>
-                  <option value="False Ceiling & Acoustic Paneling">False Ceiling & Acoustic Paneling</option>
-                  <option value="Flooring, Granite & Vitrified Tiles">Flooring, Granite & Vitrified Tiles</option>
-                </select>
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-slate-900">
+                      {UI_STRINGS.prModule.selectMajorCategory}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddCategoryModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                    >
+                      <FolderPlus className="w-3.5 h-3.5" />
+                      <span>{UI_STRINGS.prModule.addNewCategory}</span>
+                    </button>
+                  </div>
+                  <select 
+                    value={majorCategory} 
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setMajorCategory(selected);
+                      const cat = safeProjectCategories.find(
+                        (c) =>
+                          c.name.toLowerCase() === selected.toLowerCase() ||
+                          c.id === selected
+                      );
+                      if (cat) {
+                        setSelectedStandardCategoryId(cat.id);
+                        if (cat.subCategories && cat.subCategories.length > 0) {
+                          setSubCategory(cat.subCategories[0].name);
+                        } else {
+                          setSubCategory('');
+                        }
+                      }
+                    }}
+                    className="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-lg px-3.5 py-2"
+                  >
+                    <option value="">Select Major Category...</option>
+                    {safeProjectCategories.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                    {majorCategory &&
+                      !safeProjectCategories.some(
+                        (c) => c.name.toLowerCase() === majorCategory.toLowerCase()
+                      ) && (
+                        <option value={majorCategory}>{majorCategory}</option>
+                      )}
+                  </select>
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="block font-bold text-slate-900">Package Title & Code :*</label>
-                <input 
-                  type="text" 
-                  value={packageCode} 
-                  onChange={(e) => setPackageCode(e.target.value)}
-                  className="w-full bg-white text-slate-900 font-semibold border border-slate-300 rounded-lg px-3.5 py-2"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-slate-900">
+                    {UI_STRINGS.prModule.selectSubCategory}
+                  </label>
+                  <select 
+                    value={subCategory} 
+                    onChange={(e) => setSubCategory(e.target.value)}
+                    className="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-lg px-3.5 py-2"
+                  >
+                    <option value="">Select Sub-Category...</option>
+                    {availableSubCats.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                    {subCategory &&
+                      !availableSubCats.some(
+                        (s) => s.name.toLowerCase() === subCategory.toLowerCase()
+                      ) && (
+                        <option value={subCategory}>{subCategory}</option>
+                      )}
+                  </select>
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="block font-bold text-slate-900">Designated Category Manager (Auto-Routed) :</label>
-                <div className="p-2 bg-slate-100 rounded-lg border border-slate-300 text-slate-900 font-bold flex items-center space-x-2">
-                  <span className="text-sky-700">Vikram Mehta (Lead Category Manager - Interior & Fitouts)</span>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-slate-900">Package Title & Code :*</label>
+                  <input 
+                    type="text" 
+                    value={packageCode} 
+                    onChange={(e) => setPackageCode(e.target.value)}
+                    className="w-full bg-white text-slate-900 font-semibold border border-slate-300 rounded-lg px-3.5 py-2"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-slate-900">Designated Category Manager (Auto-Routed) :</label>
+                  <div className="p-2 bg-slate-100 rounded-lg border border-slate-300 text-slate-900 font-bold flex items-center space-x-2">
+                    <span className="text-sky-700">
+                      {selectedCatConfig
+                        ? `${selectedCatConfig.name} - Sourcing Command & Category Master`
+                        : 'Vikram Mehta (Lead Category Manager - Interior & Fitouts)'}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {selectedCatConfig && selectedCatConfig.items.length > 0 && (
+                <div
+                  className="p-4 bg-emerald-50/90 rounded-xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-1.5 font-bold text-emerald-950">
+                      <Layers className="w-4 h-4 text-emerald-700" />
+                      <span>
+                        Standard BOQ Master ({selectedCatConfig.items.length} items in {selectedCatConfig.name})
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800">
+                      Standard BOQ items configured in {selectedCatConfig.name} can be loaded without quantities.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleLoadStandardPackage(selectedCatConfig.id);
+                      setCurrentStep(3);
+                      setActiveMethod(2);
+                    }}
+                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Load {selectedCatConfig.name} Standard BOQ (Without Qty) →</span>
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ========================================================================= */}
         {/* STEP 3: BOQ STUDIO (PR ITEMS) */}
@@ -647,102 +1437,295 @@ export const PRModule: React.FC<PRModuleProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-white rounded-xl border border-purple-200 space-y-2 flex flex-col justify-between">
-                    <div>
-                      <span className="font-bold text-slate-900 block text-xs">Option A: Download Blank BOQ Format</span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Download pre-structured blank CSV template with approved column headers.</p>
-                    </div>
-                    <a 
-                      href={BLANK_BOQ_TEMPLATE_CSV_URI}
-                      download="Blank_BOQ_Format_Template.csv"
-                      className="w-full bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-purple-300"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download Blank BOQ Format (CSV)</span>
-                    </a>
-                  </div>
+                  {(() => {
+                    const activeCatForMethod1 = currentPRCategory ?? safeProjectCategories[0] ?? null;
+                    const method1BlankUri = getCSVDataUri(
+                      generateStandardBOQTemplateCSV(activeCatForMethod1, true)
+                    );
+                    const method1BlankFilename = activeCatForMethod1?.shortCode
+                      ? `${activeCatForMethod1.shortCode}_Standard_BOQ_Format.csv`
+                      : 'Standard_BOQ_Format.csv';
 
-                  <div className="p-4 bg-white rounded-xl border border-purple-200 space-y-2 flex flex-col justify-between">
+                    return (
+                      <div className="p-4 bg-white rounded-xl border border-purple-200 space-y-2 flex flex-col justify-between">
+                        <div>
+                          <span className="font-bold text-slate-900 block text-xs">
+                            Option A: Download Standard BOQ Format ({activeCatForMethod1?.name ?? 'Category'})
+                          </span>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Download pre-structured 4-column CSV template for {activeCatForMethod1?.name} (
+                            {activeCatForMethod1?.items?.length ?? 0} items configured, without quantities).
+                          </p>
+                        </div>
+                        <a 
+                          href={method1BlankUri}
+                          download={method1BlankFilename}
+                          className={
+                            'w-full bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-xs py-2 '
+                            + 'rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-purple-300'
+                          }
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Download Blank BOQ Format (CSV)</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="p-4 bg-white rounded-xl border border-purple-200 space-y-3 flex flex-col justify-between">
                     <div>
-                      <span className="font-bold text-slate-900 block text-xs">Option B: Upload Completed BOQ (.xlsx / .csv)</span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Upload your site spreadsheet to automatically parse and render line items in the table below.</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-900 block text-xs flex items-center">
+                          <UploadCloud className="w-4 h-4 text-purple-600 mr-1.5" />
+                          Option B: Upload Completed BOQ (.xlsx / .csv)
+                        </span>
+                        <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">
+                          Spreadsheet / CSV
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Upload your site spreadsheet to automatically parse and render line items in the table below.
+                      </p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => {
-                          setItems([
-                            { code: 'UPL-001', desc: '20mm Polished Jet Black Granite Countertop with Bullnose profiling', uom: 'Sqm', qty: 12.5 },
-                            { code: 'UPL-002', desc: '18mm Marine BWP Plywood IS 710 Carcass Framework & Partitions', uom: 'Sqm', qty: 38.0 },
-                            { code: 'UPL-003', desc: '1.0mm Textured Decorative HPL Laminate Lining', uom: 'Sqm', qty: 24.0 },
-                            { code: 'UPL-004', desc: 'Concealed Soft-Close Hinges & Heavy Duty Telescopic Channel Set', uom: 'Set', qty: 14.0 },
-                            { code: 'UPL-005', desc: '12V Profile LED Lighting with Aluminium Diffuser Channel', uom: 'Rmt', qty: 16.0 },
-                            { code: 'UPL-006', desc: '100mm SS 304 Grade Brushed Skirting Strip with Sealant', uom: 'Rmt', qty: 14.0 },
-                          ]);
-                        }} 
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2 rounded-lg shadow-sm flex items-center justify-center space-x-1.5"
+
+                    <input 
+                      id="method1FileInput"
+                      ref={method1FileInputRef} 
+                      type="file" 
+                      accept=".csv,.tsv,.txt,.xlsx,.xls" 
+                      onChange={handleBOQSpreadsheetUpload} 
+                      className="hidden" 
+                    />
+
+                    {uploadedBOQFile ? (
+                      <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                              <FileSpreadsheet className="w-4 h-4 text-purple-700" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-900 text-xs truncate block" title={uploadedBOQFile.name}>
+                                {uploadedBOQFile.name}
+                              </span>
+                              <span className="text-[10px] text-slate-500 block">
+                                {uploadedBOQFile.size} • {uploadedBOQFile.lineCount} Items Parsed
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded shrink-0">
+                            ✓ Parsed
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-purple-200/60">
+                          <button
+                            type="button"
+                            onClick={() => boqScheduleRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                            className="text-[11px] font-bold text-purple-700 hover:text-purple-900 flex items-center space-x-1"
+                          >
+                            <span>↓ View Loaded Schedule ({uploadedBOQFile.lineCount} Items)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => method1FileInputRef.current?.click()}
+                            className="text-[11px] font-bold text-purple-600 hover:text-purple-800 underline"
+                          >
+                            Re-upload
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            void processBOQSpreadsheetFile(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        onClick={() => method1FileInputRef.current?.click()}
+                        className="p-3 border-2 border-dashed border-purple-300 rounded-xl bg-purple-50/30 text-center space-y-1.5 hover:bg-purple-50 cursor-pointer transition-all"
                       >
-                        <UploadCloud className="w-4 h-4" />
-                        <span>Upload & Parse BOQ File</span>
-                      </button>
-                    </div>
+                        <UploadCloud className="w-5 h-5 text-purple-600 mx-auto" />
+                        <span className="block font-bold text-slate-800 text-xs">
+                          Click or drag & drop completed BOQ CSV / spreadsheet
+                        </span>
+                        <span className="text-[10px] text-slate-500 block">
+                          Supports .csv, .tsv, .txt, .xlsx
+                        </span>
+                        <button 
+                          type="button"
+                          disabled={isUploadingBOQ}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            method1FileInputRef.current?.click();
+                          }}
+                          className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs py-2 rounded-lg shadow-sm flex items-center justify-center space-x-1.5"
+                        >
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>{isUploadingBOQ ? 'Parsing Spreadsheet...' : 'Upload & Parse BOQ File'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {boqUploadError && (
+                      <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-medium flex items-center space-x-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>{boqUploadError}</span>
+                      </div>
+                    )}
+
+                    {boqUploadSuccess && (
+                      <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] font-medium flex items-center space-x-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{boqUploadSuccess}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {/* METHOD 2 WORKBENCH */}
-            {activeMethod === 2 && (
-              <div className="p-5 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-emerald-200 pb-3">
-                  <div>
-                    <h3 className="text-xs font-bold text-emerald-950 flex items-center">
-                      <Download className="w-4 h-4 text-emerald-700 mr-1.5" />
-                      Method 2: Corporate Standard BOQ Template (Download & Upload)
-                    </h3>
-                    <p className="text-[11px] text-emerald-800 mt-0.5">
-                      Select a standard corporate package. Download the template to enter quantities offline,
-                      upload the filled template, or edit quantities directly in the down screen table.
-                    </p>
-                  </div>
-                  <button onClick={() => setCurrentStep(4)} className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0">
-                    <span>Confirm & Move to Step 4: Supplier Selection →</span>
-                  </button>
-                </div>
+            {activeMethod === 2 && (() => {
+              const selectedPkg =
+                safeProjectCategories.find((c) => c.id === selectedStandardCategoryId) ??
+                currentPRCategory ??
+                safeProjectCategories[0] ??
+                null;
+              const templateCsvUri = getCSVDataUri(
+                generateStandardBOQTemplateCSV(selectedPkg, true)
+              );
+              const templateFilename = selectedPkg?.shortCode
+                ? `${selectedPkg.shortCode}_Standard_BOQ_Format.csv`
+                : 'Standard_BOQ_Format.csv';
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2 flex flex-col justify-between">
+              return (
+                <div className="p-5 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-emerald-200 pb-3">
                     <div>
-                      <span className="font-bold text-slate-900 block text-xs">1. Download Selected Template</span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Download pre-filled standard package items in CSV format to enter quantities.</p>
-                    </div>
-                    <a 
-                      href={STANDARD_PACKAGE_TEMPLATE_CSV_URI}
-                      download="Interior_Standard_Package.csv"
-                      className="w-full bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-emerald-300"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download Standard Template (CSV)</span>
-                    </a>
-                  </div>
-
-                  <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2 flex flex-col justify-between">
-                    <div>
-                      <span className="font-bold text-slate-900 block text-xs">2. Upload Filled Standard Template</span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Upload completed CSV with your required site quantities to populate the down screen table.</p>
+                      <h3 className="text-xs font-bold text-emerald-950 flex items-center">
+                        <Download className="w-4 h-4 text-emerald-700 mr-1.5" />
+                        Method 2: Corporate Standard BOQ Template ({selectedPkg?.name})
+                      </h3>
+                      <p className="text-[11px] text-emerald-800 mt-0.5">
+                        Download the approved corporate package template ({selectedPkg?.items?.length ?? 0} line
+                        items) to enter quantities offline, upload the filled template, or load standard BOQ items.
+                      </p>
                     </div>
                     <button 
-                      onClick={() => {
-                        setItems(DEFAULT_COUNTER_ITEMS);
-                      }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-lg shadow-sm flex items-center justify-center space-x-1.5"
+                      onClick={() => setCurrentStep(4)} 
+                      className={
+                        'bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2 '
+                        + 'rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0'
+                      }
                     >
-                      <UploadCloud className="w-4 h-4" />
-                      <span>Upload Filled Template (CSV)</span>
+                      <span>Confirm & Move to Step 4: Supplier Selection →</span>
                     </button>
                   </div>
+
+                  {/* Standard Package Selector & Direct Load Provision */}
+                  <div className="p-4 bg-white rounded-xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="w-full sm:w-2/3 space-y-1">
+                      <label htmlFor="method2-pkg-select" className="block font-bold text-slate-900 text-xs">
+                        {UI_STRINGS.categoryStandardBOQMaster.selectStandardPackageLabel}
+                      </label>
+                      <select
+                        id="method2-pkg-select"
+                        value={selectedStandardCategoryId}
+                        onChange={(e) => {
+                          const newCatId = e.target.value;
+                          setSelectedStandardCategoryId(newCatId);
+                          const found = safeProjectCategories.find((c) => c.id === newCatId);
+                          if (found) {
+                            setMajorCategory(found.name);
+                            if (found.subCategories && found.subCategories.length > 0) {
+                              setSubCategory(found.subCategories[0].name);
+                            }
+                          }
+                        }}
+                        className="w-full bg-white text-slate-900 font-semibold border border-emerald-300 rounded-lg px-3 py-2 text-xs"
+                      >
+                        {safeProjectCategories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name} ({cat.items.length} Standard BOQ Items)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadStandardPackage(selectedStandardCategoryId)}
+                      className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm flex items-center justify-center space-x-1.5 shrink-0 transition-colors"
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span>{UI_STRINGS.categoryStandardBOQMaster.loadStandardPackageButton}</span>
+                    </button>
+                  </div>
+
+                  {boqUploadError && (
+                    <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-medium flex items-center space-x-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      <span>{boqUploadError}</span>
+                    </div>
+                  )}
+
+                  {boqUploadSuccess && (
+                    <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] font-medium flex items-center space-x-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{boqUploadSuccess}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-slate-900 block text-xs">1. Download Selected Template</span>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Download {selectedPkg?.name ?? 'Standard Package'} pre-filled items in CSV format to enter quantities.
+                        </p>
+                      </div>
+                      <a 
+                        href={templateCsvUri}
+                        download={templateFilename}
+                        className="w-full bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 border border-emerald-300"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download Standard Template (CSV)</span>
+                      </a>
+                    </div>
+
+                    <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-slate-900 block text-xs">2. Upload Filled Standard Template</span>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Upload completed CSV with your required site quantities to populate the down screen table.
+                        </p>
+                      </div>
+
+                      <input 
+                        id="method2FileInput"
+                        ref={method2FileInputRef} 
+                        type="file" 
+                        accept=".csv,.tsv,.txt,.xlsx,.xls" 
+                        onChange={handleStandardTemplateUpload} 
+                        className="hidden" 
+                      />
+
+                      <button 
+                        type="button"
+                        onClick={() => method2FileInputRef.current?.click()}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-lg shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer"
+                      >
+                        <UploadCloud className="w-4 h-4" />
+                        <span>Upload Filled Template (CSV)</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* METHOD 3 WORKBENCH */}
             {activeMethod === 3 && (
@@ -754,38 +1737,351 @@ export const PRModule: React.FC<PRModuleProps> = ({
                       Method 3: Drawing AI Extractor (Without Commercial Rates)
                     </h3>
                     <p className="text-[11px] text-sky-800 mt-0.5">
-                      AI ingests technical drawing (e.g. <em>Counter Elevation D</em>) and extracts
+                      AI ingests technical drawing (e.g. <em>Counter Elevation D</em> / CAD / PDF) and extracts
                       itemized specifications and quantities directly into the schedule below.
                     </p>
                   </div>
-                  <button onClick={() => setCurrentStep(4)} className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0">
+                  <button 
+                    onClick={() => setCurrentStep(4)} 
+                    className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm whitespace-nowrap flex items-center space-x-1.5 shrink-0"
+                  >
                     <span>Confirm & Move to Step 4: Supplier Selection →</span>
                   </button>
                 </div>
 
-                <div className="p-4 bg-white rounded-xl border border-sky-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
-                  <div className="flex-1">
-                    <label className="block font-bold text-slate-900 mb-1">Enter Drawing Title or Upload Drawing Sheet:</label>
-                    <div className="flex items-center space-x-2">
-                      <input 
-                        type="text" 
-                        value={drawingInput} 
-                        onChange={(e) => setDrawingInput(e.target.value)}
-                        className="flex-1 bg-white font-bold text-slate-900 border border-sky-300 rounded-lg px-3 py-2 text-xs" 
-                      />
-                      <button 
-                        onClick={() => setItems(DEFAULT_COUNTER_ITEMS)}
-                        className="bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 rounded-lg whitespace-nowrap flex items-center space-x-1 shadow-sm"
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* OPTION A: UPLOAD DRAWING SHEET */}
+                  <div className="p-4 bg-white rounded-xl border border-sky-200 space-y-3 flex flex-col justify-between text-xs">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-900 block text-xs flex items-center">
+                          <UploadCloud className="w-4 h-4 text-sky-600 mr-1.5" />
+                          Option A: Upload Technical Drawing Sheet
+                        </span>
+                        <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-2 py-0.5 rounded">
+                          CAD / PDF / Image
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Upload architectural elevation, joinery detail, or structural CAD drawing
+                        (.pdf, .dwg, .dxf, .png, .jpg).
+                      </p>
+                    </div>
+
+                    <input 
+                      ref={drawingFileInputRef} 
+                      type="file" 
+                      accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg" 
+                      onChange={handleDrawingFileUpload} 
+                      className="hidden" 
+                    />
+
+                    {uploadedDrawingFile ? (
+                      <div className="p-3.5 bg-sky-50/70 rounded-xl border border-sky-200 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4 text-sky-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <span 
+                                className="font-bold text-slate-900 text-xs truncate block" 
+                                title={uploadedDrawingFile.name}
+                              >
+                                {uploadedDrawingFile.name}
+                              </span>
+                              <span className="text-[11px] text-slate-500 block">
+                                {uploadedDrawingFile.size} • {uploadedDrawingFile.type}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded shrink-0">
+                              ✓ Attached
+                            </span>
+                            <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded shrink-0">
+                              ⚡ {items.length} BOQ Lines Extracted
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Live Extraction Progress Block */}
+                        {isExtractingDrawing && (
+                          <div className="p-2.5 bg-sky-100/90 border border-sky-300 rounded-lg space-y-1 animate-pulse">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-sky-950">
+                              <span className="flex items-center space-x-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-sky-600 animate-spin" />
+                                <span>AI Vision Extraction in Progress...</span>
+                              </span>
+                              <span className="text-sky-700 font-mono text-[10px]">Processing</span>
+                            </div>
+                            <p className="text-[10px] text-sky-800">
+                              {extractionStage || 'Analyzing CAD vector layers and specifications...'}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-sky-200/60">
+                          <button
+                            type="button"
+                            onClick={() => boqScheduleRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center space-x-1"
+                          >
+                            <span>↓ View Generated BOQ ({items.length} Items)</span>
+                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              aria-label="Generate BOQ from Drawing"
+                              disabled={isExtractingDrawing}
+                              onClick={() => {
+                                triggerDrawingExtraction(uploadedDrawingFile.name, uploadedDrawingFile.name);
+                              }}
+                              className={
+                                'text-[11px] font-bold text-white bg-sky-600 hover:bg-sky-700 px-3 py-1 ' +
+                                'rounded-lg shadow-xs flex items-center space-x-1 disabled:opacity-50'
+                              }
+                            >
+                              <Sparkles className={`w-3 h-3 ${isExtractingDrawing ? 'animate-spin' : ''}`} />
+                              <span>{isExtractingDrawing ? 'Extracting...' : 'Generate BOQ from Drawing'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => drawingFileInputRef.current?.click()}
+                              className={
+                                'text-[11px] font-bold text-sky-700 hover:text-sky-900 px-2.5 py-1 ' +
+                                'rounded bg-white border border-sky-300 shadow-xs'
+                              }
+                            >
+                              Replace Drawing
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleClearDrawing}
+                              className="text-[11px] font-bold text-rose-600 hover:text-rose-800 px-2 py-1 rounded hover:bg-rose-50"
+                            >
+                              {UI_STRINGS.prModule.clearDrawingButton}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            processDrawingFile(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        onClick={() => drawingFileInputRef.current?.click()}
+                        className={
+                          'p-5 border-2 border-dashed border-sky-300 rounded-xl bg-sky-50/30 ' +
+                          'text-center space-y-2 hover:bg-sky-50 cursor-pointer transition-all'
+                        }
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Extract Specs & Quantities</span>
-                      </button>
+                        <UploadCloud className="w-6 h-6 text-sky-600 mx-auto" />
+                        <div>
+                          <span className="block font-bold text-slate-800 text-xs">
+                            Click or drag & drop engineering drawing sheet
+                          </span>
+                          <span className="text-[11px] text-slate-500 block mt-0.5">
+                            Supports PDF, DWG, DXF, PNG, JPG (up to 25MB)
+                          </span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            drawingFileInputRef.current?.click();
+                          }}
+                          className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm"
+                        >
+                          Browse & Upload Drawing Sheet
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sampleDoc: AttachedDoc = {
+                              name: 'Counter_Elevation_D_Approved_Drawing.pdf',
+                              type: 'Architectural Drawing (.pdf)',
+                              size: '2.4 MB',
+                              date: '2026-09-06',
+                              status: 'Attached',
+                            };
+                            setUploadedDrawingFile(sampleDoc);
+                            setDrawingInput('Counter Elevation D');
+                            triggerDrawingExtraction('Counter Elevation D', sampleDoc.name);
+                          }}
+                          className="text-sky-700 hover:text-sky-900 font-semibold underline"
+                        >
+                          Load Sample Drawing (Counter Elevation D)
+                        </button>
+                        <span className="text-slate-300">|</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sampleDoc: AttachedDoc = {
+                              name: 'Full_Height_Storage_Details_STORAGE_1.pdf',
+                              type: 'Architectural Drawing (.pdf)',
+                              size: '1.8 MB',
+                              date: '2026-09-13',
+                              status: 'Attached',
+                            };
+                            setUploadedDrawingFile(sampleDoc);
+                            setDrawingInput('Full Height Storage Details');
+                            triggerDrawingExtraction('Full Height Storage Details', sampleDoc.name);
+                          }}
+                          className="text-sky-700 hover:text-sky-900 font-semibold underline"
+                        >
+                          Sample: Full Height Storage Details
+                        </button>
+                      </div>
+                      <span className="text-slate-400">Step 3 of 7 Scope</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-sky-50 rounded-lg border border-sky-200 text-[11px] sm:w-72">
-                    <span className="font-bold text-sky-900 block">Drawing Scope Protection:</span>
-                    <span>Strictly extracts Elevation D specs. Rates hidden for PR Raiser.</span>
+
+                  {/* OPTION B: DRAWING TITLE & AI EXTRACTION */}
+                  <div className="p-4 bg-white rounded-xl border border-sky-200 space-y-3 flex flex-col justify-between text-xs">
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-bold text-slate-900 block text-xs flex items-center">
+                          <Sparkles className="w-4 h-4 text-sky-600 mr-1.5" />
+                          Option B: Drawing Title & AI Extractor Workbench
+                        </span>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Specify drawing elevation name or trigger automatic technical specification deconstruction.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-900 mb-1">
+                          Enter Drawing Title or Upload Drawing Sheet:
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="text" 
+                            value={drawingInput} 
+                            onChange={(e) => setDrawingInput(e.target.value)}
+                            className={
+                              'flex-1 bg-white font-bold text-slate-900 border border-sky-300 rounded-lg ' +
+                              'px-3 py-2 text-xs focus:ring-2 focus:ring-sky-400 focus:outline-none'
+                            } 
+                          />
+                          <button 
+                            disabled={isExtractingDrawing}
+                            onClick={handleExtractSpecsFromDrawing}
+                            className={
+                              'bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 ' +
+                              'rounded-lg whitespace-nowrap flex items-center space-x-1.5 shadow-sm disabled:opacity-50'
+                            }
+                          >
+                            <Sparkles className={`w-3.5 h-3.5 ${isExtractingDrawing ? 'animate-spin' : ''}`} />
+                            <span>
+                              {isExtractingDrawing
+                                ? 'Extract Specs & Quantities (Processing...)'
+                                : 'Extract Specs & Quantities'}
+                            </span>
+                          </button>
+                          {(Boolean(drawingInput) || items.length > 0) && (
+                            <button
+                              type="button"
+                              onClick={handleClearDrawing}
+                              className={
+                                'px-3 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 ' +
+                                'bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 whitespace-nowrap'
+                              }
+                            >
+                              {UI_STRINGS.prModule.clearDrawingButton}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 pt-0.5">
+                        <span className="font-semibold text-slate-700">Quick Presets:</span>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setDrawingInput('Counter Elevation D');
+                            triggerDrawingExtraction('Counter Elevation D');
+                          }} 
+                          className="px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold rounded border border-sky-200"
+                        >
+                          Counter Elevation D
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setDrawingInput('Full Height Storage Details');
+                            triggerDrawingExtraction('Full Height Storage Details');
+                          }} 
+                          className="px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold rounded border border-sky-200"
+                        >
+                          Full Height Storage Details
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setDrawingInput('Foundation Raft Reinforcement');
+                            triggerDrawingExtraction('Foundation Raft Reinforcement');
+                          }} 
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded"
+                        >
+                          Foundation Raft Reinforcement
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-sky-50 rounded-lg border border-sky-200 text-[11px] space-y-1">
+                      <div className="flex items-center justify-between font-bold text-sky-900">
+                        <span className="flex items-center">
+                          <ShieldCheck className="w-3.5 h-3.5 text-sky-700 mr-1" />
+                          Drawing Scope Protection:
+                        </span>
+                        <span className="text-[10px] bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded font-mono font-bold">
+                          PR Raiser Scope
+                        </span>
+                      </div>
+                      <span className="text-sky-800 block">
+                        Strictly extracts Elevation D specs. Rates hidden for PR Raiser.
+                      </span>
+                      {extractionFeedback && (
+                        <span className="text-emerald-800 font-bold block pt-1 border-t border-sky-200/60">
+                          ✓ {extractionFeedback}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* VISUAL EXTRACTION NOTIFICATION BANNER */}
+                <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-sky-50 rounded-xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center space-x-2.5 text-emerald-950">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <span className="font-bold block">
+                        {isExtractingDrawing
+                          ? '🤖 AI Vision Analyzing CAD Vectors & Specifications...'
+                          : `Drawing BOQ Generation Active: ${items.length} Line Items Populated`}
+                      </span>
+                      <span className="text-[11px] text-emerald-800">
+                        {extractionFeedback || 'Engineering line items itemized into schedule below.'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => boqScheduleRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm whitespace-nowrap flex items-center space-x-1 shrink-0 self-start sm:self-center"
+                  >
+                    <span>Inspect BOQ Schedule Below ↓</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -839,15 +2135,30 @@ export const PRModule: React.FC<PRModuleProps> = ({
             )}
 
             {/* DOWN SCREEN BOQ SCHEDULE TABLE */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div 
+              ref={boqScheduleRef} 
+              className={`bg-white rounded-2xl border shadow-sm p-5 space-y-4 transition-all duration-500 ${
+                isNewlyGenerated ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50/20' : 'border-slate-200'
+              }`}
+            >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-3">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 flex items-center">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600 mr-1.5" />
-                    Requisition Scope & Quantities Schedule (Down Screen)
-                  </h4>
-                  <p className="text-[11px] text-slate-500">
-                    Showing <strong>{items.length} items</strong> extracted for drawing: <strong>{drawingInput}</strong>
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-xs font-bold text-slate-900 flex items-center">
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 mr-1.5" />
+                      Requisition Scope & Quantities Schedule (Down Screen)
+                    </h4>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                      ✓ Schedule Active ({items.length} Lines)
+                    </span>
+                    {isNewlyGenerated && (
+                      <span className="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded animate-pulse">
+                        ⚡ Newly Loaded: {itemsSourceName}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Showing <strong>{items.length} items</strong> from source: <strong className="text-sky-800 underline">{itemsSourceName}</strong>
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -870,32 +2181,86 @@ export const PRModule: React.FC<PRModuleProps> = ({
                       <th className="p-2.5">Specification / Scope Description</th>
                       <th className="p-2.5 w-16">UOM</th>
                       <th className="p-2.5 w-28 text-right bg-emerald-50 text-emerald-950 font-bold border-l border-r border-emerald-200">Required Quantity</th>
-                      <th className="p-2.5 w-12 text-center">Action</th>
+                      <th className="p-2.5 w-20 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {items.map((it, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-2.5 text-slate-400 font-mono">{idx + 1}</td>
-                        <td className="p-2.5 font-mono font-bold text-sky-800">{it.code}</td>
-                        <td className="p-2.5 font-semibold text-slate-900">{it.desc}</td>
-                        <td className="p-2.5 font-bold text-slate-700">{it.uom}</td>
-                        <td className="p-2.5 text-right bg-emerald-50/50 border-l border-r border-emerald-100">
-                          <input 
-                            type="number" 
-                            step="0.1" 
-                            value={it.qty} 
-                            onChange={(e) => handleQtyChange(idx, e.target.value)} 
-                            className="w-20 text-xs font-bold text-emerald-950 font-mono bg-white border border-emerald-300 p-1 rounded text-right shadow-inner"
-                          />
-                        </td>
-                        <td className="p-2.5 text-center">
-                          <button onClick={() => handleRemoveLine(idx)} className="text-rose-500 hover:text-rose-700">
-                            <Trash2 className="w-3.5 h-3.5" />
+                    {items.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-500">
+                          <p className="font-bold text-xs text-slate-700">All BOQ schedule columns are currently blank.</p>
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Choose an ingestion method above (CSV Upload, Standard Template, or Technical Drawing)
+                            or click below to add lines.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleAddLine}
+                            className="mt-3 inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>+ Add First Item</span>
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      items.map((it, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-2.5 text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="p-2.5 font-mono font-bold text-sky-800">{it.code}</td>
+                          <td className="p-2.5 font-semibold text-slate-900 whitespace-pre-line">
+                            {it.desc ? (
+                              it.desc
+                            ) : (
+                              <input
+                                type="text"
+                                placeholder="Enter specification description..."
+                                value={it.desc}
+                                onChange={(e) => {
+                                  const updated = [...items];
+                                  updated[idx].desc = e.target.value;
+                                  setItems(updated);
+                                }}
+                                className="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-300 p-1 rounded"
+                              />
+                            )}
+                          </td>
+                          <td className="p-2.5 font-bold text-slate-700">{it.uom}</td>
+                          <td className="p-2.5 text-right bg-emerald-50/50 border-l border-r border-emerald-100">
+                            <input 
+                              type="number" 
+                              step="0.1" 
+                              value={it.qty === 0 ? '' : it.qty} 
+                              placeholder="0.0"
+                              onChange={(e) => handleQtyChange(idx, e.target.value)} 
+                              className="w-20 text-xs font-bold text-emerald-950 font-mono bg-white border border-emerald-300 p-1 rounded text-right shadow-inner"
+                            />
+                          </td>
+                          <td className="p-2.5 text-center">
+                            <div className="flex items-center justify-center space-x-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAmend(it, idx)}
+                                className="p-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded"
+                                title="Amend Specification & Quantity"
+                                aria-label="Amend item"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLine(idx)}
+                                className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded"
+                                title="Remove Item"
+                                aria-label="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1011,6 +2376,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
 
                 {/* Dropdown Trigger Box */}
                 <div 
+                  data-testid="pr-supplier-dropdown-trigger"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-full bg-white font-bold text-slate-900 border-2 border-sky-400 hover:border-sky-500 rounded-xl px-4 py-3 text-xs flex items-center justify-between shadow-sm cursor-pointer transition-all select-none"
                 >
@@ -1020,7 +2386,7 @@ export const PRModule: React.FC<PRModuleProps> = ({
                     ) : (
                       <div className="flex items-center space-x-1.5 flex-wrap">
                         {selectedSupplierIds.slice(0, 3).map(id => {
-                          const v = VENDOR_DATABASE.find(item => item.id === id) || { id, name: id, isRateCard: false };
+                          const v = allVendors.find(item => item.id === id) || { id, name: id, isRateCard: false };
                           return (
                             <span 
                               key={id} 
@@ -1119,6 +2485,12 @@ export const PRModule: React.FC<PRModuleProps> = ({
                                 />
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="font-bold text-slate-900 text-xs font-mono">{v.name} ({v.id})</span>
+                                  {v.source === 'CLIENT_ONBOARDED' && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white border border-emerald-700 flex items-center space-x-1 shadow-xs">
+                                      <span>🏢</span>
+                                      <span>Client Boarded</span>
+                                    </span>
+                                  )}
                                   {v.isRateCard ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center space-x-1">
                                       <span>🟢</span>
@@ -1183,12 +2555,14 @@ export const PRModule: React.FC<PRModuleProps> = ({
                     </span>
                   ) : (
                     selectedSupplierIds.map(id => {
-                      const v = VENDOR_DATABASE.find((item) => item.id === id) || {
+                      const v = allVendors.find((item) => item.id === id) || {
                         id,
                         name: id,
                         rating: 4.5,
                         isRateCard: false,
+                        source: undefined,
                       };
+                      const isClientBoarded = v.source === 'CLIENT_ONBOARDED';
                       return (
                         <div 
                           key={id}
@@ -1196,6 +2570,11 @@ export const PRModule: React.FC<PRModuleProps> = ({
                         >
                           <span>{v.isRateCard ? '🟢' : '🔵'}</span>
                           <span>{v.name} ({v.id})</span>
+                          {isClientBoarded && (
+                            <span className="text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded font-extrabold shadow-2xs">
+                              Client Boarded
+                            </span>
+                          )}
                           <span className="text-amber-600 font-mono text-[11px]">★ {v.rating.toFixed(1)}</span>
                           <button 
                             onClick={(e) => {
@@ -1575,7 +2954,9 @@ export const PRModule: React.FC<PRModuleProps> = ({
           <div className="p-6 sm:p-8 space-y-6">
             <div className="p-4 bg-purple-50 rounded-xl border border-purple-200 text-xs">
               <span className="font-bold text-purple-950 block text-sm">Engineering Attachments & Reference Documents:</span>
-              <p className="text-purple-800 mt-0.5">Attach drawings, specification sheets, and site photos for Project Head & Category Manager review.</p>
+              <p className="text-purple-800 mt-0.5">
+                Attach drawings, specification sheets, and site photos for Category Manager review and RFQ generation.
+              </p>
             </div>
 
             {/* Dropzone */}
@@ -1616,25 +2997,48 @@ export const PRModule: React.FC<PRModuleProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {documents.map((doc, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="p-2.5 font-bold text-slate-900 flex items-center space-x-2">
-                          <FileText className="w-4 h-4 text-purple-600" />
-                          <span>{doc.name}</span>
-                        </td>
-                        <td className="p-2.5 text-slate-600">{doc.type}</td>
-                        <td className="p-2.5 font-mono text-slate-500">{doc.size}</td>
-                        <td className="p-2.5 font-mono text-slate-500">{doc.date}</td>
-                        <td className="p-2.5 text-center">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">{doc.status}</span>
-                        </td>
-                        <td className="p-2.5 text-center">
-                          <button onClick={() => setDocuments(documents.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-700">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {documents.map((doc, idx) => {
+                      const isDrawing = /\.(pdf|dwg|dxf|png|jpg|jpeg)$/i.test(doc.name);
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="p-2.5 font-bold text-slate-900 flex items-center space-x-2">
+                            <FileText className="w-4 h-4 text-purple-600" />
+                            <span>{doc.name}</span>
+                          </td>
+                          <td className="p-2.5 text-slate-600">{doc.type}</td>
+                          <td className="p-2.5 font-mono text-slate-500">{doc.size}</td>
+                          <td className="p-2.5 font-mono text-slate-500">{doc.date}</td>
+                          <td className="p-2.5 text-center">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              {doc.status}
+                            </span>
+                          </td>
+                          <td className="p-2.5 text-center">
+                            <div className="flex items-center justify-center space-x-1.5">
+                              {isDrawing && (
+                                <button
+                                  type="button"
+                                  title="Generate BOQ in Step 3 from this drawing"
+                                  onClick={() => handleExtractFromStep7Doc(doc)}
+                                  className={
+                                    'text-[10px] font-bold text-sky-700 hover:text-sky-900 ' +
+                                    'bg-sky-50 border border-sky-200 px-2 py-0.5 rounded shadow-2xs'
+                                  }
+                                >
+                                  ⚡ Extract BOQ
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setDocuments(documents.filter((_, i) => i !== idx))}
+                                className="text-rose-500 hover:text-rose-700"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1672,20 +3076,73 @@ export const PRModule: React.FC<PRModuleProps> = ({
                 <span>{UI_STRINGS.prModule.nextStep}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
+            ) : submittedPR ? (
+              <button 
+                type="button"
+                className={
+                  'bg-emerald-700 text-white font-black text-xs px-6 py-2 rounded-xl shadow-md ' +
+                  'flex items-center space-x-2'
+                }
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>{UI_STRINGS.prModule.prSuccessfullySubmitted}</span>
+              </button>
             ) : (
               <button 
+                type="button"
                 onClick={handleSubmitPR} 
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-6 py-2 rounded-xl shadow-md flex items-center space-x-2"
+                className={
+                  'bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-6 py-2 ' +
+                  'rounded-xl shadow-md flex items-center space-x-2'
+                }
               >
                 <Send className="w-4 h-4" />
-                <span>{UI_STRINGS.prModule.submitToProjectHead} (Role 2) →</span>
+                <span>{UI_STRINGS.prModule.submitPR} →</span>
               </button>
             )}
           </div>
         </div>
 
       </div>
+      )}
 
+      {/* Embedded Purchase Requisitions (PRs) Master Summary Table */}
+      <div 
+        ref={prSummaryRef} 
+        id="prs-master-summary-section" 
+      >
+        <PRHistoryTable
+          prs={prs}
+          circulatedRFQs={circulatedRFQs}
+          onSelectPRForBOQ={onSelectPRForBOQ}
+          onNavigateToBOQ={onNavigateToBOQ}
+          onApprovePR={approvePRByProjectHead}
+          onStartNewPR={handleStartNewPR}
+          activePRId={currentPRId}
+        />
+      </div>
+
+      {/* Add Category Modal */}
+      <AddCategoryModal
+        isOpen={isAddCategoryModalOpen}
+        onClose={() => setIsAddCategoryModalOpen(false)}
+        onAddCategory={handleAddCategoryFromPR}
+        existingCategories={safeProjectCategories}
+      />
+
+      {/* Amend BOQ Modal */}
+      <AmendBOQModal
+        isOpen={isAmendModalOpen}
+        item={editingItem?.item || null}
+        index={editingItem?.index ?? -1}
+        onClose={() => {
+          setIsAmendModalOpen(false);
+          setEditingItem(null);
+        }}
+        onSave={handleSaveAmendedItem}
+        availableCategories={safeProjectCategories}
+        currentCategoryName={majorCategory}
+      />
     </div>
   );
 };

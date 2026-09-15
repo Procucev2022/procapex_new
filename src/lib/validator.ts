@@ -97,7 +97,11 @@ export function validateSchema<T = Record<string, unknown>>(
       }
 
       // Not required and empty/null/undefined -> skip remaining checks for this field
-      if (val === undefined || (val === null && rule.nullable)) {
+      if (
+        val === undefined ||
+        (val === null && rule.nullable) ||
+        (typeof val === 'string' && val.trim() === '')
+      ) {
         if (opts.stripUnknown && val !== undefined) {
           resultData[field] = val;
         }

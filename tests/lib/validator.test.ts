@@ -74,6 +74,14 @@ describe('Centralized Validator Engine (src/lib/validator.ts)', () => {
       // Successful string validation
       const resValid = validateSchema({ title: 'GoodTitle', code: 'PR-999' }, schema);
       expect(resValid.isValid).toBe(true);
+
+      // Optional field with empty string should skip minLength/pattern constraint
+      const schemaWithOptional: ObjectSchema = {
+        name: { type: 'string', required: true, minLength: 2 },
+        optionalCode: { type: 'string', required: false, minLength: 2, pattern: /^[A-Z]+$/ },
+      };
+      const resOptionalEmpty = validateSchema({ name: 'ValidName', optionalCode: '  ' }, schemaWithOptional);
+      expect(resOptionalEmpty.isValid).toBe(true);
     });
 
     it('should validate number constraints: min, max, coercion, and NaN handling', () => {

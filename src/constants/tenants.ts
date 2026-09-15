@@ -6,6 +6,7 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
     name: 'L&T Infra & Construction Ltd',
     short: 'LT',
     project: 'Metro Line 4 Underground & Stations',
+    tier: 'MODULE_3',
     vendor: 'DesignCraft Millworks & Interiors Pvt Ltd',
     team: {
       'PROJECT_TEAM': { name: 'Rahul Verma', title: 'Senior Project Engineer (Site Lead)' },
@@ -22,6 +23,7 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
     name: 'Tata Projects Global',
     short: 'TP',
     project: 'Noida International Airport Terminal 1',
+    tier: 'MODULE_2',
     vendor: 'Tata Steel & BlueStar Chiller Div',
     team: {
       'PROJECT_TEAM': { name: 'Siddharth Rao', title: 'Package Lead Engineer' },
@@ -38,6 +40,7 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
     name: 'Godrej Properties & Living',
     short: 'GP',
     project: 'Godrej Sky Terraces Luxury Highrise',
+    tier: 'MODULE_1',
     vendor: 'Godrej Interio Enterprise',
     team: {
       'PROJECT_TEAM': { name: 'Karan Joshi', title: 'Site In-charge (Architecture)' },
@@ -54,6 +57,7 @@ export const TENANTS: Record<TenantKey, TenantConfig> = {
     name: 'Shapoorji Pallonji Real Estate',
     short: 'SP',
     project: 'Parkwest Tech Park Phase 3',
+    tier: 'MODULE_3',
     vendor: 'SP Fabricators & Interior Solutions',
     team: {
       'PROJECT_TEAM': { name: 'Tanmay Saxena', title: 'Senior Construction Manager' },

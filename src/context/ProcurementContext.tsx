@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type {
   UserRole,
   TenantKey,
@@ -11,6 +11,8 @@ import type {
   PurchaseOrder,
   AuditLog,
   ProcurementContextType,
+  PricingTierId,
+  VendorRFQItem,
 } from '@/types';
 import {
   TENANTS,
@@ -20,26 +22,185 @@ import {
   INITIAL_PPOS,
   INITIAL_POS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_CIRCULATED_RFQS,
   PURCHASE_REQUEST_FORM_SCHEMA,
   NEGOTIATION_ROUND_FORM_SCHEMA,
   PPO_CREATE_FORM_SCHEMA,
+  PRICING_TIERS,
+  TENANT_TIER_UPDATE_SCHEMA,
 } from '@/constants';
 import { logger } from '../lib/logger';
 import { validateSchema } from '../lib/validator';
+import { useBudgetManager } from './useBudgetManager';
+import { useVendorManager } from './useVendorManager';
 
 export { TENANTS } from '@/constants';
 
-const ProcurementContext = createContext<ProcurementContextType | undefined>(undefined);
+export const ProcurementContext = createContext<ProcurementContextType | undefined>(undefined);
 
 export function ProcurementProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [activeTenantKey, setActiveTenantKey] = useState<TenantKey>('TNT_LNT');
   const [activeRole, setActiveRole] = useState<UserRole>('PROJECT_TEAM');
-  const [prs, setPrs] = useState<PurchaseRequest[]>(INITIAL_PRS);
-  const [quotes, setQuotes] = useState<Record<string, VendorQuote[]>>(INITIAL_QUOTES);
-  const [negotiations, setNegotiations] = useState<Record<string, NegotiationEvent[]>>(INITIAL_NEGO);
-  const [ppos, setPpos] = useState<PPOItem[]>(INITIAL_PPOS);
-  const [pos, setPos] = useState<PurchaseOrder[]>(INITIAL_POS);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
+  const [prs, setPrs] = useState<PurchaseRequest[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_prs_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_PRS;
+  });
+
+  const [quotes, setQuotes] = useState<Record<string, VendorQuote[]>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_quotes_v1');
+        if (stored) return { ...INITIAL_QUOTES, ...JSON.parse(stored) };
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_QUOTES;
+  });
+
+  const [negotiations, setNegotiations] = useState<Record<string, NegotiationEvent[]>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_negotiations_v1');
+        if (stored) return { ...INITIAL_NEGO, ...JSON.parse(stored) };
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_NEGO;
+  });
+
+  const [ppos, setPpos] = useState<PPOItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_ppos_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_PPOS;
+  });
+
+  const [pos, setPos] = useState<PurchaseOrder[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_pos_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_POS;
+  });
+
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_audit_logs_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_AUDIT_LOGS;
+  });
+
+  const [circulatedRFQs, setCirculatedRFQs] = useState<Record<string, VendorRFQItem>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage?.getItem('procapex_circulated_rfqs_v1');
+        if (stored) {
+          return { ...INITIAL_CIRCULATED_RFQS, ...JSON.parse(stored) };
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_CIRCULATED_RFQS;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('procapex_prs_v1', JSON.stringify(prs));
+      } catch {
+        // ignore
+      }
+    }
+  }, [prs]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('procapex_audit_logs_v1', JSON.stringify(auditLogs));
+      } catch {
+        // ignore
+      }
+    }
+  }, [auditLogs]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('procapex_quotes_v1', JSON.stringify(quotes));
+      } catch {
+        // ignore
+      }
+    }
+  }, [quotes]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('procapex_negotiations_v1', JSON.stringify(negotiations));
+      } catch {
+        // ignore
+      }
+    }
+  }, [negotiations]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('procapex_ppos_v1', JSON.stringify(ppos));
+      } catch {
+        // ignore
+      }
+    }
+  }, [ppos]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem('procapex_pos_v1', JSON.stringify(pos));
+      } catch {
+        // ignore
+      }
+    }
+  }, [pos]);
+
+  // Project Budget Planning (Finance Manager)
+  const budgetManager = useBudgetManager(setAuditLogs);
 
   // PPO 3-Tier Multi-Role Approval State
   const [tier1Approved, setTier1Approved] = useState<boolean>(false);
@@ -47,7 +208,76 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   const [tier3Approved, setTier3Approved] = useState<boolean>(false);
   const [poReleased, setPoReleased] = useState<boolean>(false);
 
-  const activeTenant = TENANTS[activeTenantKey];
+  // Multi-Tenant Pricing & Subscription Tier State
+  const [tenantTiers, setTenantTiers] = useState<Record<TenantKey, PricingTierId>>({
+    TNT_LNT: TENANTS.TNT_LNT.tier,
+    TNT_TATA: TENANTS.TNT_TATA.tier,
+    TNT_GODREJ: TENANTS.TNT_GODREJ.tier,
+    TNT_SHAPOORJI: TENANTS.TNT_SHAPOORJI.tier,
+  });
+
+  const activeTenantTier = tenantTiers[activeTenantKey] ?? 'MODULE_1';
+
+  const activeTenant = {
+    ...TENANTS[activeTenantKey],
+    tier: activeTenantTier,
+  };
+
+  const vendorManager = useVendorManager(activeTenantKey, activeTenant.name, setAuditLogs);
+
+  const currentTenants: Record<TenantKey, typeof TENANTS[TenantKey]> = (
+    Object.keys(TENANTS) as TenantKey[]
+  ).reduce((acc, k) => {
+    acc[k] = {
+      ...TENANTS[k],
+      tier: tenantTiers[k] ?? TENANTS[k].tier,
+    };
+    return acc;
+  }, {} as Record<TenantKey, typeof TENANTS[TenantKey]>);
+
+  const isModuleAllowed = (moduleId: string): boolean => {
+    const tierConfig = PRICING_TIERS[activeTenantTier];
+    if (!tierConfig) return false;
+    return tierConfig.allowedModules.includes(moduleId);
+  };
+
+  const isRoleAllowed = (role: UserRole): boolean => {
+    const tierConfig = PRICING_TIERS[activeTenantTier];
+    if (!tierConfig) return false;
+    return tierConfig.allowedRoles.includes(role);
+  };
+
+  const changeTenantTier = (tenantKey: TenantKey, newTier: PricingTierId): void => {
+    const validation = validateSchema({ tenantKey, newTier }, TENANT_TIER_UPDATE_SCHEMA);
+    if (!validation.isValid) {
+      logger.warn('context/procurement', 'Rejected invalid tenant tier update', {
+        errors: validation.errors,
+        tenantKey,
+        newTier,
+      });
+      return;
+    }
+
+    const prevTier = tenantTiers[tenantKey];
+    logger.info('context/procurement', 'Updated tenant subscription tier', {
+      tenantKey,
+      prevTier,
+      newTier,
+      price: PRICING_TIERS[newTier]?.priceFormatted,
+    });
+
+    setTenantTiers(prev => ({
+      ...prev,
+      [tenantKey]: newTier,
+    }));
+
+    setAuditLogs(prev => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: 'System Admin (Billing & Subscription)',
+      action: `Tenant Subscription Updated: ${tenantKey}`,
+      detail: `Upgraded ${TENANTS[tenantKey].name} to ${PRICING_TIERS[newTier].name} (${PRICING_TIERS[newTier].priceFormatted}${PRICING_TIERS[newTier].billingPeriod})`,
+    }, ...prev]);
+  };
 
   const changeTenant = (key: TenantKey): void => {
     logger.info('context/procurement', 'Switching active procurement tenant', {
@@ -55,6 +285,19 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       newTenant: key,
     });
     setActiveTenantKey(key);
+    const targetTier = tenantTiers[key] ?? TENANTS[key].tier;
+    const tierConfig = PRICING_TIERS[targetTier];
+    if (tierConfig && !tierConfig.allowedRoles.includes(activeRole)) {
+      const fallbackRole: UserRole = tierConfig.allowedRoles.includes('FINANCE_HEAD')
+        ? 'FINANCE_HEAD'
+        : (tierConfig.allowedRoles[0] ?? 'VENDOR');
+      logger.info('context/procurement', 'Role adjusted for new tenant subscription tier', {
+        previousRole: activeRole,
+        fallbackRole,
+        tier: targetTier,
+      });
+      setActiveRole(fallbackRole);
+    }
   };
 
   const approveTier1 = (): void => {
@@ -75,11 +318,13 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       user: 'Anil Kulkarni (Project Head)',
     });
     setTier2Approved(true);
+    setPoReleased(true);
+    setPpos(prev => prev.map(p => p.id === 'PPO-2026-0015' ? { ...p, status: 'APPROVED_PO_ISSUED' } : p));
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: 'Anil Kulkarni (Project Head)',
-      action: 'PPO Tier 2 Signed-off',
-      detail: 'Site budget clearance given for PPO-2026-0015.',
+      action: 'PPO Tier 2 Signed-off & Order Issued',
+      detail: 'Site budget clearance given for PPO-2026-0015. Official order issued.',
     }, ...prev]);
   };
 
@@ -108,20 +353,45 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setPoReleased(false);
   };
 
-  const createPR = (prData: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'>): void => {
+  const createPR = (
+    prData: Omit<PurchaseRequest, 'id' | 'status' | 'buyer'> & { id?: string }
+  ): PurchaseRequest | null => {
     const validation = validateSchema(prData, PURCHASE_REQUEST_FORM_SCHEMA);
     if (!validation.isValid) {
       logger.warn('context/procurement', 'Purchase request input validation failed, rejecting submission', {
         errors: validation.errors,
       });
-      return;
+      return null;
     }
 
+    let targetId = prData.id;
+    if (!targetId) {
+      const maxNum = prs.reduce((max, p) => {
+        const match = p.id.match(/PR-\d{4}-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      const nextNum = Math.max(maxNum + 1, prs.length + 1);
+      targetId = `PR-2026-${String(nextNum).padStart(4, '0')}`;
+    }
     const newPR: PurchaseRequest = {
       ...prData,
-      id: `PR-2026-000${prs.length + 1}`,
+      id: targetId,
       status: 'SUBMITTED',
       buyer: 'Unassigned',
+      items: prData.items?.map((it, idx) => ({
+        ...it,
+        rateCard: it.rateCard || it.benchmark || 1500,
+        benchmark: it.benchmark || it.rateCard || 1450,
+        std: it.std || 1480,
+        code: it.code || `ITEM-${idx + 1}`,
+        desc: it.desc || 'Scope Item',
+        uom: it.uom || 'Nos',
+        qty: it.qty || 1,
+      })) || [],
     };
     logger.info('context/procurement', 'Purchase Request created and submitted', {
       prId: newPR.id,
@@ -130,13 +400,20 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       costCentre: newPR.costCentre,
       itemsCount: newPR.items.length,
     });
-    setPrs(prev => [newPR, ...prev]);
+    setPrs(prev => {
+      const exists = prev.some(p => p.id === targetId);
+      if (exists) {
+        return prev.map(p => (p.id === targetId ? { ...p, ...newPR, status: 'SUBMITTED' } : p));
+      }
+      return [newPR, ...prev];
+    });
     setAuditLogs(prev => [{
       time: new Date().toISOString().replace('T', ' ').substring(0, 16),
       user: `${activeRole} (User)`,
       action: 'PR Submitted',
       detail: `Created ${newPR.id} - ${newPR.title}`,
     }, ...prev]);
+    return newPR;
   };
 
   const updatePRStatus = (id: string, status: PurchaseRequest['status'], comments?: string): void => {
@@ -227,7 +504,19 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       vendor: newPPO.vendor,
       grandTotal: newPPO.grandTotal,
     });
-    setPpos(prev => [newPPO, ...prev]);
+    setPpos(prev => {
+      const existingIdx = prev.findIndex(p => p.prId === ppoData.prId && p.vendor === ppoData.vendor);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          ...ppoData,
+          status: 'PENDING_APPROVAL',
+        };
+        return updated;
+      }
+      return [newPPO, ...prev];
+    });
   };
 
   const approvePPO = (ppoId: string): void => {
@@ -252,6 +541,207 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     }
   };
 
+  const circulateRFQ = (prId: string, invitedVendors: string[], closureDate?: string): void => {
+    const targetPR = prs.find((p) => p.id === prId) || INITIAL_PRS.find((p) => p.id === prId);
+    const rfqId = `RFQ-2026-${prId.split('-')[2] || '0005'}`;
+    const newRFQ: VendorRFQItem = {
+      id: rfqId,
+      prId,
+      title: targetPR?.title || 'Tender Package Specification',
+      projectName: targetPR?.projectName || 'Godrej Woods, Tower C',
+      category: targetPR?.category || 'General Procurement',
+      closureDate: closureDate || targetPR?.reqDate || '2026-09-28',
+      site: targetPR?.deliveryAddress || 'Tower C Reception Lobby, Godrej Woods, Sector 43, Noida',
+      invitedVendors,
+      status: 'PENDING',
+      itemsCount: targetPR?.items?.length || 0,
+      items: targetPR?.items || [],
+    };
+
+    setCirculatedRFQs((prev) => {
+      const next = { ...prev, [prId]: newRFQ, [rfqId]: newRFQ };
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage?.setItem('procapex_circulated_rfqs_v1', JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+      }
+      return next;
+    });
+
+    setPrs((prev) =>
+      prev.map((p) =>
+        p.id === prId
+          ? {
+              ...p,
+              nominatedVendors: Array.from(new Set([...(p.nominatedVendors || []), ...invitedVendors])),
+            }
+          : p
+      )
+    );
+
+    logger.info('context/procurement', 'Circulated RFQ tender to vendors', {
+      rfqId,
+      prId,
+      invitedVendors,
+    });
+
+    setAuditLogs((prev) => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: `${activeRole} (Category Manager)`,
+      action: 'RFQ Tender Circulated',
+      detail: `Circulated ${rfqId} (${newRFQ.title}) to ${invitedVendors.length} vendors: ${invitedVendors.join(', ')}`,
+    }, ...prev]);
+  };
+
+  const submitVendorQuote = (
+    prId: string,
+    vendorId: string,
+    round: number,
+    totalAmount: number,
+    remarks?: string,
+    lineRates?: Record<string, number>
+  ): void => {
+    // 1. Update line item rates on prs
+    setPrs((prevPrs) => {
+      const updated = prevPrs.map((pr) => {
+        if (pr.id !== prId) return pr;
+        const updatedItems = (pr.items || []).map((it) => {
+          const currentVQ = it.vendorQuotes || {};
+          const currentDetail = currentVQ[vendorId] || {
+            initialRate: it.rateCard || it.benchmark || 1500,
+            revisedRate: null,
+            buyerOffer1: null,
+            buyerOffer2: null,
+            finalRate: null,
+          };
+          const newRate = lineRates?.[it.code];
+          const updatedDetail = { ...currentDetail };
+          if (round === 1) {
+            updatedDetail.initialRate = newRate !== undefined ? newRate : currentDetail.initialRate;
+          } else if (round === 2) {
+            updatedDetail.revisedRate = newRate !== undefined ? newRate : currentDetail.revisedRate;
+          } else if (round === 3) {
+            updatedDetail.finalRate = newRate !== undefined ? newRate : currentDetail.finalRate;
+          }
+          return {
+            ...it,
+            vendorQuotes: {
+              ...currentVQ,
+              [vendorId]: updatedDetail,
+            },
+          };
+        });
+        return {
+          ...pr,
+          items: updatedItems,
+        };
+      });
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage?.setItem('procapex_prs_v1', JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+      }
+      return updated;
+    });
+
+    addNegotiationRound(
+      prId,
+      totalAmount,
+      remarks || `Vendor Quote submitted for Round ${round}`,
+      `VENDOR_QUOTE_ROUND_${round}`
+    );
+    setAuditLogs((prev) => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: `Vendor (${vendorId})`,
+      action: `Vendor Quote Submitted (Round ${round})`,
+      detail: `Submitted ₹ ${Math.round(totalAmount).toLocaleString()} for ${prId}`,
+    }, ...prev]);
+
+    logger.info('context/procurement', 'Vendor quote submitted with line rates and stored', {
+      prId,
+      vendorId,
+      round,
+      totalAmount,
+    });
+  };
+
+  const submitBuyerCounterOffer = (
+    prId: string,
+    vendorId: string,
+    round: number,
+    totalAmount: number,
+    remarks?: string,
+    lineRates?: Record<string, number>
+  ): void => {
+    setPrs((prevPrs) => {
+      const updated = prevPrs.map((pr) => {
+        if (pr.id !== prId) return pr;
+        const targetVendors = vendorId === 'ALL'
+          ? (pr.nominatedVendors && pr.nominatedVendors.length > 0 ? pr.nominatedVendors : ['VND-001', 'VND-002'])
+          : [vendorId];
+
+        const updatedItems = (pr.items || []).map((it) => {
+          const currentVQ = { ...(it.vendorQuotes || {}) };
+          targetVendors.forEach((vId) => {
+            const currentDetail = currentVQ[vId] || {
+              initialRate: it.rateCard || it.benchmark || 1500,
+              revisedRate: null,
+              buyerOffer1: null,
+              buyerOffer2: null,
+              finalRate: null,
+            };
+            const counterRate = lineRates?.[it.code] ?? Math.round((it.benchmark || 1400) * 1.04);
+            currentVQ[vId] = {
+              ...currentDetail,
+              ...(round === 1 ? { buyerOffer1: counterRate } : { buyerOffer2: counterRate }),
+            };
+          });
+          return {
+            ...it,
+            vendorQuotes: currentVQ,
+          };
+        });
+        return {
+          ...pr,
+          items: updatedItems,
+        };
+      });
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage?.setItem('procapex_prs_v1', JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+      }
+      return updated;
+    });
+
+    addNegotiationRound(
+      prId,
+      totalAmount,
+      remarks || `Category Manager Counter-Offer for Round ${round}`,
+      'BUYER_COUNTER'
+    );
+
+    setAuditLogs((prev) => [{
+      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: `${activeRole} (Category Manager)`,
+      action: `Buyer Counter-Offer Dispatched (Round ${round})`,
+      detail: `Dispatched ₹ ${Math.round(totalAmount).toLocaleString()} for ${prId} to ${vendorId}`,
+    }, ...prev]);
+
+    logger.info('context/procurement', 'Buyer counter-offer dispatched with line rates and stored', {
+      prId,
+      vendorId,
+      round,
+      totalAmount,
+    });
+  };
+
   const resetToSampleData = (): void => {
     logger.info('context/procurement', 'Reset procurement system data to sample state');
     setPrs(INITIAL_PRS);
@@ -259,7 +749,23 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setNegotiations(INITIAL_NEGO);
     setPpos(INITIAL_PPOS);
     setPos(INITIAL_POS);
+    setAuditLogs(INITIAL_AUDIT_LOGS);
+    setCirculatedRFQs(INITIAL_CIRCULATED_RFQS);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.removeItem('procapex_prs_v1');
+        window.localStorage?.removeItem('procapex_quotes_v1');
+        window.localStorage?.removeItem('procapex_negotiations_v1');
+        window.localStorage?.removeItem('procapex_ppos_v1');
+        window.localStorage?.removeItem('procapex_pos_v1');
+        window.localStorage?.removeItem('procapex_audit_logs_v1');
+        window.localStorage?.removeItem('procapex_circulated_rfqs_v1');
+      } catch {
+        // ignore
+      }
+    }
     resetTiers();
+    vendorManager.resetVendors();
   };
 
   return (
@@ -269,13 +775,38 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       activeTenantKey,
       activeTenant,
       changeTenant,
-      tenants: TENANTS,
+      tenants: currentTenants,
+      activeTenantTier,
+      tenantTiers,
+      changeTenantTier,
+      isModuleAllowed,
+      isRoleAllowed,
       prs,
       quotes,
       negotiations,
       ppos,
       pos,
       auditLogs,
+      circulatedRFQs,
+      circulateRFQ,
+      submitVendorQuote,
+      submitBuyerCounterOffer,
+      // Project Budget Planning (Finance Manager)
+      projectCategories: budgetManager.projectCategories,
+      projectBudget: budgetManager.projectBudget,
+      updateItemQuantity: budgetManager.updateItemQuantity,
+      updateContingencyRate: budgetManager.updateContingencyRate,
+      updateProjectSqFt: budgetManager.updateProjectSqFt,
+      freezeBudgetBaseline: budgetManager.freezeBudgetBaseline,
+      resetCategoryQuantities: budgetManager.resetCategoryQuantities,
+      downloadCategoryBOQCSV: budgetManager.downloadCategoryBOQCSV,
+      downloadProjectBudgetCSV: budgetManager.downloadProjectBudgetCSV,
+      downloadCategorySummaryCSV: budgetManager.downloadCategorySummaryCSV,
+      addCategory: budgetManager.addCategory,
+      addSubCategory: budgetManager.addSubCategory,
+      addStandardBOQItem: budgetManager.addStandardBOQItem,
+      uploadBatchStandardBOQItems: budgetManager.uploadBatchStandardBOQItems,
+      toggleItemHoldStatus: budgetManager.toggleItemHoldStatus,
       tier1Approved,
       tier2Approved,
       tier3Approved,
@@ -292,6 +823,13 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       createPPO,
       approvePPO,
       resetToSampleData,
+      // Vendor Management & Evaluation (Module 2 & 3)
+      managedVendors: vendorManager.managedVendors,
+      addClientVendors: vendorManager.addClientVendors,
+      addSingleClientVendor: vendorManager.addSingleClientVendor,
+      submitVendorEvaluation: vendorManager.submitVendorEvaluation,
+      submitPPORating: vendorManager.submitPPORating,
+      sendEvaluationInvite: vendorManager.sendEvaluationInvite,
     }}>
       {children}
     </ProcurementContext.Provider>

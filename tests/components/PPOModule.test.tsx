@@ -115,50 +115,75 @@ describe('PPOModule Component', () => {
     expect(mockApproveTier2).toHaveBeenCalled();
   });
 
-  it('renders Tier 3 in progress when Tier 2 is approved', () => {
+  it('renders PO Released state with download banner when poReleased / Tier 2 is approved', () => {
     (useProcurement as jest.Mock).mockReturnValue({
       ppos: samplePPOs,
       pos: samplePOs,
-      activeTenant: sampleTenant,
+      activeTenant: { ...sampleTenant, team: { PROJECT_HEAD_PPO: { name: 'Anil Kulkarni' } } },
       tier1Approved: true,
       tier2Approved: true,
-      tier3Approved: false,
-      poReleased: false,
-      approveTier1: mockApproveTier1,
-      approveTier2: mockApproveTier2,
-      approveTier3AndReleasePO: mockApproveTier3AndReleasePO,
-      approvePPO: mockApprovePPO,
-    });
-
-    render(<PPOModule />);
-
-    expect(screen.getByText(UI_STRINGS.ppoModule.badgeTier3InProgress)).toBeInTheDocument();
-    expect(screen.getByText(formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, { name: 'Anil Kulkarni' }))).toBeInTheDocument();
-
-    const tier3Btn = screen.getByRole('button', { name: UI_STRINGS.ppoModule.tier3SignOff });
-    fireEvent.click(tier3Btn);
-    expect(mockApproveTier3AndReleasePO).toHaveBeenCalled();
-  });
-
-  it('renders PO Released state with download banner when poReleased is true', () => {
-    (useProcurement as jest.Mock).mockReturnValue({
-      ppos: samplePPOs,
-      pos: samplePOs,
-      activeTenant: { ...sampleTenant, team: {} },
-      tier1Approved: true,
-      tier2Approved: true,
-      tier3Approved: true,
       poReleased: true,
       approveTier1: mockApproveTier1,
       approveTier2: mockApproveTier2,
-      approveTier3AndReleasePO: mockApproveTier3AndReleasePO,
       approvePPO: mockApprovePPO,
     });
 
     render(<PPOModule />);
 
     expect(screen.getByText(UI_STRINGS.ppoModule.badgePoReleased)).toBeInTheDocument();
-    expect(screen.getByText(formatString(UI_STRINGS.ppoModule.tier3SignedTemplate, { name: 'Sunil Deshmukh' }))).toBeInTheDocument();
+    expect(screen.getByText(formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, { name: 'Anil Kulkarni' }))).toBeInTheDocument();
+
+    const downloadBannerBtn = screen.getByRole('button', {
+      name: formatString(UI_STRINGS.ppoModule.downloadOfficialPdfTemplate, { poNumber: 'PO-2026-0089' }),
+    });
+    fireEvent.click(downloadBannerBtn);
+  });
+
+  it('handles PO download when po does not exist in pos array', () => {
+    (useProcurement as jest.Mock).mockReturnValue({
+      ppos: samplePPOs,
+      pos: [],
+      activeTenant: { ...sampleTenant, team: {} },
+      tier1Approved: true,
+      tier2Approved: true,
+      poReleased: true,
+      approveTier1: mockApproveTier1,
+      approveTier2: mockApproveTier2,
+      approvePPO: mockApprovePPO,
+    });
+
+    render(<PPOModule />);
+
+    const downloadBannerBtn = screen.getByRole('button', {
+      name: formatString(UI_STRINGS.ppoModule.downloadOfficialPdfTemplate, { poNumber: 'PO-2026-0089' }),
+    });
+    // Should hit `if (!po) return;` cleanly without errors
+    fireEvent.click(downloadBannerBtn);
+  });
+
+  it('downloads PO PDF with fallback team names when tenant team is empty', () => {
+    (useProcurement as jest.Mock).mockReturnValue({
+      ppos: samplePPOs,
+      pos: [
+        {
+          id: 'PO-2026-0089',
+          ppoRef: '',
+          vendor: 'Sample Vendor',
+          amount: 0,
+          issueDate: '',
+          status: 'ISSUED',
+        },
+      ],
+      activeTenant: { ...sampleTenant, team: {} },
+      tier1Approved: true,
+      tier2Approved: true,
+      poReleased: true,
+      approveTier1: mockApproveTier1,
+      approveTier2: mockApproveTier2,
+      approvePPO: mockApprovePPO,
+    });
+
+    render(<PPOModule />);
 
     const downloadBannerBtn = screen.getByRole('button', {
       name: formatString(UI_STRINGS.ppoModule.downloadOfficialPdfTemplate, { poNumber: 'PO-2026-0089' }),

@@ -10,6 +10,7 @@ import {
   GitMerge, 
   Bell, 
   RotateCcw, 
+  Calculator,
 } from 'lucide-react';
 import { useProcurement } from '../context/ProcurementContext';
 import type { DashboardProps } from '@/types';
@@ -49,6 +50,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
         </div>
         <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      </div>
+
+      {/* Finance Manager & Budget Planning Spotlight Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-sm border border-indigo-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 mt-0.5">
+            <Calculator className="w-6 h-6 text-indigo-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase font-extrabold text-indigo-300 tracking-wider">
+                {UI_STRINGS.dashboard.budgetSpotlightBadge}
+              </span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-bold">
+                Active Module
+              </span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
+              {UI_STRINGS.dashboard.budgetSpotlightTitle}
+            </h2>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+              {UI_STRINGS.dashboard.budgetSpotlightDescription}
+            </p>
+            <div className="flex items-center gap-4 mt-2 text-xs text-slate-300 font-medium flex-wrap">
+              <div>Baseline: <span className="font-bold text-white">₹ 14.20 Cr</span></div>
+              <div className="w-1 h-1 rounded-full bg-slate-600"></div>
+              <div>Estimated: <span className="font-bold text-indigo-300">₹ 12.46 Cr</span></div>
+              <div className="w-1 h-1 rounded-full bg-slate-600"></div>
+              <div>Rate: <span className="font-bold text-emerald-400">₹ 1,047 / sq.ft</span></div>
+              <div className="w-1 h-1 rounded-full bg-slate-600"></div>
+              <div>Categories: <span className="font-bold text-white">6 Standard Scope</span></div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onNavigate('budget')}
+          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2 shrink-0 self-start md:self-center"
+        >
+          <span>{UI_STRINGS.dashboard.budgetSpotlightButton}</span>
+        </button>
       </div>
 
       {/* KPI Cards */}

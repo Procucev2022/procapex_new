@@ -31,3 +31,45 @@ export interface NegotiationTactic {
   modelUsed: string;
   isLiveAi: boolean;
 }
+
+export interface DrawingExtractionRequest {
+  fileName?: string;
+  fileType?: string;
+  drawingTitleHint?: string;
+  categoryHint?: string;
+  textContent?: string;
+  fileBase64?: string;
+  fileMimeType?: string;
+}
+
+export interface DrawingExtractionResult {
+  drawingTitle: string;
+  category: string;
+  subCategory?: string;
+  items: Array<{
+    code: string;
+    desc: string;
+    uom: string;
+    qty: number;
+    benchmark?: number;
+    rateCard?: number;
+    status?: string;
+    drawingElevation?: string;
+  }>;
+  modelUsed: string;
+  isLiveAi: boolean;
+  confidence: string;
+}
+
+export interface AmendBOQItemInput {
+  index: number;
+  code: string;
+  desc: string;
+  uom: string;
+  qty: number;
+  benchmarkRate?: number;
+  addToStandardBOQ?: boolean;
+  categoryId?: string;
+  subCategoryId?: string;
+}
+

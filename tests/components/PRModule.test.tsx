@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { PRModule } from '@/components/PRModule';
 import { useProcurement } from '@/context/ProcurementContext';
 import { UI_STRINGS } from '@/constants';
@@ -20,6 +20,7 @@ describe('PRModule Component', () => {
       createPR: mockCreatePR,
     });
     window.alert = jest.fn();
+    window.HTMLElement.prototype.scrollIntoView = jest.fn();
   });
 
   it('renders Step 1 (General Details) and updates all general fields', () => {
@@ -65,9 +66,12 @@ describe('PRModule Component', () => {
     fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepCategory, 'i') }));
     expect(screen.getByText(/Step 2\/7/i)).toBeInTheDocument();
 
-    const majorCategorySelect = container.querySelector('select') as HTMLSelectElement;
-    if (majorCategorySelect) {
-      fireEvent.change(majorCategorySelect, { target: { value: 'Civil & Structural' } });
+    const selects = container.querySelectorAll('select');
+    if (selects.length > 0) {
+      fireEvent.change(selects[0], { target: { value: 'Civil & Structural' } });
+    }
+    if (selects.length > 1) {
+      fireEvent.change(selects[1], { target: { value: 'False Ceiling & Acoustic Paneling' } });
     }
 
     const textInputs = container.querySelectorAll('input[type="text"]');
@@ -84,7 +88,7 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 3\/7/i)).toBeInTheDocument();
   });
 
-  it('interacts with Step 3 (BOQ Studio) and all 4 ingestion methods', () => {
+  it('interacts with Step 3 (BOQ Studio) and all 4 ingestion methods', async () => {
     const { container } = render(<PRModule />);
 
     fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
@@ -97,6 +101,42 @@ describe('PRModule Component', () => {
 
     const uploadSpreadsheetBtn = screen.getByRole('button', { name: /Upload & Parse BOQ File/i });
     fireEvent.click(uploadSpreadsheetBtn);
+
+    // Test drag and drop on Method 1 dropzone
+    const method1Dropzone = screen.getByText(/Click or drag & drop completed BOQ CSV/i).closest('div');
+    if (method1Dropzone) {
+      fireEvent.dragOver(method1Dropzone);
+      fireEvent.drop(method1Dropzone, { dataTransfer: { files: [] } });
+    }
+
+    // Upload real CSV via Method 1 file input
+    const method1Input = container.querySelector('#method1FileInput') as HTMLInputElement;
+
+    if (method1Input) {
+      const validCsv = new File(
+        [
+          'Item Code,Item Description / Specs,Unit (UOM),Required Quantity\nSITE-001,Reinforced Concrete M30,Cum,85.5\nSITE-002,Structural Steel Beams,Ton,14.2',
+        ],
+        'Site_Structural_BOQ.csv',
+        { type: 'text/csv' }
+      );
+      await act(async () => {
+        fireEvent.change(method1Input, { target: { files: [validCsv] } });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Site_Structural_BOQ.csv')).toBeInTheDocument();
+        expect(screen.getByText('SITE-001')).toBeInTheDocument();
+        expect(screen.getByText('Reinforced Concrete M30')).toBeInTheDocument();
+      });
+
+      // Test scroll to schedule button and re-upload button
+      const viewLoadedScheduleBtn = screen.getByRole('button', { name: /View Loaded Schedule/i });
+      fireEvent.click(viewLoadedScheduleBtn);
+
+      const reuploadBtn = screen.getByRole('button', { name: /Re-upload/i });
+      fireEvent.click(reuploadBtn);
+    }
 
     const method1MoveBtn = screen.getByRole('button', { name: /Confirm & Move to Step 4: Supplier Selection →/i });
     fireEvent.click(method1MoveBtn);
@@ -111,6 +151,23 @@ describe('PRModule Component', () => {
     const uploadStdBtn = screen.getByRole('button', { name: /Upload Filled Template/i });
     fireEvent.click(uploadStdBtn);
 
+    const method2Input = container.querySelector('#method2FileInput') as HTMLInputElement;
+    if (method2Input) {
+      const templateCsv = new File(
+        [
+          'Item Code,Item Description,Unit,Qty\nSTD-PKG-01,Standard Flooring Tile,Sqm,250\nSTD-PKG-02,Standard Wall Paint,Sqm,500',
+        ],
+        'Standard_Package_Filled.csv',
+        { type: 'text/csv' }
+      );
+      await act(async () => {
+        fireEvent.change(method2Input, { target: { files: [templateCsv] } });
+      });
+      await waitFor(() => {
+        expect(screen.getByText('STD-PKG-01')).toBeInTheDocument();
+      });
+    }
+
     const method2MoveBtn = screen.getByRole('button', { name: /Confirm & Move to Step 4: Supplier Selection →/i });
     fireEvent.click(method2MoveBtn);
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
@@ -118,6 +175,10 @@ describe('PRModule Component', () => {
     // Back to Step 3, test Method 4
     fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     fireEvent.click(screen.getByText('4. Manual / Catalog'));
+    const catalogPicker = container.querySelector('#nextCatalogPicker') as HTMLSelectElement;
+    if (catalogPicker) {
+      fireEvent.change(catalogPicker, { target: { value: '18mm BWP Marine Plywood' } });
+    }
     const addFromCatalogBtn = screen.getByRole('button', { name: /Add from Catalog/i });
     fireEvent.click(addFromCatalogBtn);
 
@@ -126,12 +187,96 @@ describe('PRModule Component', () => {
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
 
     // Back to Step 3, test Method 3
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') })
+    );
     fireEvent.click(screen.getByText('3. Drawing AI Extractor'));
+    expect(screen.getByText('Option A: Upload Technical Drawing Sheet')).toBeInTheDocument();
+    expect(screen.getByText('Counter_Elevation_D_Approved_Drawing.pdf')).toBeInTheDocument();
+
+    // Test Sub-Category select in Step 2 (to be tested when visiting Step 2)
+    // Test Replace Drawing button
+    const replaceBtn = screen.getByRole('button', { name: /Replace Drawing/i });
+    fireEvent.click(replaceBtn);
+
+    // Test View Generated BOQ scroll button
+    const viewGeneratedBtn = screen.getByRole('button', { name: /View Generated BOQ/i });
+    fireEvent.click(viewGeneratedBtn);
+
+    // Test Remove Drawing
+    const removeDrawingBtns = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.prModule.clearDrawingButton, 'i'),
+    });
+    fireEvent.click(removeDrawingBtns[0]);
+    expect(screen.getByText(/Click or drag & drop engineering drawing sheet/i)).toBeInTheDocument();
+
+    // Test Dropzone drag & drop
+    const dropzone = screen.getByText(/Click or drag & drop engineering drawing sheet/i).closest('div');
+    if (dropzone) {
+      fireEvent.dragOver(dropzone);
+      fireEvent.drop(dropzone, { dataTransfer: { files: [] } });
+      const droppedCad = new File(['cad data'], 'Civil_Structural_Plan.dwg', { type: 'application/octet-stream' });
+      fireEvent.drop(dropzone, { dataTransfer: { files: [droppedCad] } });
+      expect(screen.getByText('Civil_Structural_Plan.dwg')).toBeInTheDocument();
+    }
+
+    // Remove drawing again to test click on browse button in dropzone and dropzone click
+    const removeDrawingBtns2 = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.prModule.clearDrawingButton, 'i'),
+    });
+    fireEvent.click(removeDrawingBtns2[0]);
+
+    const dropzoneEl = screen.getByText(/Click or drag & drop engineering drawing sheet/i).closest('div');
+    if (dropzoneEl) {
+      fireEvent.click(dropzoneEl);
+    }
+
+    const browseDrawingBtn = screen.getByRole('button', { name: /Browse & Upload Drawing Sheet/i });
+    fireEvent.click(browseDrawingBtn);
+
+    // Test upload drawing file via input and duplicate file upload
+    const fileInputs = container.querySelectorAll('input[type="file"]');
+    const drawingInputEl = fileInputs[0];
+    const dummyFile = new File(['dummy drawing content'], 'Architectural_Floor_Plan.pdf', {
+      type: 'application/pdf',
+    });
+    fireEvent.change(drawingInputEl, { target: { files: [dummyFile] } });
+    expect(screen.getByText('Architectural_Floor_Plan.pdf')).toBeInTheDocument();
+
+    // Test duplicate file upload to cover duplicate check branch
+    fireEvent.change(drawingInputEl, { target: { files: [dummyFile] } });
+
+    // Test explicit Generate BOQ from Drawing button in Option A
+    const generateBOQBtn = screen.getByRole('button', { name: /Generate BOQ from Drawing/i });
+    fireEvent.click(generateBOQBtn);
+
+    // Test Inspect BOQ Schedule Below button
+    const inspectBOQBtn = screen.getByRole('button', { name: /Inspect BOQ Schedule Below/i });
+    fireEvent.click(inspectBOQBtn);
+
+    // Test Load Sample Drawing link
+    const sampleLink = screen.getByRole('button', { name: /Load Sample Drawing/i });
+    fireEvent.click(sampleLink);
+    expect(screen.getByText('Counter_Elevation_D_Approved_Drawing.pdf')).toBeInTheDocument();
+
+    // Test Quick Presets
+    const raftPresetBtn = screen.getByRole('button', { name: /Foundation Raft Reinforcement/i });
+    fireEvent.click(raftPresetBtn);
+    expect(screen.getByDisplayValue('Foundation Raft Reinforcement')).toBeInTheDocument();
+
+    const counterPresetBtn = screen.getByRole('button', { name: 'Counter Elevation D' });
+    fireEvent.click(counterPresetBtn);
+    expect(screen.getByDisplayValue('Counter Elevation D')).toBeInTheDocument();
+
+    // Change custom title & extract
     const drawingInput = screen.getByDisplayValue('Counter Elevation D');
     fireEvent.change(drawingInput, { target: { value: 'Elevation Front View' } });
 
     const extractBtn = screen.getByRole('button', { name: /Extract Specs & Quantities/i });
+    fireEvent.click(extractBtn);
+
+    // Test Raft extraction branch
+    fireEvent.change(drawingInput, { target: { value: 'Foundation Raft Footing Detail' } });
     fireEvent.click(extractBtn);
 
     const method3MoveBtn = screen.getByRole('button', { name: /Confirm & Move to Step 4: Supplier Selection →/i });
@@ -157,7 +302,13 @@ describe('PRModule Component', () => {
       fireEvent.click(deleteButtons[deleteButtons.length - 1]);
     }
 
-    // Move to Step 4 via bottom down-screen button
+    // Header Move to Step 4 button
+    const headerStep4Btn = screen.getByRole('button', { name: /^Move to Step 4: Supplier Selection →$/i });
+    fireEvent.click(headerStep4Btn);
+    expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
+
+    // Back to Step 3, test bottom down-screen button
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') }));
     const bottomConfirmBtn = screen.getByRole('button', { name: /Confirm BOQ & Proceed to Step 4/i });
     fireEvent.click(bottomConfirmBtn);
     expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
@@ -199,7 +350,8 @@ describe('PRModule Component', () => {
     // Toggle individual supplier checkbox in dropdown (both uncheck and check)
     const checkboxes = container.querySelectorAll('input[type="checkbox"]');
     if (checkboxes.length > 1) {
-      fireEvent.click(checkboxes[0]); // toggle
+      fireEvent.click(checkboxes[0]); // uncheck
+      fireEvent.click(checkboxes[0]); // re-check (covers line 217)
       fireEvent.click(checkboxes[1]); // toggle another
     }
 
@@ -235,7 +387,13 @@ describe('PRModule Component', () => {
     fireEvent.click(screen.getByRole('button', { name: /\+ Select All/i }));
     fireEvent.click(screen.getByRole('button', { name: /Done \/ Apply Selection/i }));
     fireEvent.click(headerProceedBtn);
+    expect(screen.getByText(/Step 5\/7/i)).toBeInTheDocument();
 
+    // Back to Step 4 to test bottomProceedBtn when valid
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepSuppliers, 'i') }));
+    expect(screen.getByText(/Step 4\/7/i)).toBeInTheDocument();
+    const bottomProceedBtnValid = screen.getByRole('button', { name: /Confirm Suppliers & Proceed to Step 5/i });
+    fireEvent.click(bottomProceedBtnValid);
     expect(screen.getByText(/Step 5\/7/i)).toBeInTheDocument();
   });
 
@@ -354,6 +512,12 @@ describe('PRModule Component', () => {
       fireEvent.change(fileInput, { target: { files: [file] } });
       expect(screen.getByText('structural_drawing.pdf')).toBeInTheDocument();
 
+      const extractBOQBtns = screen.getAllByRole('button', { name: /⚡ Extract BOQ/i });
+      expect(extractBOQBtns.length).toBeGreaterThan(0);
+      fireEvent.click(extractBOQBtns[0]);
+      expect(screen.getByText(/Step 3\/7/i)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i') }));
       fireEvent.change(fileInput, { target: { files: [] } });
     }
 
@@ -362,7 +526,8 @@ describe('PRModule Component', () => {
       fireEvent.click(deleteButtons[0]);
     }
 
-    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitToProjectHead, 'i') });
+    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitPR, 'i') });
+    expect(submitBtn).toHaveTextContent(new RegExp(UI_STRINGS.prModule.submitPR, 'i'));
     fireEvent.click(submitBtn);
 
     expect(mockCreatePR).toHaveBeenCalledWith(
@@ -373,17 +538,69 @@ describe('PRModule Component', () => {
       })
     );
     expect(mockOnSelectPRForBOQ).toHaveBeenCalledWith('PR-2026-0005');
+
+    // Verify PR Successfully Submitted button, banner, and badge are visible
+    expect(
+      screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.prSuccessfullySubmitted, 'i') })
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(new RegExp(UI_STRINGS.prModule.prSuccessfullySubmitted, 'i')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SUBMITTED/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Proceed to RFQ Hub →/i)).toBeInTheDocument();
+
+    // Click Proceed to RFQ Hub
+    const proceedRfqBtn = screen.getByText(/Proceed to RFQ Hub →/i);
+    fireEvent.click(proceedRfqBtn);
+    expect(mockOnSelectPRForBOQ).toHaveBeenCalledWith('PR-2026-0005');
   });
 
   it('handles submission with only onNavigateToBOQ provided', () => {
     render(<PRModule onNavigateToBOQ={mockOnNavigateToBOQ} />);
 
     fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i') }));
-    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitToProjectHead, 'i') });
+    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitPR, 'i') });
     fireEvent.click(submitBtn);
 
     expect(mockCreatePR).toHaveBeenCalled();
     expect(mockOnNavigateToBOQ).toHaveBeenCalledWith('PR-2026-0005');
+
+    // Verify PR Successfully Submitted button and banner
+    expect(
+      screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.prSuccessfullySubmitted, 'i') })
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(new RegExp(UI_STRINGS.prModule.prSuccessfullySubmitted, 'i')).length).toBeGreaterThan(0);
+  });
+
+  it('allows raising a blank new PR with all fields cleared and adds first BOQ item', () => {
+    const { container } = render(<PRModule />);
+
+    // Click "+ Raise New PR" in header
+    const raiseNewBtns = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.prModule.raiseNewPR.replace(/[+]/g, '\\+'), 'i'),
+    });
+    fireEvent.click(raiseNewBtns[0]);
+
+    // Verify draft ID incremented and Step 1 fields are blank
+    expect(screen.getByText(/Draft ID: PR-2026-0006/i)).toBeInTheDocument();
+    const textInputs = container.querySelectorAll('input[type="text"]');
+    expect(textInputs.length).toBeGreaterThan(0);
+    // Product/Service Description is first text input
+    expect((textInputs[0] as HTMLInputElement).value).toBe('');
+
+    const costCenterSelect = screen.getByDisplayValue(/Select Cost Centre/i);
+    expect(costCenterSelect).toBeInTheDocument();
+
+    // Navigate to Step 3 (BOQ Studio) - should show empty state
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') })
+    );
+    expect(screen.getByText(/All BOQ schedule columns are currently blank/i)).toBeInTheDocument();
+
+    // Add first item
+    const addFirstItemBtn = screen.getByRole('button', { name: /\+ Add First Item/i });
+    fireEvent.click(addFirstItemBtn);
+
+    // Line 1 should be added
+    expect(screen.getByText('ITEM-1')).toBeInTheDocument();
   });
 
   it('handles navigation via Previous, Next, and Cancel buttons', () => {
@@ -423,5 +640,67 @@ describe('PRModule Component', () => {
         expect(screen.queryByText(/Multi-Select Enabled/i)).not.toBeInTheDocument();
       }
     }
+  });
+
+  it('handles drawing extraction timers and stage progression', () => {
+    jest.useFakeTimers();
+    render(<PRModule />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepBOQ.replace(/[()]/g, '\\$&'), 'i') })
+    );
+    fireEvent.click(screen.getByText('3. Drawing AI Extractor'));
+
+    const generateBOQBtn = screen.getByRole('button', { name: /Generate BOQ from Drawing/i });
+    fireEvent.click(generateBOQBtn);
+
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('supports viewing in PRs summary and creating another new PR', () => {
+    const mockOnViewPRSummary = jest.fn();
+    render(<PRModule onViewPRSummary={mockOnViewPRSummary} onNavigateToBOQ={mockOnNavigateToBOQ} />);
+
+    // Navigate to Step 7 and submit
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i') }));
+    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitPR, 'i') });
+    fireEvent.click(submitBtn);
+
+    // Verify View in PRs Summary button
+    const viewSummaryBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.viewInPRSummary, 'i') });
+    fireEvent.click(viewSummaryBtn);
+    expect(mockOnViewPRSummary).toHaveBeenCalledWith('PR-2026-0005');
+
+    // Click Create Another PR
+    const createAnotherBtn = screen.getByRole('button', {
+      name: new RegExp(UI_STRINGS.prModule.createAnotherPR.replace(/[+]/g, '\\+'), 'i'),
+    });
+    fireEvent.click(createAnotherBtn);
+
+    // Should reset to Step 1 and have new draft ID (PR-2026-0006)
+    expect(screen.getByText(/Step 1\/7/i)).toBeInTheDocument();
+    expect(screen.getByText(/Draft ID: PR-2026-0006/i)).toBeInTheDocument();
+
+    // Navigate to Step 7 again and submit the new PR
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i') }));
+    const newSubmitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.prModule.submitPR, 'i') });
+    fireEvent.click(newSubmitBtn);
+
+    // Verify PR-2026-0006 was submitted
+    expect(mockCreatePR).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'PR-2026-0006',
+      })
+    );
   });
 });

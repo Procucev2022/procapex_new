@@ -109,6 +109,108 @@ export const API_AI_STATUS_QUERY_SCHEMA: ObjectSchema = {
   },
 };
 
+export const API_DRAWING_EXTRACTION_SCHEMA: ObjectSchema = {
+  fileName: {
+    type: 'string',
+    required: false,
+    maxLength: 300,
+    description: 'Uploaded drawing file name (e.g. Counter_Elevation_D.pdf, Layout.dwg)',
+  },
+  fileType: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'MIME type or extension classification',
+  },
+  drawingTitleHint: {
+    type: 'string',
+    required: false,
+    maxLength: 300,
+    description: 'User provided drawing title hint or manual elevation name',
+  },
+  categoryHint: {
+    type: 'string',
+    required: false,
+    maxLength: 200,
+    description: 'Project scope category hint (e.g. Interior & Fitouts, Civil)',
+  },
+  textContent: {
+    type: 'string',
+    required: false,
+    maxLength: 10000,
+    description: 'Extracted text layer or OCR string from drawing title block',
+  },
+  fileBase64: {
+    type: 'string',
+    required: false,
+    maxLength: 15000000,
+    description: 'Base64 encoded drawing image or document payload for Gemini Multimodal Vision analysis',
+  },
+  fileMimeType: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'MIME type of base64 document (e.g. image/png, image/jpeg, application/pdf)',
+  },
+};
+
+export const AMEND_BOQ_ITEM_SCHEMA: ObjectSchema = {
+  code: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'BOQ item specification code',
+  },
+  desc: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 500,
+    description: 'Technical specification description',
+  },
+  uom: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 20,
+    description: 'Unit of measurement',
+  },
+  qty: {
+    type: 'number',
+    required: true,
+    min: 0.001,
+    max: 10000000,
+    coerce: true,
+    description: 'Required quantity',
+  },
+  benchmarkRate: {
+    type: 'number',
+    required: false,
+    min: 0,
+    coerce: true,
+    description: 'Unit benchmark rate in INR',
+  },
+  addToStandardBOQ: {
+    type: 'boolean',
+    required: false,
+    description: 'Flag to persist item into Standard BOQ Master Catalog',
+  },
+  categoryId: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'Target Category ID for standard catalog registration',
+  },
+  subCategoryId: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'Target Sub-Category ID for standard catalog registration',
+  },
+};
+
+
 export const API_GRAPHQL_SCHEMA: ObjectSchema = {
   query: {
     type: 'string',
@@ -257,6 +359,12 @@ export const API_COMMON_HEADERS_SCHEMA: HeadersSchema = {
 // ==============================================================================
 
 export const PURCHASE_REQUEST_FORM_SCHEMA: ObjectSchema = {
+  id: {
+    type: 'string',
+    required: false,
+    maxLength: 50,
+    description: 'Purchase request identifier',
+  },
   title: {
     type: 'string',
     required: true,
@@ -314,6 +422,17 @@ export const PURCHASE_REQUEST_FORM_SCHEMA: ObjectSchema = {
     required: false,
     maxLength: 1000,
     description: 'Optional requisition notes',
+  },
+  nominatedVendors: {
+    type: 'array',
+    required: false,
+    description: 'Array of nominated vendor IDs',
+  },
+  deliveryAddress: {
+    type: 'string',
+    required: false,
+    maxLength: 500,
+    description: 'Site delivery address',
   },
   items: {
     type: 'array',
@@ -475,6 +594,33 @@ export const PPO_CREATE_FORM_SCHEMA: ObjectSchema = {
     maxLength: 200,
     description: 'Payment milestone terms',
   },
+  totalVal: {
+    type: 'number',
+    required: false,
+    min: 0,
+    coerce: true,
+    description: 'Total net commercial value before tax',
+  },
+  taxRate: {
+    type: 'number',
+    required: false,
+    min: 0,
+    coerce: true,
+    description: 'Tax percentage rate',
+  },
+  taxAmount: {
+    type: 'number',
+    required: false,
+    min: 0,
+    coerce: true,
+    description: 'Tax amount in INR',
+  },
+  leadTime: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'Delivery lead time description',
+  },
 };
 
 export const NEGOTIATION_ROUND_FORM_SCHEMA: ObjectSchema = {
@@ -500,3 +646,416 @@ export const NEGOTIATION_ROUND_FORM_SCHEMA: ObjectSchema = {
     description: 'Action classification (BUYER_COUNTER, VENDOR_CONCESSION, etc.)',
   },
 };
+
+export const BUDGET_QUANTITY_UPDATE_SCHEMA: ObjectSchema = {
+  categoryId: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 50,
+    description: 'Category identifier',
+  },
+  itemId: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 50,
+    description: 'Standard BOQ item identifier',
+  },
+  newQty: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 10000000,
+    coerce: true,
+    description: 'Updated item quantity for project budgeting',
+  },
+};
+
+export const BUDGET_CONTINGENCY_SCHEMA: ObjectSchema = {
+  contingencyRatePercent: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 30,
+    coerce: true,
+    description: 'Project contingency buffer percentage',
+  },
+};
+
+export const BUDGET_SQFT_UPDATE_SCHEMA: ObjectSchema = {
+  totalProjectSqFt: {
+    type: 'number',
+    required: true,
+    min: 500,
+    max: 50000000,
+    coerce: true,
+    description: 'Total project built-up area in square feet',
+  },
+};
+
+export const TENANT_TIER_UPDATE_SCHEMA: ObjectSchema = {
+  tenantKey: {
+    type: 'enum',
+    required: true,
+    enumValues: ['TNT_LNT', 'TNT_TATA', 'TNT_GODREJ', 'TNT_SHAPOORJI'],
+    description: 'Target tenant key',
+  },
+  newTier: {
+    type: 'enum',
+    required: true,
+    enumValues: ['MODULE_1', 'MODULE_2', 'MODULE_3'],
+    description: 'Target pricing subscription tier',
+  },
+};
+
+export const CLIENT_VENDOR_CSV_ROW_SCHEMA: ObjectSchema = {
+  name: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 200,
+    description: 'Vendor company name',
+  },
+  category: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Procurement category',
+  },
+  gstin: {
+    type: 'string',
+    required: true,
+    minLength: 5,
+    maxLength: 20,
+    description: 'Vendor GSTIN or Tax Registration ID',
+  },
+  contactPerson: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Primary contact representative',
+  },
+  email: {
+    type: 'string',
+    required: true,
+    minLength: 5,
+    maxLength: 100,
+    description: 'Vendor corporate email',
+  },
+  city: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Headquarters / Operating City',
+  },
+};
+
+export const VENDOR_EVALUATION_SCHEMA: ObjectSchema = {
+  turnoverCr: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 100000,
+    coerce: true,
+    description: 'Annual revenue turnover in Crores',
+  },
+  solvencyBankName: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Bank issuing solvency guarantee letter',
+  },
+  factoryCapacityUnitsPerMonth: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 10000000,
+    coerce: true,
+    description: 'Monthly manufacturing unit capacity',
+  },
+  machineryCount: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 10000,
+    coerce: true,
+    description: 'Active plant machinery & production tools',
+  },
+  workforceCount: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 100000,
+    coerce: true,
+    description: 'Direct & technical workforce headcount',
+  },
+  pastProjectsCompleted: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 10000,
+    coerce: true,
+    description: 'Past completed enterprise projects count',
+  },
+};
+
+export const VENDOR_PPO_RATING_SCHEMA: ObjectSchema = {
+  ppoId: {
+    type: 'string',
+    required: true,
+    minLength: 3,
+    maxLength: 50,
+    description: 'Target PPO ID',
+  },
+  vendorId: {
+    type: 'string',
+    required: true,
+    minLength: 3,
+    maxLength: 50,
+    description: 'Rated vendor ID',
+  },
+  qualityRating: {
+    type: 'number',
+    required: true,
+    min: 1,
+    max: 5,
+    coerce: true,
+    description: 'Material & technical spec adherence score (1-5)',
+  },
+  timelinessRating: {
+    type: 'number',
+    required: true,
+    min: 1,
+    max: 5,
+    coerce: true,
+    description: 'Delivery dispatch & schedule adherence score (1-5)',
+  },
+  commercialRating: {
+    type: 'number',
+    required: true,
+    min: 1,
+    max: 5,
+    coerce: true,
+    description: 'Invoicing & contract commercial integrity score (1-5)',
+  },
+};
+
+// ==============================================================================
+// 10. Master Category & Standard BOQ Validation Schemas
+// ==============================================================================
+
+export const ADD_CATEGORY_SCHEMA: ObjectSchema = {
+  name: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Category name (e.g. Landscaping & External Works)',
+  },
+  majorCategory: {
+    type: 'string',
+    required: false,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Optional major category name override or grouping',
+  },
+  subCategory: {
+    type: 'string',
+    required: false,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Optional sub-category scope name',
+  },
+  subCategories: {
+    type: 'array',
+    required: false,
+    description: 'Optional array of minor category / sub-category scope names',
+  },
+  shortCode: {
+    type: 'string',
+    required: false,
+    minLength: 2,
+    maxLength: 10,
+    pattern: /^[A-Za-z0-9_-]+$/,
+    description: 'Optional category prefix code (auto-derived if omitted)',
+  },
+  costCenter: {
+    type: 'string',
+    required: false,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Optional cost center code and department description',
+  },
+  description: {
+    type: 'string',
+    required: false,
+    maxLength: 500,
+    description: 'Optional category scope and trade specification',
+  },
+  baselineBudget: {
+    type: 'number',
+    required: false,
+    min: 0,
+    coerce: true,
+    description: 'Optional initial baseline budget allocation in INR',
+  },
+};
+
+export const ADD_SUBCATEGORY_SCHEMA: ObjectSchema = {
+  categoryId: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Target parent category identifier',
+  },
+  name: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Sub-category name (e.g. Softscape & Plantation)',
+  },
+  shortCode: {
+    type: 'string',
+    required: false,
+    minLength: 2,
+    maxLength: 10,
+    pattern: /^[A-Za-z0-9_-]+$/,
+    description: 'Optional sub-category prefix code (auto-derived if omitted)',
+  },
+  description: {
+    type: 'string',
+    required: false,
+    maxLength: 500,
+    description: 'Sub-category trade details',
+  },
+};
+
+export const ADD_STANDARD_BOQ_ITEM_SCHEMA: ObjectSchema = {
+  categoryId: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Target parent category identifier',
+  },
+  subCategoryId: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'Target sub-category identifier if applicable',
+  },
+  desc: {
+    type: 'string',
+    required: true,
+    minLength: 3,
+    maxLength: 500,
+    description: 'Full trade line item specification and standard',
+  },
+  uom: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'Standard unit of measure (e.g. Sqm, Cum, Ton)',
+  },
+  benchmarkRate: {
+    type: 'number',
+    required: true,
+    min: 0.01,
+    max: 1000000000,
+    coerce: true,
+    description: 'Approved benchmark unit rate in INR',
+  },
+  defaultQty: {
+    type: 'number',
+    required: true,
+    min: 0.01,
+    max: 1000000000,
+    coerce: true,
+    description: 'Standard benchmark quantity',
+  },
+  notes: {
+    type: 'string',
+    required: false,
+    maxLength: 500,
+    description: 'Engineering notes or references',
+  },
+};
+
+export const ITEM_HOLD_TOGGLE_SCHEMA: ObjectSchema = {
+  categoryId: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Target parent category identifier',
+  },
+  itemId: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Target standard BOQ item identifier',
+  },
+};
+
+export const STANDARD_BOQ_UPLOAD_ROW_SCHEMA: ObjectSchema = {
+  category: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 100,
+    description: 'Parent Category code or name',
+  },
+  subCategory: {
+    type: 'string',
+    required: false,
+    maxLength: 100,
+    description: 'Sub-Category code or name if applicable',
+  },
+  desc: {
+    type: 'string',
+    required: true,
+    minLength: 3,
+    maxLength: 500,
+    description: 'Technical specification and standards',
+  },
+  uom: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'Unit of measure',
+  },
+  benchmarkRate: {
+    type: 'number',
+    required: true,
+    min: 0.01,
+    max: 1000000000,
+    coerce: true,
+    description: 'Benchmark rate in INR',
+  },
+  defaultQty: {
+    type: 'number',
+    required: true,
+    min: 0.01,
+    max: 1000000,
+    coerce: true,
+    description: 'Default quantity',
+  },
+  notes: {
+    type: 'string',
+    required: false,
+    maxLength: 500,
+    description: 'Engineering or compliance notes',
+  },
+};
+
+

@@ -64,6 +64,7 @@ import * as cryptoModule from '@/constants/crypto';
 import * as diagnosticsModule from '@/constants/diagnostics';
 import * as validationModule from '@/constants/validation';
 import * as stringsModule from '@/constants/strings';
+import * as pricingModule from '@/constants/pricing';
 import * as indexModule from '@/constants/index';
 
 describe('Constants Architecture & Integrity Test Suite', () => {
@@ -212,18 +213,20 @@ describe('Constants Architecture & Integrity Test Suite', () => {
   describe('Navigation Constants', () => {
     it('should export NAV_ITEMS matching enterprise navigation structure', () => {
       expect(navigationModule.NAV_ITEMS).toBeDefined();
-      expect(NAV_ITEMS.length).toBe(8);
+      expect(NAV_ITEMS.length).toBe(9);
       const ids = NAV_ITEMS.map((n) => n.id);
-      expect(ids).toContain('dashboard');
-      expect(ids).toContain('boq_raiser_studio');
-      expect(ids).toContain('pr_approval_queue');
-      expect(ids).toContain('category_manager_hub');
+      expect(ids).toContain('budget_planning');
+      expect(ids).toContain('boq_rfq_management');
+      expect(ids).toContain('category_standard_boq_master');
+      expect(ids).toContain('vendor_management');
+      expect(ids).toContain('vendor_negotiation_hub');
       expect(ids).toContain('ppo_workorders');
       expect(ids).toContain('vendor_portal');
       expect(ids).toContain('tenant_overview');
       expect(ids).toContain('masters');
     });
   });
+
 
   describe('AI Constants', () => {
     it('should export DEFAULT_GEMINI_MODEL and PRESET_ITEMS', () => {
@@ -380,6 +383,17 @@ describe('Constants Architecture & Integrity Test Suite', () => {
     });
   });
 
+  describe('Pricing Constants', () => {
+    it('should export PRICING_TIERS with 3 tiers and correct pricing models', () => {
+      expect(pricingModule.PRICING_TIERS).toBeDefined();
+      expect(pricingModule.PRICING_TIERS.MODULE_1.priceUSD).toBe(2000);
+      expect(pricingModule.PRICING_TIERS.MODULE_2.priceUSD).toBe(4000);
+      expect(pricingModule.PRICING_TIERS.MODULE_3.priceUSD).toBe(6000);
+      expect(pricingModule.COMMON_VENDOR_MODULE).toBe('vendor_portal');
+      expect(pricingModule.COMMON_VENDOR_ROLE).toBe('VENDOR');
+    });
+  });
+
   describe('Index Barrel Export', () => {
     it('should re-export all constants correctly from index', () => {
       expect(indexModule.TENANTS).toBe(tenantsModule.TENANTS);
@@ -400,6 +414,7 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(indexModule.PURCHASE_REQUEST_FORM_SCHEMA).toBe(validationModule.PURCHASE_REQUEST_FORM_SCHEMA);
       expect(indexModule.UI_STRINGS).toBe(stringsModule.UI_STRINGS);
       expect(indexModule.formatString).toBe(stringsModule.formatString);
+      expect(indexModule.PRICING_TIERS).toBe(pricingModule.PRICING_TIERS);
     });
   });
 });

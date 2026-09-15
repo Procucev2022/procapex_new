@@ -5,8 +5,9 @@ import {
   getMasterVendor,
   getItemRateCard,
   getItemVendorQuote,
+  syncPRsToPRData,
 } from '@/components/CategoryManagerHub';
-import type { BOQItemWithMLEO } from '@/types';
+import type { BOQItemWithMLEO, PurchaseRequest } from '@/types';
 import { useProcurement } from '@/context/ProcurementContext';
 import { UI_STRINGS } from '@/constants';
 
@@ -16,11 +17,13 @@ jest.mock('@/context/ProcurementContext', () => ({
 
 describe('CategoryManagerHub Component', () => {
   const mockOnRouteToPPO = jest.fn();
+  const mockCreatePPO = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useProcurement as jest.Mock).mockReturnValue({
       prs: [],
+      createPPO: mockCreatePPO,
     });
     window.alert = jest.fn();
   });
@@ -56,10 +59,16 @@ describe('CategoryManagerHub Component', () => {
     expect(screen.getAllByText(/PR-2026-0005/i).length).toBeGreaterThan(0);
   });
 
-  it('interacts with Tab 1 (RFQ Management), adds rate cards, toggles dropdown and chips', () => {
+  it('interacts with Tab 1 (RFQ Management), sets closure date, toggles vendors, and submits RFQ', () => {
     const { container } = render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRFQ }));
+
+    // RFQ closure date input
+    const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement;
+    expect(dateInput).toBeInTheDocument();
+    fireEvent.change(dateInput, { target: { value: '2026-10-15' } });
+    expect(dateInput.value).toBe('2026-10-15');
 
     // Reset to raiser selection
     const resetBtn = screen.getByRole('button', { name: /Reset to Raiser Selection/i });
@@ -88,46 +97,22 @@ describe('CategoryManagerHub Component', () => {
       fireEvent.click(chipRemoveBtns[0]);
     }
 
-    // Tab 1 Non-L1 award button & modal close
-    const tab1NonL1Btns = screen.getAllByRole('button', { name: /Award PPO \(Non-L1\) →/i });
-    if (tab1NonL1Btns.length > 0) {
-      fireEvent.click(tab1NonL1Btns[0]);
-      const closeX = screen.getByRole('button', { name: 'Close Non-L1 Modal' });
-      fireEvent.click(closeX);
-    }
+    // Submit RFQ button
+    const submitRfqBtn = screen.getByRole('button', {
+      name: new RegExp(UI_STRINGS.categoryManagerHub.rfqSubmitTender, 'i'),
+    });
+    expect(submitRfqBtn).toBeInTheDocument();
+    fireEvent.click(submitRfqBtn);
 
-    // Tab 1 CBA Matrix button
-    const cbaMatrixBtns = screen.getAllByRole('button', { name: /CBA Matrix →/i });
-    if (cbaMatrixBtns.length > 0) {
-      fireEvent.click(cbaMatrixBtns[0]);
-      expect(screen.getByText(/4-Way Commercial Matrix/i)).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRFQ }));
-    }
+    // Dispatched notice banner appears
+    expect(
+      screen.getByText(new RegExp(UI_STRINGS.categoryManagerHub.rfqSubmittedNotice, 'i'))
+    ).toBeInTheDocument();
 
-    // Award PPO L1 from Tab 1 table
-    const tab1AwardBtns = screen.getAllByRole('button', { name: /Award PPO \(L1\) →/i });
-    if (tab1AwardBtns.length > 0) {
-      fireEvent.click(tab1AwardBtns[0]);
-      expect(screen.getAllByText(/L1 Award \(Lowest Bidder\)/i).length).toBeGreaterThan(0);
-    }
-  });
-
-  it('interacts with Tab 2 (Master Rate Card Studio) in both Method 2 and Standard modes', () => {
-    const { container } = render(<CategoryManagerHub onRouteToPPO={mockOnRouteToPPO} />);
-
-    // Standard mode (PR-2026-0005)
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRateCard }));
-    expect(screen.getAllByText(/Master Rate Card/i).length).toBeGreaterThan(0);
-
-    // Switch to PR-2026-0003 (Method 2)
-    fireEvent.click(screen.getByText('PR-2026-0003'));
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRateCard }));
-    expect(screen.getByText(/Multi-Vendor Contracted Rate Card Comparison Matrix/i)).toBeInTheDocument();
-
-    // Direct Award L1 from Method 2 Rate Card view
-    const directAwardBtn = screen.getByRole('button', { name: /Direct Award L1 →/i });
-    fireEvent.click(directAwardBtn);
-    expect(screen.getAllByText(/L1 Award \(Lowest Bidder\)/i).length).toBeGreaterThan(0);
+    // Link to 4-Way Commercial Matrix
+    const openMatrixBtn = screen.getByRole('button', { name: /View 4-Way Commercial Matrix/i });
+    fireEvent.click(openMatrixBtn);
+    expect(screen.getByText(/Direct PPO Generation & Vendor Award Console/i)).toBeInTheDocument();
   });
 
   it('interacts with Tab 3 (4-Way Commercial Matrix), L1 award, and Non-L1 Governance Modal', () => {
@@ -410,6 +395,80 @@ describe('CategoryManagerHub Component', () => {
         initialRate: 2300,
         revisedRate: null,
       });
+    });
+
+    it('syncPRsToPRData merges context PRs and generates PRData for newly submitted PRs', () => {
+      const mockContextPRs: PurchaseRequest[] = [
+        {
+          id: 'PR-2026-0005',
+          title: 'Updated Reception Counter',
+          projectName: 'Metro Station Depot',
+          costCentre: 'CC-104',
+          category: 'Interior & Fitouts',
+          requester: 'Rahul Verma',
+          reqDate: '2026-09-28',
+          status: 'SUBMITTED',
+          buyer: 'Unassigned',
+          items: [
+            { code: 'NEW-01', desc: 'Custom Counter Granite', uom: 'Sqm', qty: 15, benchmark: 3500 },
+          ],
+        },
+        {
+          id: 'PR-2026-0009',
+          title: 'Brand New Civil Requisition',
+          projectName: 'Metro Elevated Pier',
+          costCentre: 'CC-101',
+          category: 'Civil Materials',
+          requester: 'Amit Sharma',
+          reqDate: '2026-10-05',
+          status: 'SUBMITTED',
+          buyer: 'Unassigned',
+          items: [
+            { code: 'CIV-01', desc: 'High Strength Cement', uom: 'Bag', qty: 200, benchmark: 420 },
+          ],
+        },
+      ];
+
+      const result = syncPRsToPRData(mockContextPRs, {});
+      expect(result['PR-2026-0005']).toBeDefined();
+      expect(result['PR-2026-0005'].title).toBe('Updated Reception Counter');
+      expect(result['PR-2026-0005'].items[0].code).toBe('NEW-01');
+
+      expect(result['PR-2026-0009']).toBeDefined();
+      expect(result['PR-2026-0009'].title).toBe('Brand New Civil Requisition');
+      expect(result['PR-2026-0009'].categoryMajor).toBe('CIVIL');
+      expect(result['PR-2026-0009'].items.length).toBe(1);
+      expect(result['PR-2026-0009'].items[0].code).toBe('CIV-01');
+    });
+
+    it('displays newly submitted PR from useProcurement and selects it via initialPRId', () => {
+      (useProcurement as jest.Mock).mockReturnValue({
+        prs: [
+          {
+            id: 'PR-2026-0008',
+            title: 'Steel Fabrication Requisition',
+            projectName: 'Metro Line 4 Pier Cap',
+            costCentre: 'CC-102',
+            category: 'Structural Steel',
+            requester: 'Rahul Verma',
+            reqDate: '2026-09-30',
+            status: 'SUBMITTED',
+            buyer: 'Unassigned',
+            items: [
+              { code: 'STL-99', desc: 'Rebar Steel 32mm', uom: 'Ton', qty: 25, benchmark: 55000 },
+            ],
+          },
+        ],
+      });
+
+      render(<CategoryManagerHub initialPRId="PR-2026-0008" />);
+
+      // Queue bar and overview card should display the newly submitted PR
+      expect(screen.getAllByText('PR-2026-0008').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Steel Fabrication Requisition').length).toBeGreaterThan(0);
+
+      // Selected PR overview card should display PR-2026-0008 details
+      expect(screen.getAllByText('SUBMITTED').length).toBeGreaterThan(0);
     });
   });
 });

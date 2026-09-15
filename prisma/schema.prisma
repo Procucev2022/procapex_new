@@ -187,3 +187,59 @@ model AuditLog {
   details   String
   createdAt DateTime @default(now())
 }
+
+// 11. Category Standard BOQ Master Catalog
+model MasterCategory {
+  id             String             @id // e.g. CAT-CIVIL
+  name           String
+  shortCode      String
+  costCenter     String
+  description    String
+  subtotalCost   Float              @default(0)
+  baselineBudget Float              @default(0)
+  committedCost  Float              @default(0)
+  status         String             @default("DRAFT") // DRAFT, BASELINED, APPROVED
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  subCategories  MasterSubCategory[]
+  items          MasterStandardBOQItem[]
+}
+
+model MasterSubCategory {
+  id          String         @id // e.g. SUB-CIVIL-01
+  categoryId  String
+  category    MasterCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  shortCode   String
+  description String?
+  createdAt   DateTime       @default(now())
+
+  items       MasterStandardBOQItem[]
+}
+
+model MasterStandardBOQItem {
+  id                        String             @id // e.g. ITM-CIVIL-GEN-001
+  code                      String             @unique // e.g. CIV-CON-M30
+  categoryId                String
+  category                  MasterCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subCategoryId             String?
+  subCategory               MasterSubCategory? @relation(fields: [subCategoryId], references: [id], onDelete: SetNull)
+  subCategoryName           String?
+  desc                      String
+  uom                       String
+  benchmarkRate             Float
+  defaultQty                Float              @default(0)
+  qty                       Float              @default(0)
+  calculatedCost            Float              @default(0)
+  benchmarkDetailsRate      Float?
+  benchmarkRateCardRate     Float?
+  historicalLowestRate      Float?
+  aiConfidence              String?            @default("95%")
+  varianceVsRateCardPercent Float?             @default(0)
+  notes                     String?
+  status                    String             @default("ACTIVE") // ACTIVE, ON_HOLD
+  isImmutable               Boolean            @default(true)
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+}

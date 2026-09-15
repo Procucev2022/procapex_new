@@ -23,10 +23,13 @@ describe('Header Component', () => {
       activeTenantKey: 'TNT_LNT',
       changeTenant: mockChangeTenant,
       activeTenant: { name: 'L&T Infra & Construction' },
+      activeTenantTier: 'MODULE_3',
+      isModuleAllowed: jest.fn(() => true),
+      isRoleAllowed: jest.fn(() => true),
     });
   });
 
-  it('renders brand logo and title, and clicking logo navigates to dashboard', () => {
+  it('renders brand logo and title, and clicking logo navigates to budget_planning', () => {
     render(
       <Header
         currentTab="boq_raiser_studio"
@@ -40,7 +43,7 @@ describe('Header Component', () => {
 
     const logo = screen.getByText(UI_STRINGS.header.brandName).closest('div');
     fireEvent.click(logo!);
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('dashboard');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('budget_planning');
   });
 
   it('changes tenant when selecting client from dropdown', () => {
@@ -66,37 +69,70 @@ describe('Header Component', () => {
       />
     );
 
-    const roleSelect = screen.getByDisplayValue('1. Project Team (PR Raiser & BOQ Studio)');
+    const roleSelect = screen.getByDisplayValue('1. BOQ & RFQ Management (Project Team & Category Manager)');
 
-    // 1. PROJECT_TEAM
-    fireEvent.change(roleSelect, { target: { value: 'PROJECT_TEAM' } });
-    expect(mockSetActiveRole).toHaveBeenCalledWith('PROJECT_TEAM');
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('boq_raiser_studio');
+    // 1. BOQ_RFQ_MANAGER
+    fireEvent.change(roleSelect, { target: { value: 'BOQ_RFQ_MANAGER' } });
+    expect(mockSetActiveRole).toHaveBeenCalledWith('BOQ_RFQ_MANAGER');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('boq_rfq_management');
 
-    // 2. PROJECT_HEAD_PR
-    fireEvent.change(roleSelect, { target: { value: 'PROJECT_HEAD_PR' } });
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('pr_approval_queue');
+    // 2. VENDOR_NEGOTIATION_HUB
+    fireEvent.change(roleSelect, { target: { value: 'VENDOR_NEGOTIATION_HUB' } });
+    expect(mockSetActiveRole).toHaveBeenCalledWith('VENDOR_NEGOTIATION_HUB');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('vendor_negotiation_hub');
 
-    // 3. CATEGORY_MANAGER
-    fireEvent.change(roleSelect, { target: { value: 'CATEGORY_MANAGER' } });
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('category_manager_hub');
-
-    // 4. CATEGORY_MANAGER_2
+    // 3. CATEGORY_MANAGER_2
     fireEvent.change(roleSelect, { target: { value: 'CATEGORY_MANAGER_2' } });
     expect(mockSetCurrentTab).toHaveBeenCalledWith('ppo_workorders');
 
-    // 5. PROJECT_HEAD_PPO
+    // 4. PROJECT_HEAD_PPO
     fireEvent.change(roleSelect, { target: { value: 'PROJECT_HEAD_PPO' } });
     expect(mockSetCurrentTab).toHaveBeenCalledWith('ppo_workorders');
 
-    // 6. FINANCE_HEAD
+    // 5. FINANCE_HEAD
     fireEvent.change(roleSelect, { target: { value: 'FINANCE_HEAD' } });
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('ppo_workorders');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('budget_planning');
 
-    // 7. VENDOR
+    // 6. VENDOR
     fireEvent.change(roleSelect, { target: { value: 'VENDOR' } });
     expect(mockSetActiveRole).toHaveBeenLastCalledWith('VENDOR');
     expect(mockSetCurrentTab).toHaveBeenCalledWith('vendor_portal');
+  });
+
+  it('handles Finance Manager Login button click and active state', () => {
+    const { rerender } = render(
+      <Header
+        currentTab="dashboard"
+        setCurrentTab={mockSetCurrentTab}
+        onOpenNewPR={mockOnOpenNewPR}
+      />
+    );
+
+    const financeLoginBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.header.financeManagerLoginButton, 'i') });
+    expect(financeLoginBtn).toBeInTheDocument();
+    fireEvent.click(financeLoginBtn);
+
+    expect(mockSetActiveRole).toHaveBeenCalledWith('FINANCE_HEAD');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('budget_planning');
+
+    // Rerender as FINANCE_HEAD on budget_planning tab
+    (useProcurement as jest.Mock).mockReturnValue({
+      activeRole: 'FINANCE_HEAD',
+      setActiveRole: mockSetActiveRole,
+      activeTenantKey: 'TNT_LNT',
+      changeTenant: mockChangeTenant,
+      activeTenant: { name: 'L&T Infra & Construction' },
+    });
+
+    rerender(
+      <Header
+        currentTab="budget_planning"
+        setCurrentTab={mockSetCurrentTab}
+        onOpenNewPR={mockOnOpenNewPR}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.header.financeManagerActiveLabel)).toBeInTheDocument();
   });
 
   it('handles "Raise New PR" button click', () => {
@@ -111,8 +147,8 @@ describe('Header Component', () => {
     const raiseBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.header.raisePRButton, 'i') });
     fireEvent.click(raiseBtn);
 
-    expect(mockSetActiveRole).toHaveBeenCalledWith('PROJECT_TEAM');
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('boq_raiser_studio');
+    expect(mockSetActiveRole).toHaveBeenCalledWith('BOQ_RFQ_MANAGER');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('boq_rfq_management');
     expect(mockOnOpenNewPR).toHaveBeenCalled();
   });
 
@@ -126,12 +162,9 @@ describe('Header Component', () => {
     );
 
     const tabLabels = [
-      'Dashboard',
-      '1. Create PR & BOQ Studio',
-      '2. PR Approvals',
-      '3. Category Manager (Buyer Hub)',
-      '4-6. PPO Approval & PO Release',
-      '7. Vendor Portal (Bidding)',
+      '2. BOQ & RFQ Management Module',
+      '4. PPO Approvals',
+      '5. Vendor Portal (Bidding)',
       'Tenant Hierarchy',
       'Masters & Audit',
     ];
@@ -142,6 +175,16 @@ describe('Header Component', () => {
       fireEvent.click(tabBtn);
     });
 
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('masters');
+    // Also click Budget Planning tab
+    const budgetTabBtn = screen.getByRole('button', { name: /1\. Budget Planning Module/i });
+    expect(budgetTabBtn).toBeInTheDocument();
+    fireEvent.click(budgetTabBtn);
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('budget_planning');
+
+    // Also click Vendor Negotiation Hub tab
+    const negTabBtn = screen.getByRole('button', { name: /3\. Vendor Negotiation Hub/i });
+    expect(negTabBtn).toBeInTheDocument();
+    fireEvent.click(negTabBtn);
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('vendor_negotiation_hub');
   });
 });

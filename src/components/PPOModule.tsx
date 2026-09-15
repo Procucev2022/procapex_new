@@ -20,15 +20,15 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
     activeTenant, 
     tier1Approved, 
     tier2Approved, 
-    tier3Approved, 
     poReleased, 
     approveTier1, 
     approveTier2, 
-    approveTier3AndReleasePO, 
     approvePPO, 
   } = useProcurement();
 
   const [subTab, setSubTab] = useState<'WORKFLOW' | 'PPO' | 'PO'>('WORKFLOW');
+  const [selectedPPOId, setSelectedPPOId] = useState<string>(ppos[0]?.id || 'PPO-2026-0015');
+  const activePPO = ppos.find((p) => p.id === selectedPPOId) || ppos[0];
 
   const downloadPoPdf = (poId: string): void => {
     const po = pos.find(p => p.id === poId);
@@ -81,7 +81,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
         ['5', '12V LED Strip Light with Profile', 'Rmt', '16.0', 'Rs. 420', 'Rs. 6,720'],
         ['6', '100mm SS 304 Brushed Skirting', 'Rmt', '14.0', 'Rs. 780', 'Rs. 10,920'],
         ['', 'Applicable GST / Taxes (18%)', '', '', '', 'Rs. 26,730'],
-        ['', 'GRAND TOTAL (INC. TAXES)', '', '', '', `INR ${(po.amount ?? po.grandTotal ?? 175230).toLocaleString()}`],
+        ['', 'GRAND TOTAL (INC. TAXES)', '', '', '', `INR ${(po.amount || 175230).toLocaleString()}`],
       ],
       theme: 'striped',
       headStyles: { fillColor: [3, 105, 161], textColor: 255, fontSize: 8 },
@@ -99,15 +99,13 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
     doc.setFont('helvetica', 'normal');
     doc.text('Authorized Digital Signatures:', 14, finalY + 15);
     doc.text(`1. Strategic Sourcing: ${activeTenant.team['CATEGORY_MANAGER_2']?.name || 'Category Mgr 2'} (Approved)`, 14, finalY + 22);
-    doc.text(`2. Project Budget: ${activeTenant.team['PROJECT_HEAD_PR']?.name || 'Project Head'} (Approved)`, 14, finalY + 28);
-    doc.text(`3. Finance Authorization: ${activeTenant.team['FINANCE_HEAD']?.name || 'Finance Head'} (Approved & Released)`, 14, finalY + 34);
+    doc.text(`2. Project Budget: ${activeTenant.team['PROJECT_HEAD_PPO']?.name || 'Project Head'} (Approved)`, 14, finalY + 28);
 
     doc.save(`${po.id}_Official_Order.pdf`);
   };
 
   const getOverallBadge = (): { text: string; bg: string } => {
-    if (poReleased) return { text: UI_STRINGS.ppoModule.badgePoReleased, bg: 'bg-emerald-100 text-emerald-900' };
-    if (tier2Approved) return { text: UI_STRINGS.ppoModule.badgeTier3InProgress, bg: 'bg-purple-100 text-purple-900' };
+    if (poReleased || tier2Approved) return { text: UI_STRINGS.ppoModule.badgePoReleased, bg: 'bg-emerald-100 text-emerald-900' };
     if (tier1Approved) return { text: UI_STRINGS.ppoModule.badgeTier2InProgress, bg: 'bg-amber-100 text-amber-900' };
     return { text: UI_STRINGS.ppoModule.badgeTier1InProgress, bg: 'bg-amber-100 text-amber-900' };
   };
@@ -157,11 +155,29 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       {subTab === 'WORKFLOW' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-3 gap-2">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">PPO-2026-0015 – Reception Counter Joinery Package</h3>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2 flex-wrap">
+                <h3 className="text-sm font-bold text-slate-900">
+                  {activePPO?.id} – {activePPO?.itemDesc}
+                </h3>
+                {ppos.length > 1 && (
+                  <select
+                    aria-label="Select PPO for workflow sign-off"
+                    value={activePPO?.id}
+                    onChange={(e) => setSelectedPPOId(e.target.value)}
+                    className="text-xs border border-slate-300 rounded-lg px-2 py-0.5 bg-slate-50 font-medium"
+                  >
+                    {ppos.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.id} ({p.vendor})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <p className="text-xs text-slate-500">
-                Awarded to: <strong>DesignCraft Millworks & Interiors Pvt Ltd</strong> • Total Value:{' '}
-                <strong>₹ 1,75,230 (Incl. 18% GST)</strong>
+                Awarded to: <strong>{activePPO?.vendor}</strong> • Total Value:{' '}
+                <strong>₹ {activePPO?.grandTotal?.toLocaleString()} (Incl. {activePPO?.taxRate || 18}% GST)</strong>
               </p>
             </div>
             <span className={`text-xs font-mono px-3 py-1 rounded-full font-bold ${badge.bg}`}>
@@ -169,7 +185,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {/* TIER 1 */}
             <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${tier1Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-amber-300 bg-white'}`}>
               <div className="flex items-center justify-between">
@@ -234,50 +250,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                   <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
                   <span>
                     {formatString(UI_STRINGS.ppoModule.tier2SignedTemplate, {
-                      name: activeTenant.team['PROJECT_HEAD_PR']?.name || 'Anil Kulkarni',
-                    })}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* TIER 3 */}
-            <div className={`p-4 rounded-xl border-2 transition-all space-y-2 ${!tier2Approved ? 'opacity-60 border-slate-200 bg-slate-50' : tier3Approved ? 'border-emerald-300 bg-emerald-50/20' : 'border-purple-300 bg-white'}`}>
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">{UI_STRINGS.ppoModule.tier3Title}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                  !tier2Approved
-                    ? 'bg-slate-200 text-slate-600'
-                    : tier3Approved
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-purple-100 text-purple-800'
-                }`}>
-                  {!tier2Approved
-                    ? UI_STRINGS.ppoModule.badgeAwaitingTier2
-                    : tier3Approved
-                    ? UI_STRINGS.ppoModule.badgeApprovedIssued
-                    : UI_STRINGS.ppoModule.badgePendingFinalAudit}
-                </span>
-              </div>
-              <p className="text-slate-500 text-[11px]">{UI_STRINGS.ppoModule.tier3Desc}</p>
-              {!tier3Approved ? (
-                <button
-                  onClick={approveTier3AndReleasePO}
-                  disabled={!tier2Approved}
-                  className={`w-full py-2 rounded-lg font-bold transition-all ${
-                    tier2Approved
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm cursor-pointer'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  {UI_STRINGS.ppoModule.tier3SignOff}
-                </button>
-              ) : (
-                <div className="text-[11px] font-bold text-purple-800 flex items-center pt-1">
-                  <CheckCircle2 className="w-4 h-4 mr-1 text-purple-600" />
-                  <span>
-                    {formatString(UI_STRINGS.ppoModule.tier3SignedTemplate, {
-                      name: activeTenant.team['FINANCE_HEAD']?.name || 'Sunil Deshmukh',
+                      name: activeTenant.team['PROJECT_HEAD_PPO']?.name || 'Anil Kulkarni',
                     })}
                   </span>
                 </div>
@@ -395,7 +368,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                     <td className="p-3 font-mono font-bold text-emerald-700">{po.id}</td>
                     <td className="p-3 font-mono text-slate-600">{po.ppoRef}</td>
                     <td className="p-3 font-bold text-slate-800">{po.vendor}</td>
-                    <td className="p-3 text-right font-bold text-emerald-950 font-mono">₹ {(po.amount ?? po.grandTotal ?? 0).toLocaleString()}</td>
+                    <td className="p-3 text-right font-bold text-emerald-950 font-mono">₹ {(po.amount || 0).toLocaleString()}</td>
                     <td className="p-3 text-slate-600">{po.issueDate}</td>
                     <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">{po.status}</span></td>
                     <td className="p-3 text-right">

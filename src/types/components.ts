@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { BOQItem, MLEOBreakdown, VendorQuoteDetail } from './procurement';
+import type { BOQItem, MLEOBreakdown, VendorQuoteDetail, VendorRFQItem } from './procurement';
 
 // --- Header ---
 export interface NavItem {
@@ -25,6 +25,7 @@ export interface PRModuleProps {
   onSelectPRForBOQ?: (prId: string) => void;
   onNavigateToBOQ?: (prId: string) => void;
   onOpenNewPRModal?: () => void;
+  onViewPRSummary?: (prId?: string) => void;
 }
 
 export interface RequesterBOQItem {
@@ -32,6 +33,33 @@ export interface RequesterBOQItem {
   desc: string;
   uom: string;
   qty: number;
+  rateCard?: number;
+  benchmark?: number;
+  std?: number;
+  aiConf?: string;
+  drawingElevation?: string;
+}
+
+export interface AmendCategoryOption {
+  id: string;
+  name: string;
+  subCategories?: Array<{ id: string; name: string }>;
+}
+
+export interface AmendBOQModalProps {
+  isOpen: boolean;
+  item: RequesterBOQItem | null;
+  index: number;
+  onClose: () => void;
+  onSave: (
+    amendedItem: RequesterBOQItem,
+    index: number,
+    addToStandardBOQ: boolean,
+    categoryId?: string,
+    subCategoryId?: string,
+  ) => void;
+  availableCategories?: AmendCategoryOption[];
+  currentCategoryName?: string;
 }
 
 export interface AttachedDoc {
@@ -60,6 +88,7 @@ export interface VendorItem {
   leadTime: string;
   badgeText: string;
   capacity: string;
+  source?: 'PROCAPX_PLATFORM' | 'CLIENT_ONBOARDED';
 }
 
 // --- PR Approval Queue ---
@@ -69,7 +98,9 @@ export interface PRApprovalQueueProps {
 
 // --- Category Manager Hub ---
 export interface CategoryManagerHubProps {
-  onRouteToPPO: () => void;
+  initialPRId?: string;
+  onRouteToPPO?: () => void;
+  onRouteToNegotiation?: () => void;
 }
 
 export interface BOQItemWithMLEO {
@@ -179,8 +210,64 @@ export interface VendorQuoteItem {
   uom: string;
   qty: number;
   rate1: number;
+  buyerOffer1: number;
   targetRate: number;
   rate2: number;
+  buyerOffer2: number;
+  rate3: number;
+}
+
+export interface VendorQuotedTerms {
+  paymentStructure: string;
+  creditDays: string;
+  advPct: string;
+  retPct: string;
+  abg: string;
+  leadTime: string;
+  deliveryDate: string;
+  incoterms: string;
+  warranty: string;
+  deviations: string;
+}
+
+export interface VendorRFQSummaryTabProps {
+  rfqId: string;
+  rfqAccepted: boolean;
+  onAcceptRfq: (rfqId?: string) => void;
+  onProceedToQuotation: () => void;
+  items: VendorQuoteItem[];
+  activeVendorName: string;
+  activeVendorId?: string;
+  allVendorRFQs?: VendorRFQItem[];
+  onSelectRFQ?: (rfqId: string) => void;
+  activeRFQItem?: VendorRFQItem;
+}
+
+export interface VendorQuotationSummaryTabProps {
+  items: VendorQuoteItem[];
+  rfqAccepted: boolean;
+  onRate1Change: (idx: number, val: string) => void;
+  onRate2Change: (idx: number, val: string) => void;
+  onRate3Change: (idx: number, val: string) => void;
+  quote1Submitted: boolean;
+  quote2Submitted: boolean;
+  quote3Submitted: boolean;
+  onSubmitQuote1: () => void;
+  onSubmitQuote2: () => void;
+  onSubmitQuote3: () => void;
+  terms: VendorQuotedTerms;
+  onUpdateTerms: (terms: VendorQuotedTerms) => void;
+  onProceedToPPO: () => void;
+  activeRound?: 1 | 2 | 3 | 'all';
+  onSelectRound?: (round: 1 | 2 | 3 | 'all') => void;
+}
+
+export interface VendorPPOAwardTabProps {
+  ppoAccepted: boolean;
+  onAcceptPPO: () => void;
+  items: VendorQuoteItem[];
+  activeVendorName: string;
+  terms: VendorQuotedTerms;
 }
 
 // --- Masters & Audit ---
@@ -209,3 +296,27 @@ export interface VendorCommercialTerms {
   complianceNote: string;
 }
 
+// --- BOQ and RFQ Management Module ---
+export interface BOQAndRFQManagementModuleProps {
+  initialSubTab?: 'boq_studio' | 'prs_summary' | 'rfq_hub';
+  selectedPRId?: string;
+  onOpenNewPRModal?: () => void;
+  onRouteToPPO?: () => void;
+  onRouteToNegotiation?: () => void;
+}
+
+// --- Vendor Portal & Login ---
+export interface VendorPortalProps {
+  initialAuthenticated?: boolean;
+}
+
+export interface VendorLoginViewProps {
+  vendors: VendorItem[];
+  selectedVendorId: string;
+  onSelectVendor: (vendorId: string) => void;
+  onLoginSuccess: (vendorId: string) => void;
+}
+
+export interface VendorManagementModuleProps {
+  onRouteToVendorPortal?: () => void;
+}

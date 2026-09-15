@@ -69,6 +69,10 @@ describe('Dashboard Component', () => {
     const reviewPpoBtn = screen.getByRole('button', { name: /Review & Approve PPO/i });
     fireEvent.click(reviewPpoBtn);
     expect(mockOnNavigate).toHaveBeenCalledWith('ppo');
+
+    const budgetBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.dashboard.budgetSpotlightButton, 'i') });
+    fireEvent.click(budgetBtn);
+    expect(mockOnNavigate).toHaveBeenCalledWith('budget');
   });
 
   it('triggers reset to sample baseline data', () => {

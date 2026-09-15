@@ -27,7 +27,49 @@ describe('ProcurementContext', () => {
     expect(result.current.ppos.length).toBeGreaterThan(0);
     expect(result.current.pos.length).toBeGreaterThan(0);
     expect(result.current.auditLogs.length).toBeGreaterThan(0);
-    expect(result.current.tenants).toBe(TENANTS);
+    expect(result.current.tenants.TNT_LNT.name).toBe(TENANTS.TNT_LNT.name);
+    expect(result.current.activeTenantTier).toBe('MODULE_3');
+    expect(result.current.isModuleAllowed('budget_planning')).toBe(true);
+    expect(result.current.isRoleAllowed('FINANCE_HEAD')).toBe(true);
+  });
+
+  it('allows upgrading and changing tenant pricing tier and checks permissions', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ProcurementProvider>{children}</ProcurementProvider>
+    );
+    const { result } = renderHook(() => useProcurement(), { wrapper });
+
+    act(() => {
+      result.current.changeTenant('TNT_GODREJ');
+    });
+
+    expect(result.current.activeTenantTier).toBe('MODULE_1');
+    expect(result.current.isModuleAllowed('budget_planning')).toBe(true);
+    expect(result.current.isModuleAllowed('boq_rfq_management')).toBe(false);
+    expect(result.current.isModuleAllowed('category_standard_boq_master')).toBe(false);
+    expect(result.current.isRoleAllowed('FINANCE_HEAD')).toBe(true);
+    expect(result.current.isRoleAllowed('BOQ_RFQ_MANAGER')).toBe(false);
+
+    // Upgrade to Module 2
+    act(() => {
+      result.current.changeTenantTier('TNT_GODREJ', 'MODULE_2');
+    });
+
+    expect(result.current.activeTenantTier).toBe('MODULE_2');
+    expect(result.current.isModuleAllowed('boq_rfq_management')).toBe(true);
+    expect(result.current.isModuleAllowed('category_standard_boq_master')).toBe(true);
+    expect(result.current.isRoleAllowed('BOQ_RFQ_MANAGER')).toBe(true);
+    expect(result.current.isModuleAllowed('vendor_negotiation_hub')).toBe(false);
+
+    // Upgrade to Module 3
+    act(() => {
+      result.current.changeTenantTier('TNT_GODREJ', 'MODULE_3');
+    });
+
+    expect(result.current.activeTenantTier).toBe('MODULE_3');
+    expect(result.current.isModuleAllowed('vendor_negotiation_hub')).toBe(true);
+    expect(result.current.isModuleAllowed('category_standard_boq_master')).toBe(true);
+    expect(result.current.isRoleAllowed('VENDOR_NEGOTIATION_HUB')).toBe(true);
   });
 
   it('allows changing active tenant and active role', () => {
@@ -69,7 +111,8 @@ describe('ProcurementContext', () => {
       result.current.approveTier2();
     });
     expect(result.current.tier2Approved).toBe(true);
-    expect(result.current.auditLogs[0].action).toBe('PPO Tier 2 Signed-off');
+    expect(result.current.poReleased).toBe(true);
+    expect(result.current.auditLogs[0].action).toBe('PPO Tier 2 Signed-off & Order Issued');
 
     // Tier 3 & Release PO
     act(() => {
@@ -264,5 +307,126 @@ describe('ProcurementContext', () => {
       } as any);
     });
     expect(result.current.ppos.length).toBe(initialPpoCount);
+  });
+
+  it('handles Master Catalog additions and hold toggling with validation', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ProcurementProvider>{children}</ProcurementProvider>
+    );
+    const { result } = renderHook(() => useProcurement(), { wrapper });
+
+    // Add category
+    let newCat: any;
+    act(() => {
+      newCat = result.current.addCategory({
+        name: 'Landscaping & External Works',
+        shortCode: 'LAND',
+        costCenter: 'CC-108',
+        description: 'Hardscape and external softscape',
+      });
+    });
+    expect(newCat.id).toBe('CAT-LAND');
+    expect(result.current.projectCategories.some((c) => c.id === 'CAT-LAND')).toBe(true);
+
+    // Invalid category (shortCode too short)
+    expect(() => {
+      act(() => {
+        result.current.addCategory({
+          name: 'Invalid',
+          shortCode: 'X',
+          costCenter: 'CC',
+          description: 'Desc',
+        });
+      });
+    }).toThrow();
+
+    // Add subcategory
+    let newSub: any;
+    act(() => {
+      newSub = result.current.addSubCategory({
+        categoryId: 'CAT-LAND',
+        name: 'Hardscape Works',
+        shortCode: 'HARD',
+      });
+    });
+    expect(newSub.shortCode).toBe('HARD');
+    const updatedCat = result.current.projectCategories.find((c) => c.id === 'CAT-LAND');
+    expect(updatedCat?.subCategories?.length).toBe(1);
+
+    // Invalid subcategory (non-existent category)
+    expect(() => {
+      act(() => {
+        result.current.addSubCategory({
+          categoryId: 'NON_EXISTENT',
+          name: 'Invalid',
+          shortCode: 'INV',
+        });
+      });
+    }).toThrow();
+
+    // Add standard BOQ item
+    let newItem: any;
+    act(() => {
+      newItem = result.current.addStandardBOQItem({
+        categoryId: 'CAT-LAND',
+        subCategoryId: newSub.id,
+        desc: 'Interlocking Concrete Paver Blocks 80mm M40',
+        uom: 'Sqm',
+        benchmarkRate: 850,
+        defaultQty: 1500,
+      });
+    });
+    expect(newItem.code).toBe('LAND-HARD-001');
+    expect(newItem.isImmutable).toBe(true);
+    expect(newItem.status).toBe('ACTIVE');
+
+    // Invalid BOQ item (rate <= 0)
+    expect(() => {
+      act(() => {
+        result.current.addStandardBOQItem({
+          categoryId: 'CAT-LAND',
+          desc: 'Invalid Item',
+          uom: 'Nos',
+          benchmarkRate: -10,
+          defaultQty: 10,
+        });
+      });
+    }).toThrow();
+
+    // Invalid BOQ item (non-existent category)
+    expect(() => {
+      act(() => {
+        result.current.addStandardBOQItem({
+          categoryId: 'NON_EXISTENT',
+          desc: 'Invalid Item',
+          uom: 'Nos',
+          benchmarkRate: 100,
+          defaultQty: 10,
+        });
+      });
+    }).toThrow();
+
+    // Toggle Hold Status
+    const catCivil = result.current.projectCategories.find((c) => c.id === 'CAT-CIVIL')!;
+    const itemCivil = catCivil.items[0];
+    const initialCost = result.current.projectBudget.totalEstimatedBOQCost;
+
+    act(() => {
+      result.current.toggleItemHoldStatus('CAT-CIVIL', itemCivil.id);
+    });
+
+    const toggledCat = result.current.projectCategories.find((c) => c.id === 'CAT-CIVIL')!;
+    const toggledItem = toggledCat.items.find((i) => i.id === itemCivil.id)!;
+    expect(toggledItem.status).toBe('ON_HOLD');
+    expect(result.current.projectBudget.totalEstimatedBOQCost).toBeLessThan(initialCost);
+
+    // Toggle back to active
+    act(() => {
+      result.current.toggleItemHoldStatus('CAT-CIVIL', itemCivil.id);
+    });
+    const restoredCat = result.current.projectCategories.find((c) => c.id === 'CAT-CIVIL')!;
+    const restoredItem = restoredCat.items.find((i) => i.id === itemCivil.id)!;
+    expect(restoredItem.status).toBe('ACTIVE');
+    expect(result.current.projectBudget.totalEstimatedBOQCost).toBe(initialCost);
   });
 });

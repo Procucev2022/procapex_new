@@ -63,6 +63,8 @@ service-account*.json
 *.db-journal
 prisma/*.db
 prisma/*.sqlite*
+data/
+
 
 # ==============================================================================
 # Logs & Debugging

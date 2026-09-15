@@ -142,7 +142,7 @@ describe('AES Cryptographic Suite (src/lib/crypto.ts)', () => {
       const bundle = encrypt(samplePlaintext, { algorithm: 'aes-256-cbc' });
       const corruptedBundle: EncryptedDataBundle = {
         ...bundle,
-        ciphertext: bundle.ciphertext.slice(0, -2) + '00',
+        ciphertext: bundle.ciphertext.slice(0, -4),
       };
 
       expect(() => {
