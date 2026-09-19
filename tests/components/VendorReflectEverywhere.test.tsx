@@ -10,6 +10,7 @@ import { UI_STRINGS } from '@/constants';
 const VendorIntegrationHarness: React.FC = () => {
   const { managedVendors, addSingleClientVendor } = useProcurement();
   const [activeView, setActiveView] = React.useState<'pr' | 'rfq'>('pr');
+  const [activePRId, setActivePRId] = React.useState<string>('PR-2026-0005');
 
   return (
     <div>
@@ -47,14 +48,22 @@ const VendorIntegrationHarness: React.FC = () => {
       </div>
 
       <div data-testid="managed-vendors-count">{managedVendors.length}</div>
+      <div data-testid="active-pr-id">{activePRId}</div>
       <div data-testid="rao-vendor-status">
         {managedVendors.find((v) => v.name.toLowerCase().includes('rao interior'))
           ? 'FOUND_RAO'
           : 'NOT_FOUND'}
       </div>
 
-      {activeView === 'pr' && <PRModule />}
-      {activeView === 'rfq' && <CategoryManagerHub />}
+      {activeView === 'pr' && (
+        <PRModule
+          onNavigateToBOQ={(prId) => {
+            setActivePRId(prId);
+            setActiveView('rfq');
+          }}
+        />
+      )}
+      {activeView === 'rfq' && <CategoryManagerHub initialPRId={activePRId} />}
     </div>
   );
 };
@@ -76,96 +85,7 @@ describe('Client-Onboarded Vendors Reflect Everywhere Integration', () => {
     expect(screen.getByTestId('rao-vendor-status')).toHaveTextContent('FOUND_RAO');
   });
 
-  it('displays Rao Interior works with Client Boarded badge in PR Module Step 4 Supplier Selection', () => {
-    render(
-      <ProcurementProvider>
-        <VendorIntegrationHarness />
-      </ProcurementProvider>
-    );
-
-    // Navigate to Step 4 (Supplier Selection) in PR Module
-    const step4Btn = screen.getByRole('button', {
-      name: new RegExp(UI_STRINGS.prModule.stepSuppliers, 'i'),
-    });
-    fireEvent.click(step4Btn);
-
-    // Open the dropdown menu via data-testid
-    const dropdownTrigger = screen.getByTestId('pr-supplier-dropdown-trigger');
-    fireEvent.click(dropdownTrigger);
-
-    // Verify "Rao Interior works" is listed in dropdown options
-    expect(screen.getByText(/Rao Interior works \(CLT-VND-003\)/i)).toBeInTheDocument();
-
-    // Verify "Client Boarded" badge is rendered
-    const clientBoardedBadges = screen.getAllByText(/Client Boarded/i);
-    expect(clientBoardedBadges.length).toBeGreaterThan(0);
-  });
-
-  it('allows selecting Rao Interior works in PR and submitting with nominated vendor', () => {
-    render(
-      <ProcurementProvider>
-        <VendorIntegrationHarness />
-      </ProcurementProvider>
-    );
-
-    // Go to Step 4
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: new RegExp(UI_STRINGS.prModule.stepSuppliers, 'i'),
-      })
-    );
-
-    // Open dropdown
-    fireEvent.click(screen.getByTestId('pr-supplier-dropdown-trigger'));
-
-    // Click on Rao Interior works option to select it
-    const raoOption = screen.getByText(/Rao Interior works \(CLT-VND-003\)/i);
-    fireEvent.click(raoOption);
-
-    // Close dropdown
-    fireEvent.click(screen.getByRole('button', { name: /Done \/ Apply Selection/i }));
-
-    // Verify Rao Interior works is shown in the selected chips below dropdown
-    expect(screen.getAllByText(/Rao Interior works \(CLT-VND-003\)/i).length).toBeGreaterThan(0);
-
-    // Navigate to Step 7 (Attachments & Submit)
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i'),
-      })
-    );
-
-    // Submit PR
-    const submitPRBtn = screen.getByRole('button', {
-      name: new RegExp(UI_STRINGS.prModule.submitPR, 'i'),
-    });
-    fireEvent.click(submitPRBtn);
-
-    // Check PR is submitted
-    expect(
-      screen.getAllByText(new RegExp(UI_STRINGS.prModule.prSuccessfullySubmitted, 'i')).length
-    ).toBeGreaterThan(0);
-  });
-
-  it('displays Rao Interior works in CategoryManagerHub RFQ circulation vendor dropdown', () => {
-    render(
-      <ProcurementProvider>
-        <VendorIntegrationHarness />
-      </ProcurementProvider>
-    );
-
-    // Switch to RFQ Workbench
-    fireEvent.click(screen.getByText('Show RFQ Workbench'));
-
-    // Open the supplier dropdown in Step 1 via data-testid
-    const dropdownToggle = screen.getByTestId('rfq-supplier-dropdown-trigger');
-    fireEvent.click(dropdownToggle);
-
-    // Verify "Rao Interior works" is available in the dropdown with "Client Boarded" badge
-    expect(screen.getAllByText(/Rao Interior works \(CLT-VND-003\)/i).length).toBeGreaterThan(0);
-  });
-
-  it('dynamically reflects a newly onboarded client vendor across both PR and RFQ modules and localStorage', () => {
+  it('dynamically reflects a newly onboarded client vendor across managedVendors and localStorage', () => {
     render(
       <ProcurementProvider>
         <VendorIntegrationHarness />
@@ -179,25 +99,106 @@ describe('Client-Onboarded Vendors Reflect Everywhere Integration', () => {
     const stored = getStoredVendors();
     const hasVerma = stored.some((v) => v.name.includes('Verma Interior'));
     expect(hasVerma).toBe(true);
+  });
 
-    // Check in PR Module: navigate to Step 4
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: new RegExp(UI_STRINGS.prModule.stepSuppliers, 'i'),
-      })
+  it('makes newly onboarded client vendor visible and selectable in CategoryManagerHub supplier nomination', () => {
+    render(
+      <ProcurementProvider>
+        <VendorIntegrationHarness />
+      </ProcurementProvider>
     );
-    fireEvent.click(screen.getByTestId('pr-supplier-dropdown-trigger'));
 
-    // Verma Interior should be in PR Module dropdown
-    expect(screen.getByText(/Verma Interior Design & Fitouts/i)).toBeInTheDocument();
+    // 1. Onboard a new client vendor
+    fireEvent.click(screen.getByText('Add Dynamic Client Vendor'));
 
-    // Switch to RFQ Workbench
+    // 2. Navigate to RFQ Workbench
     fireEvent.click(screen.getByText('Show RFQ Workbench'));
 
-    // In RFQ Workbench: open dropdown
-    fireEvent.click(screen.getByTestId('rfq-supplier-dropdown-trigger'));
+    // 3. Switch to Suppliers & Scope Nomination sub-tab
+    const suppliersTabBtn = screen.getByText(UI_STRINGS.categoryManagerHub.subTabSuppliers);
+    fireEvent.click(suppliersTabBtn);
 
-    // Verma Interior should be selectable in RFQ Workbench dropdown
+    // 4. Open the supplier nomination dropdown using test id
+    const dropdownToggle = screen.getByTestId('rfq-supplier-dropdown-trigger');
+    fireEvent.click(dropdownToggle);
+
+    // 5. Verify the newly onboarded vendor is present in the list
     expect(screen.getByText(/Verma Interior Design & Fitouts/i)).toBeInTheDocument();
+
+    // 6. Select the newly onboarded vendor
+    fireEvent.click(screen.getByText(/Verma Interior Design & Fitouts/i));
+
+    // 7. Close dropdown
+    fireEvent.click(dropdownToggle);
+
+    // 8. Confirm vendor is now in the Nominated Suppliers Scope table
+    const tableMatches = screen.getAllByText(/Verma Interior Design & Fitouts/i);
+    expect(tableMatches.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('creates a blank RFQ package when Proceed to Raise RFQ is clicked in BOQ Studio', () => {
+    render(
+      <ProcurementProvider>
+        <VendorIntegrationHarness />
+      </ProcurementProvider>
+    );
+
+    // Ensure we are in BOQ Studio
+    expect(screen.getByRole('heading', { level: 1, name: /BOQ Studio/i })).toBeInTheDocument();
+
+    // Click "Proceed to Raise RFQ"
+    const proceedButtons = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.prModule.proceedToRaiseRFQ, 'i'),
+    });
+    fireEvent.click(proceedButtons[0]);
+
+    // Should switch to RFQ Workbench with the new blank RFQ package
+    expect(screen.getByText('Show RFQ Workbench')).toBeInTheDocument();
+    expect(screen.getByTestId('active-pr-id').textContent).toMatch(/PR-2026-\d{4}/);
+
+    // Switch to suppliers tab in CategoryManagerHub
+    const suppliersTabBtn = screen.getByText(UI_STRINGS.categoryManagerHub.subTabSuppliers);
+    fireEvent.click(suppliersTabBtn);
+
+    // Verify empty state is displayed because it is a blank RFQ with zero pre-nominated vendors
+    expect(
+      screen.getByText(UI_STRINGS.categoryManagerHub.noSuppliersNominated)
+    ).toBeInTheDocument();
+  });
+
+  it('always shows blank supplier selection provision with 0 selected suppliers on default PR-2026-0005 and when reset', () => {
+    render(
+      <ProcurementProvider>
+        <CategoryManagerHub initialPRId="PR-2026-0005" />
+      </ProcurementProvider>
+    );
+
+    // Switch to suppliers tab in CategoryManagerHub
+    const suppliersTabBtn = screen.getByText(UI_STRINGS.categoryManagerHub.subTabSuppliers);
+    fireEvent.click(suppliersTabBtn);
+
+    // 1. Check dropdown trigger shows 0 selected
+    expect(screen.getByText(/0 selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/Select suppliers to invite for RFQ/i)).toBeInTheDocument();
+
+    // 2. Check selected chips shows empty state
+    expect(screen.getByText(/No suppliers selected yet/i)).toBeInTheDocument();
+
+    // 3. Check table shows empty state notice
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.noSuppliersNominated)).toBeInTheDocument();
+
+    // 4. Add rate card vendors
+    const addRateCardBtn = screen.getByRole('button', { name: /\+ Add All Rate Card Vendors/i });
+    fireEvent.click(addRateCardBtn);
+    expect(screen.queryByText(/No suppliers selected yet/i)).not.toBeInTheDocument();
+
+    // 5. Click reset to default (blank) and verify it returns to completely blank provision
+    const resetBtn = screen.getByRole('button', { name: /Reset to Default/i });
+    fireEvent.click(resetBtn);
+
+    expect(screen.getByText(/0 selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/No suppliers selected yet/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.noSuppliersNominated)).toBeInTheDocument();
   });
 });
+

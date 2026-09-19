@@ -1,23 +1,57 @@
 'use client';
 
-import React from 'react';
-import { X, Award, Star } from 'lucide-react';
+import React, { useState, useContext, useMemo } from 'react';
+import { X, Award, Star, Layers, CreditCard, Zap } from 'lucide-react';
 import { UI_STRINGS } from '@/constants';
+import { ProcurementContext } from '@/context/ProcurementContext';
 import { InteriorCredibilitySection } from './InteriorCredibilitySection';
 import { BoughtoutCredibilitySection } from './BoughtoutCredibilitySection';
-import type { ManagedVendor } from '@/types';
+import { VendorCataloguePricingTab } from './VendorCataloguePricingTab';
+import { VendorProfileRateCardTab } from '../rate-card/VendorProfileRateCardTab';
+import type { ManagedVendor, BudgetCategory, VendorCatalogueItemPrice } from '@/types';
 
 interface VendorCredibilityDrawerProps {
   isOpen: boolean;
   vendor: ManagedVendor | null;
   onClose: () => void;
+  initialTab?: 'credibility' | 'rate_card' | 'catalogue';
+  projectCategories?: BudgetCategory[];
+  onSaveCataloguePrices?: (
+    vendorId: string,
+    prices: Record<string, VendorCatalogueItemPrice>
+  ) => void;
+  onOpenIntimationModal?: (vendor: ManagedVendor) => void;
+  onUpdateCategories?: (vendorId: string, categories: string[]) => void;
 }
 
 export const VendorCredibilityDrawer: React.FC<VendorCredibilityDrawerProps> = ({
   isOpen,
   vendor,
   onClose,
+  initialTab,
+  projectCategories = [],
+  onSaveCataloguePrices,
+  onOpenIntimationModal,
+  onUpdateCategories,
 }) => {
+  const [activeTab, setActiveTab] = useState<'credibility' | 'rate_card' | 'catalogue'>(
+    initialTab || 'credibility'
+  );
+
+  const context = useContext(ProcurementContext);
+  const getCoverage = context?.getVendorCategoryRateCardCoverage;
+
+  const rateCardCoverage = useMemo(() => {
+    if (!vendor || !getCoverage) return null;
+    return getCoverage(vendor.id, vendor.category);
+  }, [vendor, getCoverage]);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
+
   if (!isOpen || !vendor) return null;
 
   const interiorData = vendor.categorySpecificProfile?.interiorFitout;
@@ -25,7 +59,7 @@ export const VendorCredibilityDrawer: React.FC<VendorCredibilityDrawerProps> = (
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
@@ -33,9 +67,21 @@ export const VendorCredibilityDrawer: React.FC<VendorCredibilityDrawerProps> = (
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-black tracking-widest px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                {vendor.id} • {vendor.category}
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-[10px] uppercase font-black tracking-widest px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                  {vendor.id} • {vendor.category}
+                </span>
+                {vendor.isRateCard && rateCardCoverage && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('rate_card')}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1 hover:bg-emerald-100 transition-colors cursor-pointer"
+                  >
+                    <Zap className="w-3 h-3 text-emerald-600" />
+                    <span>Rate Card: {rateCardCoverage.coveragePct}% Std BOQ</span>
+                  </button>
+                )}
+              </div>
               <h3 className="text-xl font-black text-slate-900 mt-0.5">{vendor.name}</h3>
               <p className="text-xs text-slate-500">
                 {UI_STRINGS.vendorManagement.viewProfileDrawerTitle}
@@ -51,9 +97,79 @@ export const VendorCredibilityDrawer: React.FC<VendorCredibilityDrawerProps> = (
           </button>
         </div>
 
-        {/* Score & Evaluation Overview */}
-        {vendor.evaluationScore && (
-          <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Tab Switcher */}
+        <div className="flex border-b border-slate-200 gap-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab('credibility')}
+            className={`pb-3 font-bold text-xs transition-colors border-b-2 flex items-center space-x-1.5 ${
+              activeTab === 'credibility'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5" />
+            <span>{UI_STRINGS.vendorManagement.tabGeneralEvaluation}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rate_card')}
+            className={`pb-3 font-bold text-xs transition-colors border-b-2 flex items-center space-x-1.5 ${
+              activeTab === 'rate_card'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>{UI_STRINGS.rateCards.tabRateCard}</span>
+            {rateCardCoverage && (
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.2 rounded-full ml-1">
+                {rateCardCoverage.coveragePct}%
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('catalogue')}
+            className={`pb-3 font-bold text-xs transition-colors border-b-2 flex items-center space-x-1.5 ${
+              activeTab === 'catalogue'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{UI_STRINGS.vendorManagement.tabCataloguePricing}</span>
+          </button>
+        </div>
+
+        {/* Tab: Rate Card & Agreements */}
+        {activeTab === 'rate_card' && (
+          <VendorProfileRateCardTab
+            vendorId={vendor.id}
+            vendorName={vendor.name}
+            vendorCategory={vendor.category}
+            vendorCategories={vendor.categories}
+            isVendorPortal={false}
+          />
+        )}
+
+        {/* Tab 2: Standard BOQ Catalogue Pricing */}
+        {activeTab === 'catalogue' && (
+          <VendorCataloguePricingTab
+            vendor={vendor}
+            projectCategories={projectCategories}
+            onSaveCataloguePrices={onSaveCataloguePrices || (() => {})}
+            onOpenIntimationModal={() => onOpenIntimationModal?.(vendor)}
+            onUpdateCategories={onUpdateCategories}
+          />
+        )}
+
+        {/* Tab 1: Credibility & Audit Scorecard */}
+        {activeTab === 'credibility' && (
+          <>
+            {/* Score & Evaluation Overview */}
+            {vendor.evaluationScore && (
+              <div className="bg-brand-900 text-white rounded-2xl p-5 shadow-md border border-brand-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="text-xl font-black text-white">
                 Evaluation Grade: <span className="text-emerald-400">{vendor.evaluationScore.grade}</span> (
@@ -121,6 +237,8 @@ export const VendorCredibilityDrawer: React.FC<VendorCredibilityDrawerProps> = (
             </div>
           </div>
         )}
+        </>
+      )}
 
         <div className="flex justify-end pt-4 border-t border-slate-100">
           <button

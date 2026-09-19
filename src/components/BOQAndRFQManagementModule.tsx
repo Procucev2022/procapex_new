@@ -93,7 +93,7 @@ export const BOQAndRFQManagementModule: React.FC<BOQAndRFQManagementModuleProps>
             const foundTitle = prs.find(p => p.id === targetId)?.title;
             setLastSubmittedPR({
               id: targetId,
-              title: foundTitle || 'Fabrication & Installation of Reception Counter',
+              title: foundTitle || 'New Blank RFQ Package',
             });
             setActiveSubTab('rfq_hub');
           }}
@@ -103,7 +103,7 @@ export const BOQAndRFQManagementModule: React.FC<BOQAndRFQManagementModuleProps>
             const foundTitle = prs.find(p => p.id === targetId)?.title;
             setLastSubmittedPR({
               id: targetId,
-              title: foundTitle || 'Fabrication & Installation of Reception Counter',
+              title: foundTitle || 'New Blank RFQ Package',
             });
           }}
           onViewPRSummary={(prId) => {

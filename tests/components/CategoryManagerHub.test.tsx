@@ -33,13 +33,13 @@ describe('CategoryManagerHub Component', () => {
 
     expect(screen.getByText(UI_STRINGS.categoryManagerHub.roleBadge)).toBeInTheDocument();
 
-    // Top banner shortcut buttons
-    const cbaShortcut = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.cbaMatrix });
-    fireEvent.click(cbaShortcut);
+    // Navigation tabs
+    const cbaTab = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabCommercial });
+    fireEvent.click(cbaTab);
     expect(screen.getByText(/Direct PPO Generation & Vendor Award Console/i)).toBeInTheDocument();
 
-    const rfqShortcut = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.raiseRFQ });
-    fireEvent.click(rfqShortcut);
+    const rfqTab = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRFQ });
+    fireEvent.click(rfqTab);
     expect(screen.getByText(/Active RFQ: RFQ-2026-0005/i)).toBeInTheDocument();
 
     // Switch PR to PR-2026-0003 (Method 2 Rate Card)
@@ -64,14 +64,24 @@ describe('CategoryManagerHub Component', () => {
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabRFQ }));
 
-    // RFQ closure date input
+    // Sub-tabs verification
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.subTabGeneral)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.subTabSuppliers)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.subTabDelivery)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.subTabTerms)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.categoryManagerHub.subTabDocuments)).toBeInTheDocument();
+
+    // RFQ closure date input (on General tab)
     const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement;
     expect(dateInput).toBeInTheDocument();
     fireEvent.change(dateInput, { target: { value: '2026-10-15' } });
     expect(dateInput.value).toBe('2026-10-15');
 
-    // Reset to raiser selection
-    const resetBtn = screen.getByRole('button', { name: /Reset to Raiser Selection/i });
+    // Switch to Supplier Selection sub-tab
+    fireEvent.click(screen.getByText(UI_STRINGS.categoryManagerHub.subTabSuppliers));
+
+    // Reset to default
+    const resetBtn = screen.getByRole('button', { name: /Reset to Default/i });
     fireEvent.click(resetBtn);
 
     // Add all rate card vendors
@@ -79,16 +89,14 @@ describe('CategoryManagerHub Component', () => {
     fireEvent.click(addRateCardBtn);
 
     // Open/close vendor multi-select dropdown
-    const dropdownToggle = screen.getByText(/Vendors in RFQ Scope/i).closest('div')?.querySelector('button[type="button"]');
-    if (dropdownToggle) {
-      fireEvent.click(dropdownToggle);
+    const dropdownToggle = screen.getByTestId('rfq-supplier-dropdown-trigger');
+    fireEvent.click(dropdownToggle);
 
-      // Toggle a vendor in the dropdown list (uncheck then check)
-      const vendorRows = container.querySelectorAll('.divide-y > div.cursor-pointer');
-      if (vendorRows.length > 0) {
-        fireEvent.click(vendorRows[0]);
-        fireEvent.click(vendorRows[0]);
-      }
+    // Toggle a vendor in the dropdown list (uncheck then check)
+    const vendorRows = container.querySelectorAll('.divide-y > div.cursor-pointer');
+    if (vendorRows.length > 0) {
+      fireEvent.click(vendorRows[0]);
+      fireEvent.click(vendorRows[0]);
     }
 
     // Remove a vendor chip
@@ -98,19 +106,19 @@ describe('CategoryManagerHub Component', () => {
     }
 
     // Submit RFQ button
-    const submitRfqBtn = screen.getByRole('button', {
-      name: new RegExp(UI_STRINGS.categoryManagerHub.rfqSubmitTender, 'i'),
+    const submitRfqBtns = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.categoryManagerHub.submitRFQ, 'i'),
     });
-    expect(submitRfqBtn).toBeInTheDocument();
-    fireEvent.click(submitRfqBtn);
+    expect(submitRfqBtns.length).toBeGreaterThan(0);
+    fireEvent.click(submitRfqBtns[0]);
 
-    // Dispatched notice banner appears
+    // Modal shows RFQ Successfully submitted
     expect(
-      screen.getByText(new RegExp(UI_STRINGS.categoryManagerHub.rfqSubmittedNotice, 'i'))
+      screen.getByText(UI_STRINGS.categoryManagerHub.rfqSuccessfullySubmitted)
     ).toBeInTheDocument();
 
-    // Link to 4-Way Commercial Matrix
-    const openMatrixBtn = screen.getByRole('button', { name: /View 4-Way Commercial Matrix/i });
+    // Link to 4-Way Commercial Matrix in modal
+    const openMatrixBtn = screen.getByRole('button', { name: /View Commercial Matrix \(CBA\) →/i });
     fireEvent.click(openMatrixBtn);
     expect(screen.getByText(/Direct PPO Generation & Vendor Award Console/i)).toBeInTheDocument();
   });
@@ -306,7 +314,7 @@ describe('CategoryManagerHub Component', () => {
     expect(screen.getByText(/No Vendor Finalized Yet for PPO Drafting/i)).toBeInTheDocument();
 
     // Click link to commercial matrix
-    const openMatrixBtn = screen.getByRole('button', { name: /Open 4-Way Commercial Matrix →/i });
+    const openMatrixBtn = screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.openCommercialMatrix });
     fireEvent.click(openMatrixBtn);
 
     // Award L1

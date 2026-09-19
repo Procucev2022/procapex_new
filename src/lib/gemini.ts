@@ -7,9 +7,12 @@ import type {
   NegotiationTactic,
   DrawingExtractionRequest,
   DrawingExtractionResult,
+  RefineBOQItemRequest,
+  RefineBOQItemResult,
 } from '@/types';
 import { DEFAULT_GEMINI_MODEL } from '@/constants';
 import { cleanDrawingTitle, extractBOQItemsFromDrawing } from './boq-extractor';
+import { getVendorCatalogueBenchmark } from './vendor-catalogue-pricing';
 
 export type {
   MLEOCostBreakdown,
@@ -17,6 +20,8 @@ export type {
   NegotiationTactic,
   DrawingExtractionRequest,
   DrawingExtractionResult,
+  RefineBOQItemRequest,
+  RefineBOQItemResult,
 };
 
 export interface GeminiModelContext {
@@ -83,11 +88,13 @@ export async function generateCostAnalysis(
   currentQuote?: number
 ): Promise<MLEOCostBreakdown> {
   const gemini = getGeminiModel();
+  const catalogueData = getVendorCatalogueBenchmark(itemDescription);
   logger.info('lib/gemini', 'Initiating MLEO cost analysis', {
     itemDescription,
     quantity,
     uom,
     currentQuote,
+    catalogueBenchmark: catalogueData?.benchmarkRate,
     hasApiKey: Boolean(gemini),
   });
 
@@ -99,11 +106,16 @@ export async function generateCostAnalysis(
         itemDescription,
       });
 
+      const catalogueLine = catalogueData
+        ? `Vendor Directory Baseline Catalogue Rate: ₹${catalogueData.benchmarkRate} (derived from ${catalogueData.vendorCount} empanelled vendor submission(s))`
+        : '';
+
       const prompt = `You are an expert construction and industrial procurement cost engineer.
 Analyze the following item and perform a bottom-up MLEO (Material, Labour, Equipment, Overheads) cost deconstruction:
 Item: "${itemDescription}"
 Quantity: ${quantity} ${uom}
 ${currentQuote ? `Vendor Quoted Rate: ₹${currentQuote}` : ''}
+${catalogueLine}
 
 Respond ONLY with valid JSON in this exact structure without markdown backticks:
 {
@@ -153,7 +165,11 @@ Respond ONLY with valid JSON in this exact structure without markdown backticks:
   }
 
   // Fallback intelligent estimation if GEMINI_API_KEY is not configured
-  const baseRate = currentQuote ? Math.round(currentQuote * 0.88) : 4350;
+  const baseRate = catalogueData?.benchmarkRate
+    ? catalogueData.benchmarkRate
+    : currentQuote
+    ? Math.round(currentQuote * 0.88)
+    : 4350;
   const matCost = Math.round(baseRate * 0.56);
   const labCost = Math.round(baseRate * 0.14);
   const eqCost = Math.round(baseRate * 0.18);
@@ -467,6 +483,158 @@ export async function extractDrawingWithAI(
       status: 'Active',
       drawingElevation: resolvedTitle,
     })),
+    modelUsed: `${getConfiguredModelName()} (Demo Mode - Add GEMINI_API_KEY to .env for live AI)`,
+    isLiveAi: false,
+    confidence: '95%',
+  };
+}
+
+/**
+ * AI & LLM Engine for Refining BOQ Line Items.
+ * Analyzes user technical input, enhances engineering specifications,
+ * recalibrates benchmark pricing, and produces an auditable engineering rationale.
+ */
+export async function refineBOQItemWithAI(
+  params: RefineBOQItemRequest,
+): Promise<RefineBOQItemResult> {
+  const startTime = Date.now();
+  const gemini = getGeminiModel();
+  const catalogueData = getVendorCatalogueBenchmark(params.itemCode, params.categoryHint);
+
+  if (gemini) {
+    try {
+      const catalogueInfo = catalogueData
+        ? `- Vendor Directory Baseline Rate: ₹${catalogueData.benchmarkRate} (${catalogueData.vendorCount} vendor submissions)`
+        : '';
+
+      const prompt = `You are a Senior Quantity Surveyor, Construction Estimator, and Engineering Specifications Expert.
+Refine and enhance the following Bill of Quantities (BOQ) line item based strictly on the user's technical input and requirements:
+
+CURRENT BOQ LINE ITEM:
+- Item Code: ${params.itemCode}
+- Current Technical Specs: ${params.currentDesc}
+- Current Unit (UOM): ${params.currentUom || 'Sqm'}
+- Current Quantity: ${params.currentQty || 1}
+- Current Benchmark Rate: ₹${params.currentBenchmarkRate || 1500}
+- Category: ${params.categoryHint || 'Interior & Civil Fitouts'}
+- Sub-Category: ${params.subCategoryHint || 'General'}
+${catalogueInfo}
+
+USER REFINEMENT REQUIREMENTS & SPECIFICATIONS:
+"${params.userInputSpecs}"
+
+INSTRUCTIONS:
+1. Formulate a comprehensive, contractor-ready technical specification description combining the existing item with the user's specific requirements, IS/ASTM standards, material grade, tolerances, and finishing details.
+2. Recommend appropriate standard UOM (Sqm, Rmt, Nos, Set, Cum, Ton, Kg) and quantity (default to current unless user specified a quantity change).
+3. Recalculate the AI Benchmark Unit Rate (₹ in INR) reflecting material upgrades, specialized fittings, labor complexity, and quality assurance.
+4. Provide a clear engineering rationale explaining the specification enhancement and pricing impact.
+5. Provide 2-5 concise specification highlight tags.
+
+Return ONLY a valid JSON object adhering strictly to this schema:
+{
+  "refinedCode": "${params.itemCode}",
+  "refinedDesc": "Comprehensive engineering specification...",
+  "refinedUom": "${params.currentUom || 'Sqm'}",
+  "refinedQty": ${params.currentQty || 1},
+  "refinedBenchmarkRate": 2250,
+  "aiRationale": "Pricing recalibrated to account for specified premium grades, specialized fittings, and stringent tolerances.",
+  "specsHighlighted": ["Commercial SS316", "IS 2553 Compliant", "Edge Polishing"],
+  "confidence": "96%"
+}`;
+
+      const result = await gemini.model.generateContent(prompt);
+      const text = result.response.text();
+      const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      if (parsed.refinedDesc) {
+        logger.info('lib/gemini', 'Gemini AI BOQ line refinement succeeded', {
+          itemCode: params.itemCode,
+          durationMs: Date.now() - startTime,
+          modelUsed: gemini.displayModelName,
+        });
+
+        return {
+          refinedCode: parsed.refinedCode || params.itemCode,
+          refinedDesc: parsed.refinedDesc,
+          refinedUom: parsed.refinedUom || params.currentUom || 'Sqm',
+          refinedQty: Number(parsed.refinedQty) || params.currentQty || 1,
+          refinedBenchmarkRate: Number(parsed.refinedBenchmarkRate) || params.currentBenchmarkRate || 1500,
+          aiRationale: parsed.aiRationale || 'Refined based on engineering standards and user specification inputs.',
+          specsHighlighted: Array.isArray(parsed.specsHighlighted) ? parsed.specsHighlighted : ['Custom Spec Refined'],
+          modelUsed: gemini.displayModelName,
+          isLiveAi: true,
+          confidence: parsed.confidence || '96%',
+        };
+      }
+    } catch (err: unknown) {
+      logger.warn('lib/gemini', 'Gemini BOQ refinement failed, falling back to heuristic engine', {
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - startTime,
+      });
+    }
+  }
+
+  // Offline intelligent engineering heuristics fallback
+  const userLower = params.userInputSpecs.toLowerCase();
+  let multiplier = 1.15;
+  const highlights: string[] = [];
+
+  if (userLower.includes('glass') || userLower.includes('toughened') || userLower.includes('glazing')) {
+    multiplier += 0.20;
+    highlights.push('Toughened Safety Glass');
+  }
+  if (userLower.includes('spider') || userLower.includes('ss 316') || userLower.includes('ss316') || userLower.includes('stainless')) {
+    multiplier += 0.15;
+    highlights.push('SS 316 Architectural Grade');
+  }
+  if (userLower.includes('fire') || userLower.includes('bwp') || userLower.includes('marine') || userLower.includes('termite')) {
+    multiplier += 0.18;
+    highlights.push('Fire-Retardant & BWP Treated');
+  }
+  if (userLower.includes('acoustic') || userLower.includes('soundproof') || userLower.includes('insulation')) {
+    multiplier += 0.20;
+    highlights.push('Acoustic NRC Certified');
+  }
+  if (userLower.includes('granite') || userLower.includes('marble') || userLower.includes('chamfer')) {
+    multiplier += 0.15;
+    highlights.push('Precision Chamfered Edge');
+  }
+  if (catalogueData) {
+    highlights.push(`Vendor Catalogue Rate: ₹${catalogueData.benchmarkRate}`);
+  }
+  if (highlights.length === 0) {
+    highlights.push('User Specs Integrated', 'Enhanced Quality Standards');
+  }
+
+  const baseRate = catalogueData?.benchmarkRate
+    ? catalogueData.benchmarkRate
+    : Math.max(params.currentBenchmarkRate || 1500, 100);
+  const refinedBenchmarkRate = Math.round(baseRate * multiplier);
+
+  const cleanUserSpecs = params.userInputSpecs.trim().replace(/\.+$/, '');
+  const refinedDesc = `${params.currentDesc} [Enhanced Specification: Conforming to ${cleanUserSpecs}. Includes surface preparation, grade-certified materials, structural anchorages/fittings, alignment tolerances, and installation testing as per engineering guidelines].`;
+
+  const catalogueNotice = catalogueData
+    ? ` Baseline calibrated with Vendor Directory catalogue rate (₹${catalogueData.benchmarkRate}).`
+    : '';
+  const rationale = `Benchmark rate adjusted from ₹${baseRate.toLocaleString('en-IN')} to ₹${refinedBenchmarkRate.toLocaleString('en-IN')} (+${Math.round((multiplier - 1) * 100)}%) reflecting user specification upgrades (${highlights.join(', ')}), specialized labor requirements, and quality certification.${catalogueNotice}`;
+
+  logger.info('lib/gemini', 'Generated refined BOQ line item via offline engineering heuristic engine', {
+    itemCode: params.itemCode,
+    refinedBenchmarkRate,
+    multiplier,
+    isLiveAi: false,
+  });
+
+  return {
+    refinedCode: params.itemCode,
+    refinedDesc,
+    refinedUom: params.currentUom || 'Sqm',
+    refinedQty: params.currentQty || 1,
+    refinedBenchmarkRate,
+    aiRationale: rationale,
+    specsHighlighted: highlights,
     modelUsed: `${getConfiguredModelName()} (Demo Mode - Add GEMINI_API_KEY to .env for live AI)`,
     isLiveAi: false,
     confidence: '95%',

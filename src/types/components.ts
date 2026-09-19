@@ -12,7 +12,7 @@ export interface NavItem {
 export interface HeaderProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
-  onOpenNewPR: () => void;
+  onOpenNewPR?: () => void;
 }
 
 // --- Dashboard ---
@@ -38,6 +38,10 @@ export interface RequesterBOQItem {
   std?: number;
   aiConf?: string;
   drawingElevation?: string;
+  status?: string;
+  isRefined?: boolean;
+  aiRationale?: string;
+  refinedSpecs?: string;
 }
 
 export interface AmendCategoryOption {
@@ -60,6 +64,7 @@ export interface AmendBOQModalProps {
   ) => void;
   availableCategories?: AmendCategoryOption[];
   currentCategoryName?: string;
+  subCategoryHint?: string;
 }
 
 export interface AttachedDoc {
@@ -89,6 +94,7 @@ export interface VendorItem {
   badgeText: string;
   capacity: string;
   source?: 'PROCAPX_PLATFORM' | 'CLIENT_ONBOARDED';
+  categories?: string[];
 }
 
 // --- PR Approval Queue ---

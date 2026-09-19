@@ -5,6 +5,9 @@ import type {
   VendorEvaluationSubmission,
   VendorEvaluationScoreResult,
   VendorPPORating,
+  VendorCatalogueItemPrice,
+  VendorCatalogueStatus,
+  SendCatalogueIntimationInput,
   AuditLog,
   TenantKey,
 } from '@/types';
@@ -12,51 +15,13 @@ import { SEED_MANAGED_VENDORS } from '@/constants';
 import { calculateVendorEvaluationScore, calculateCompositeRating } from '@/lib/vendor-evaluation';
 import { logger } from '@/lib/logger';
 
-export const STORAGE_KEY_VENDORS = 'procapex_managed_vendors_v1';
+import {
+  STORAGE_KEY_VENDORS,
+  getStoredVendors,
+  persistStoredVendors as persistVendorsToStorage,
+} from '@/lib/vendor-storage';
 
-/**
- * Loads managed vendors from localStorage if available, merging with SEED_MANAGED_VENDORS.
- */
-export function getStoredVendors(): ManagedVendor[] {
-  if (typeof window === 'undefined') {
-    return SEED_MANAGED_VENDORS;
-  }
-  try {
-    const cached = window.localStorage.getItem(STORAGE_KEY_VENDORS);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const merged: ManagedVendor[] = [...parsed];
-        SEED_MANAGED_VENDORS.forEach((seed) => {
-          const exists = merged.some(
-            (m) => m.id === seed.id || m.name.toLowerCase().trim() === seed.name.toLowerCase().trim()
-          );
-          if (!exists) {
-            merged.push(seed);
-          }
-        });
-        return merged;
-      }
-    }
-  } catch (err) {
-    logger.warn('context/vendor-manager', 'Failed reading vendors from localStorage', {
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
-  return SEED_MANAGED_VENDORS;
-}
-
-export function persistVendorsToStorage(vendors: ManagedVendor[]): void {
-  if (typeof window !== 'undefined') {
-    try {
-      window.localStorage.setItem(STORAGE_KEY_VENDORS, JSON.stringify(vendors));
-    } catch (err) {
-      logger.warn('context/vendor-manager', 'Failed saving vendors to localStorage', {
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
-}
+export { STORAGE_KEY_VENDORS, getStoredVendors, persistVendorsToStorage };
 
 export interface UseVendorManagerResult {
   managedVendors: ManagedVendor[];
@@ -76,6 +41,17 @@ export interface UseVendorManagerResult {
     rating: Omit<VendorPPORating, 'id' | 'ratedAt'>
   ) => void;
   sendEvaluationInvite: (vendorId: string, email: string) => void;
+  updateVendorCataloguePrices: (
+    vendorId: string,
+    prices: Record<string, VendorCatalogueItemPrice>
+  ) => void;
+  sendVendorCatalogueIntimation: (
+    input: SendCatalogueIntimationInput
+  ) => void;
+  updateVendorCategories: (
+    vendorId: string,
+    categories: string[]
+  ) => void;
   resetVendors: () => void;
 }
 
@@ -95,34 +71,40 @@ export function useVendorManager(
 
   const addClientVendors = (newVendors: VendorCSVRow[]): void => {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
-    const createdVendors: ManagedVendor[] = newVendors.map((row, idx) => ({
-      id: `CLT-VND-${Date.now()}-${idx + 1}`,
-      name: row.name,
-      category: row.category,
-      subCategory: row.subCategory,
-      region: row.region,
-      regionLabel: `${row.region} (${row.city})`,
-      rating: 4.0,
-      reviewsCount: 0,
-      isRateCard: false,
-      rateCardCode: null,
-      rateCardStatus: 'Client Empanelled',
-      contactPerson: row.contactPerson,
-      gstin: row.gstin,
-      city: row.city,
-      leadTime: row.leadTime,
-      badgeText: 'Client Boarded Vendor',
-      capacity: row.capacity,
-      source: 'CLIENT_ONBOARDED',
-      tenantKey: activeTenantKey,
-      tenantName: activeTenantName,
-      email: row.email,
-      phone: row.phone,
-      evaluationStatus: 'PENDING_VENDOR_INPUT',
-      ppoRatings: [],
-      compositeRating: 4.0,
-      totalPPOsCompleted: 0,
-    }));
+    const createdVendors: ManagedVendor[] = newVendors.map((row, idx) => {
+      const categories = row.categories && row.categories.length > 0
+        ? row.categories
+        : row.category ? [row.category] : [];
+      return {
+        id: `CLT-VND-${Date.now()}-${idx + 1}`,
+        name: row.name,
+        category: row.category,
+        categories,
+        subCategory: row.subCategory,
+        region: row.region,
+        regionLabel: `${row.region} (${row.city})`,
+        rating: 4.0,
+        reviewsCount: 0,
+        isRateCard: false,
+        rateCardCode: null,
+        rateCardStatus: 'Client Empanelled',
+        contactPerson: row.contactPerson,
+        gstin: row.gstin,
+        city: row.city,
+        leadTime: row.leadTime,
+        badgeText: 'Client Boarded Vendor',
+        capacity: row.capacity,
+        source: 'CLIENT_ONBOARDED',
+        tenantKey: activeTenantKey,
+        tenantName: activeTenantName,
+        email: row.email,
+        phone: row.phone,
+        evaluationStatus: 'PENDING_VENDOR_INPUT',
+        ppoRatings: [],
+        compositeRating: 4.0,
+        totalPPOsCompleted: 0,
+      };
+    });
 
     setManagedVendors((prev) => {
       const updated = [...createdVendors, ...prev];
@@ -153,8 +135,12 @@ export function useVendorManager(
     >
   ): void => {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const categories = vendorData.categories && vendorData.categories.length > 0
+      ? vendorData.categories
+      : vendorData.category ? [vendorData.category] : [];
     const newVendor: ManagedVendor = {
       ...vendorData,
+      categories,
       id: `CLT-VND-${Date.now()}`,
       source: 'CLIENT_ONBOARDED',
       tenantKey: activeTenantKey,
@@ -306,6 +292,133 @@ export function useVendorManager(
     logger.info('context/vendor-manager', 'Dispatched vendor evaluation invite', { vendorId, email });
   };
 
+  const updateVendorCataloguePrices = (
+    vendorId: string,
+    prices: Record<string, VendorCatalogueItemPrice>
+  ): void => {
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    setManagedVendors((prev) => {
+      const updated = prev.map((vendor) => {
+        if (vendor.id !== vendorId) return vendor;
+        const mergedPrices = {
+          ...(vendor.cataloguePrices || {}),
+          ...prices,
+        };
+        const currentStatus = vendor.catalogueStatus || {
+          hasSubmittedPrices: false,
+          intimationSent: false,
+        };
+        const updatedStatus: VendorCatalogueStatus = {
+          ...currentStatus,
+          hasSubmittedPrices: true,
+          lastSubmittedAt: timestamp,
+        };
+        return {
+          ...vendor,
+          cataloguePrices: mergedPrices,
+          catalogueStatus: updatedStatus,
+        };
+      });
+      persistVendorsToStorage(updated);
+      return updated;
+    });
+
+    const itemsCount = Object.keys(prices).length;
+    setAuditLogs((prev) => [
+      {
+        time: timestamp,
+        user: `${activeTenantName} Vendor Management`,
+        action: `Committed standard BOQ catalogue rates for vendor ${vendorId} (${itemsCount} items).`,
+      },
+      ...prev,
+    ]);
+
+    logger.info('context/vendor-manager', 'Vendor catalogue prices updated', {
+      vendorId,
+      itemsCount,
+    });
+  };
+
+  const sendVendorCatalogueIntimation = (
+    input: SendCatalogueIntimationInput
+  ): void => {
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const deadlineDate = input.customDeadline
+      ? input.customDeadline
+      : new Date(Date.now() + input.deadlineDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    setManagedVendors((prev) => {
+      const updated = prev.map((vendor) => {
+        if (vendor.id !== input.vendorId) return vendor;
+        const existingStatus = vendor.catalogueStatus || {
+          hasSubmittedPrices: false,
+          intimationSent: false,
+        };
+        const updatedStatus: VendorCatalogueStatus = {
+          ...existingStatus,
+          intimationSent: true,
+          intimationSentAt: timestamp,
+          intimationDeadline: deadlineDate,
+          intimationDaysAllowed: input.deadlineDays,
+          intimationNotes: input.notes,
+        };
+        return {
+          ...vendor,
+          catalogueStatus: updatedStatus,
+        };
+      });
+      persistVendorsToStorage(updated);
+      return updated;
+    });
+
+    setAuditLogs((prev) => [
+      {
+        time: timestamp,
+        user: `${activeTenantName} Category Head`,
+        action: `Dispatched catalogue pricing intimation to vendor ${input.vendorId}. Deadline: ${deadlineDate}.`,
+      },
+      ...prev,
+    ]);
+
+    logger.info('context/vendor-manager', 'Dispatched catalogue pricing intimation', {
+      vendorId: input.vendorId,
+      deadlineDate,
+    });
+  };
+
+  const updateVendorCategories = (
+    vendorId: string,
+    categories: string[]
+  ): void => {
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    setManagedVendors((prev) => {
+      const updated = prev.map((vendor) => {
+        if (vendor.id !== vendorId) return vendor;
+        return {
+          ...vendor,
+          categories,
+          category: categories[0] || vendor.category,
+        };
+      });
+      persistVendorsToStorage(updated);
+      return updated;
+    });
+
+    setAuditLogs((prev) => [
+      {
+        time: timestamp,
+        user: `${activeTenantName} Category Head`,
+        action: `Updated category assignments for vendor ${vendorId}: ${categories.join(', ')}.`,
+      },
+      ...prev,
+    ]);
+
+    logger.info('context/vendor-manager', 'Updated vendor categories', {
+      vendorId,
+      categories,
+    });
+  };
+
   const resetVendors = (): void => {
     setManagedVendors(SEED_MANAGED_VENDORS);
     persistVendorsToStorage(SEED_MANAGED_VENDORS);
@@ -318,6 +431,9 @@ export function useVendorManager(
     submitVendorEvaluation,
     submitPPORating,
     sendEvaluationInvite,
+    updateVendorCataloguePrices,
+    sendVendorCatalogueIntimation,
+    updateVendorCategories,
     resetVendors,
   };
 }

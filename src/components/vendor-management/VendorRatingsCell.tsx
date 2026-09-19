@@ -10,7 +10,7 @@ interface VendorRatingsCellProps {
 
 export const VendorRatingsCell: React.FC<VendorRatingsCellProps> = ({ vendor }) => {
   return (
-    <td className="py-3.5 px-4">
+    <td className="py-3.5 px-4 align-middle">
       <div className="space-y-1">
         <div className="flex items-center space-x-1.5">
           <div className="flex text-amber-500">

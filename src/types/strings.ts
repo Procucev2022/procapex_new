@@ -298,6 +298,7 @@ export interface UIStringsVendorPortal {
   tabRfqSummary: string;
   tabQuotationSummary: string;
   tabPPOAward: string;
+  tabCataloguePricing: string;
   proceedToQuotation: string;
   rfqDetailsTitle: string;
   scopeSpecTitle: string;
@@ -397,6 +398,23 @@ export interface UIStringsPRModule {
   drawingClearedNotice: string;
   drawingScanningState: string;
   itemAddedToStandardBOQSuccessTemplate: string;
+  aiBenchmarkRate: string;
+  aiBenchmarkAmount: string;
+  totalBenchmarkValue: string;
+  proceedToRaiseRFQ: string;
+  aiRefineTitle: string;
+  aiRefineSubtitle: string;
+  inputSpecsPrompt: string;
+  inputSpecsPlaceholder: string;
+  refineWithAiButton: string;
+  refiningButton: string;
+  refinedOutputHeading: string;
+  acceptRevisedButton: string;
+  correctAndAcceptButton: string;
+  acceptCorrectedButton: string;
+  aiRationaleLabel: string;
+  quickPromptsLabel: string;
+  refinedBadge: string;
 }
 
 export interface UIStringsCategoryManagerHub {
@@ -414,6 +432,7 @@ export interface UIStringsCategoryManagerHub {
   tabPPO: string;
   raiseRFQ: string;
   cbaMatrix: string;
+  negotiationShortcut: string;
   awardPPO: string;
   awardL1: string;
   awardNonL1: string;
@@ -431,6 +450,18 @@ export interface UIStringsCategoryManagerHub {
   quote2Col: string;
   offer1Col: string;
   offer2Col: string;
+  subTabGeneral: string;
+  subTabSuppliers: string;
+  subTabDelivery: string;
+  subTabTerms: string;
+  subTabDocuments: string;
+  submitRFQ: string;
+  rfqSuccessfullySubmitted: string;
+  openCommercialMatrix: string;
+  filterClientOnboarded: string;
+  createBlankRFQ: string;
+  noSuppliersNominated: string;
+  searchVendorPlaceholder: string;
 }
 
 export interface UIStringsModals {
@@ -641,6 +672,43 @@ export interface UIStringsVendorManagement {
   viewProfileDrawerTitle: string;
   tabGeneralEvaluation: string;
   tabCategoryEvaluation: string;
+  tabCataloguePricing: string;
+  tabCataloguePricingSubtitle: string;
+  rfqIsolationNotice: string;
+  rfqIsolationDescription: string;
+  aiCostingNotice: string;
+  sendIntimationButton: string;
+  sendIntimationModalTitle: string;
+  sendIntimationModalSubtitle: string;
+  intimationTimelineLabel: string;
+  intimationDaysPreset7: string;
+  intimationDaysPreset14: string;
+  intimationDaysPreset30: string;
+  intimationDaysPresetCustom: string;
+  intimationCustomDateLabel: string;
+  intimationNotesLabel: string;
+  intimationNotesPlaceholder: string;
+  intimationConfirmSendButton: string;
+  intimationStatusSentTemplate: string;
+  intimationStatusDeadlineTemplate: string;
+  intimationStatusPending: string;
+  intimationStatusSubmitted: string;
+  cataloguePricingSaveButton: string;
+  cataloguePricingSavedNotice: string;
+  colItemCode: string;
+  colItemDescription: string;
+  colCategory: string;
+  colUOM: string;
+  colBenchmarkRate: string;
+  colVendorRate: string;
+  colVariance: string;
+  colStatus: string;
+  noStandardBOQForCategories: string;
+  multiCategorySelectLabel: string;
+  multiCategorySelectHint: string;
+  assignedCategoriesBadgeTemplate: string;
+  rateCardLockedNotice: string;
+  rateCardUpdatePrompt: string;
 }
 
 export interface UIStringsCategoryStandardBOQMaster {
@@ -771,6 +839,117 @@ export interface UIStringsCategoryStandardBOQMaster {
   itemCreatedSuccessTemplate: string;
 }
 
+export interface UIStringsRateCards {
+  title: string;
+  subtitle: string;
+  badge: string;
+  tabActiveRateCards: string;
+  tabCreateProposal: string;
+  tabNegotiations: string;
+  activeAgreementsTitle: string;
+  createProposalTitle: string;
+  selectCategoryLabel: string;
+  selectVendorLabel: string;
+  aiCostHeader: string;
+  recentBestRateHeader: string;
+  lastPpoRateHeader: string;
+  proposedRateHeader: string;
+  applyLastPpoRateButton: string;
+  adoptAiCostButton: string;
+  submitProposalButton: string;
+  sellerCounterRateHeader: string;
+  finalAgreedRateHeader: string;
+  acceptCounterOfferButton: string;
+  finalizeRateCardButton: string;
+  statusDraft: string;
+  statusProposalSent: string;
+  statusCounterOffered: string;
+  statusFinalised: string;
+  fastTrackBadge: string;
+  fastTrackButton: string;
+  addToRateCardCheckbox: string;
+  rateCardCreatedSuccessTemplate: string;
+  rateCardUpdatedSuccessTemplate: string;
+  itemAddedToRateCardSuccessTemplate: string;
+  coverageBadgeTemplate: string;
+  coverageFull: string;
+  coveragePartial: string;
+  coverageNone: string;
+  tabRateCard: string;
+  stdBOQCoverageTitle: string;
+  stdBOQCoverageBadgeTemplate: string;
+  stdBOQCoverageDetailTemplate: string;
+  vendorProfileTabTitle: string;
+  rateCardReferenceTitle: string;
+  rateCardAcceptanceTitle: string;
+  confirmRateCardButton: string;
+  submitCounterOfferButton: string;
+  acceptanceDeclaration: string;
+  signatoryNameLabel: string;
+  digitalConfirmationStamp: string;
+  confirmedBadge: string;
+  confirmedNoticeTemplate: string;
+  missingBOQItemsTitle: string;
+  missingBOQItemsSubtitle: string;
+  addBOQItemToRateCardButton: string;
+  coverageFilterAll: string;
+  coverageFilterRateCardOnly: string;
+  coverageFilterNonRateCard: string;
+}
+
+export interface UIStringsEAuction {
+  launchEAuctionButton: string;
+  tabEAuctionArena: string;
+  buyerConsoleTitle: string;
+  buyerConsoleSubtitle: string;
+  vendorArenaTitle: string;
+  vendorArenaSubtitle: string;
+  statusScheduled: string;
+  statusLive: string;
+  statusPaused: string;
+  statusExtended: string;
+  statusConcluded: string;
+  statusAwarded: string;
+  countdownLabel: string;
+  overtimeNotice: string;
+  startAuctionButton: string;
+  pauseAuctionButton: string;
+  resumeAuctionButton: string;
+  extendAuctionButton: string;
+  concludeAuctionButton: string;
+  simulateBidButton: string;
+  awardToL1Button: string;
+  backToNegotiationButton: string;
+  kpiBaselineBudget: string;
+  kpiStartingL1: string;
+  kpiCurrentL1: string;
+  kpiTotalSavings: string;
+  kpiTotalBids: string;
+  kpiActiveBidders: string;
+  leaderboardTitle: string;
+  rankCol: string;
+  bidderCol: string;
+  currentBidCol: string;
+  varianceCol: string;
+  bidsCountCol: string;
+  statusCol: string;
+  liveBidStreamTitle: string;
+  liveBidStreamSubtitle: string;
+  vendorStandingLeading: string;
+  vendorStandingOutbid: string;
+  quickBidLabel: string;
+  customBidLabel: string;
+  submitBidButton: string;
+  minDecrementLabelTemplate: string;
+  minNextEligibleBidTemplate: string;
+  autoBidTitle: string;
+  autoBidSubtitle: string;
+  autoBidFloorLabel: string;
+  saveAutoBidButton: string;
+  bidConfirmationDeclaration: string;
+  awardSuccessNoticeTemplate: string;
+}
+
 export interface UIStringsDictionary {
   common: UIStringsCommon;
   header: UIStringsHeader;
@@ -792,5 +971,7 @@ export interface UIStringsDictionary {
   pricingTiers: UIStringsPricingTiers;
   vendorManagement: UIStringsVendorManagement;
   categoryStandardBOQMaster: UIStringsCategoryStandardBOQMaster;
+  rateCards: UIStringsRateCards;
+  eauction: UIStringsEAuction;
 }
 

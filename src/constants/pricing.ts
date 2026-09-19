@@ -13,6 +13,7 @@ export const PRICING_TIERS: Record<PricingTierId, PricingTierConfig> = {
     summary: 'Executive capital planning, standard category BOQs, rate card benchmarking, and baseline controls.',
     allowedModules: [
       'budget_planning',
+      'rate_cards',
       'vendor_portal',
       'tenant_overview',
       'masters',
@@ -44,6 +45,7 @@ export const PRICING_TIERS: Record<PricingTierId, PricingTierConfig> = {
       'budget_planning',
       'boq_rfq_management',
       'category_standard_boq_master',
+      'rate_cards',
       'vendor_management',
       'vendor_portal',
       'tenant_overview',
@@ -82,6 +84,7 @@ export const PRICING_TIERS: Record<PricingTierId, PricingTierConfig> = {
       'budget_planning',
       'boq_rfq_management',
       'category_standard_boq_master',
+      'rate_cards',
       'vendor_management',
       'vendor_negotiation_hub',
       'ppo_workorders',

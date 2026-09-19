@@ -19,7 +19,7 @@ export const INITIAL_PRS: PurchaseRequest[] = [
     reqDate: '2026-09-25',
     status: 'SUBMITTED',
     buyer: 'Vikram Mehta (Category Manager)',
-    nominatedVendors: ['VND-001', 'VND-002', 'CLT-VND-003'],
+    nominatedVendors: [],
     remarks: 'Reception Counter & Lobby Joinery Package (PKG-2026-INT-001). 6 items, 4 drawings attached.',
     items: [
       {
@@ -124,7 +124,7 @@ export const INITIAL_PRS: PurchaseRequest[] = [
     reqDate: '2026-09-15',
     status: 'ACCEPTED',
     buyer: 'Vikram Mehta (Buyer)',
-    nominatedVendors: ['VND-011', 'VND-012'],
+    nominatedVendors: [],
     remarks: 'Requirement for Pier Cap 101 to 115. Mill test certs required.',
     items: [
       { code: 'STL-TMT-25MM', desc: 'TMT Reinforcement Steel Bars Fe500D 25mm dia', uom: 'Ton', qty: 150, rateCard: 54000, benchmark: 53200, std: 54500, aiConf: '98%' },
@@ -141,7 +141,7 @@ export const INITIAL_PRS: PurchaseRequest[] = [
     reqDate: '2026-09-01',
     status: 'ACCEPTED',
     buyer: 'Vikram Mehta (Buyer)',
-    nominatedVendors: ['VND-003', 'VND-004'],
+    nominatedVendors: [],
     remarks: 'Pumping and transit mixer supply included with temperature monitoring.',
     items: [
       { code: 'CON-RMC-M30', desc: 'Design Mix Concrete M30 with Fly Ash & Superplasticizer', uom: 'Cum', qty: 450, rateCard: 4200, benchmark: 4350, std: 4150, aiConf: '99%' },
@@ -157,7 +157,7 @@ export const INITIAL_PRS: PurchaseRequest[] = [
     reqDate: '2026-10-10',
     status: 'SUBMITTED',
     buyer: 'Unassigned',
-    nominatedVendors: ['VND-014', 'VND-015'],
+    nominatedVendors: [],
     remarks: 'High efficiency VFD chillers with BMS integration.',
     items: [
       { code: 'MEP-CHL-200TR', desc: 'Water Cooled Screw Chiller Unit 200 TR Capacity', uom: 'Nos', qty: 2, rateCard: 3800000, benchmark: 3650000, std: 3750000, aiConf: '92%' },
@@ -275,7 +275,7 @@ export const INITIAL_CIRCULATED_RFQS: Record<string, VendorRFQItem> = {
     closureDate: '2026-09-28',
     site: 'Tower C Reception Lobby, Godrej Woods, Sector 43, Noida',
     contact: 'Rajesh Sharma (+91 98765 43210)',
-    invitedVendors: ['VND-001', 'VND-002', 'CLT-VND-003'],
+    invitedVendors: [],
     status: 'PENDING',
     itemsCount: 6,
     items: INITIAL_PRS[0].items,
@@ -289,7 +289,7 @@ export const INITIAL_CIRCULATED_RFQS: Record<string, VendorRFQItem> = {
     closureDate: '2026-10-15',
     site: 'HVAC Plant Room & Floor 4-8 AHU, Godrej One, Mumbai',
     contact: 'Anil Deshmukh (+91 98330 44556)',
-    invitedVendors: ['VND-014', 'VND-015'],
+    invitedVendors: [],
     status: 'PENDING',
     itemsCount: 1,
     items: INITIAL_PRS[3].items,

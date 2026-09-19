@@ -19,14 +19,19 @@ export const TenantOverview: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-950 text-white rounded-2xl p-6 shadow-sm border border-slate-800">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
-            <Building2 className="w-6 h-6" />
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30 flex items-center justify-center font-bold shrink-0">
+            <Building2 className="w-5 h-5 text-sky-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-black">{UI_STRINGS.tenantOverview.title}</h1>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                MULTI-TENANT ARCHITECTURE
+              </span>
+            </div>
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">{UI_STRINGS.tenantOverview.title}</h1>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
               {UI_STRINGS.tenantOverview.subtitle}
             </p>
           </div>
@@ -34,7 +39,7 @@ export const TenantOverview: React.FC = () => {
       </div>
 
       {/* 3 PRICING MODELS ARCHITECTURE SECTION */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+      <div className="bg-white rounded-2xl border border-blue-200 p-6 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <div className="flex items-center space-x-2">
@@ -68,7 +73,7 @@ export const TenantOverview: React.FC = () => {
                 key={tierId}
                 className={`rounded-2xl p-5 border flex flex-col justify-between space-y-4 transition-all ${
                   isTier3
-                    ? 'border-indigo-400/60 bg-gradient-to-b from-indigo-50/50 via-white to-white shadow-md ring-1 ring-indigo-300/50'
+                    ? 'border-blue-300 bg-blue-50/50 shadow-md ring-1 ring-blue-200'
                     : isTier2
                     ? 'border-sky-300 bg-sky-50/30 shadow-sm'
                     : 'border-slate-200 bg-slate-50/40'

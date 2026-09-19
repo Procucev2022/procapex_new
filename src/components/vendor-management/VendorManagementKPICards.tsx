@@ -13,7 +13,7 @@ export const VendorManagementKPICards: React.FC<VendorManagementKPICardsProps> =
   return (
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
       {/* Total Empanelled */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+      <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-sm space-y-1">
         <div className="flex items-center justify-between text-slate-400">
           <span className="text-[10px] font-bold uppercase tracking-wider">
             {UI_STRINGS.vendorManagement.kpiTotalVendors}
@@ -49,7 +49,7 @@ export const VendorManagementKPICards: React.FC<VendorManagementKPICardsProps> =
       </div>
 
       {/* Evaluations Pending */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+      <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-sm space-y-1">
         <div className="flex items-center justify-between text-amber-600">
           <span className="text-[10px] font-bold uppercase tracking-wider">
             {UI_STRINGS.vendorManagement.kpiPendingEvaluations}
@@ -61,7 +61,7 @@ export const VendorManagementKPICards: React.FC<VendorManagementKPICardsProps> =
       </div>
 
       {/* PPO Rated Vendors */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 lg:col-span-1">
+      <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-sm space-y-1 col-span-2 lg:col-span-1">
         <div className="flex items-center justify-between text-slate-400">
           <span className="text-[10px] font-bold uppercase tracking-wider">
             {UI_STRINGS.vendorManagement.kpiPPORated}

@@ -85,7 +85,7 @@ export const CategoryBudgetSummary: React.FC<CategoryBudgetSummaryProps> = ({
       </div>
 
       {/* Built-up Area (Sq. Ft.) Provision & Rate Banner */}
-      <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white">
+      <div className="mt-6 p-4 rounded-xl bg-brand-900 text-white border border-brand-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* Area Provision Input */}
           <div className="flex-1 max-w-md">
@@ -169,10 +169,10 @@ export const CategoryBudgetSummary: React.FC<CategoryBudgetSummaryProps> = ({
       </div>
 
       {/* Category Summary Breakdown Table */}
-      <div className="overflow-x-auto mt-6 border border-slate-200/80 rounded-xl">
+      <div className="overflow-x-auto mt-6 border border-blue-200 rounded-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
+            <tr className="bg-blue-50/80 text-blue-950 font-bold border-b-2 border-blue-200">
               <th className="py-3 px-4">{strings.thCategory}</th>
               <th className="py-3 px-3 text-center">{strings.thItems}</th>
               <th className="py-3 px-4 text-right">{strings.thBaseline}</th>
@@ -183,7 +183,7 @@ export const CategoryBudgetSummary: React.FC<CategoryBudgetSummaryProps> = ({
               <th className="py-3 px-4 text-center">{strings.thAction}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-blue-100">
             {metrics.map((row) => {
               const isSurplus = row.varianceAmount >= 0;
               return (

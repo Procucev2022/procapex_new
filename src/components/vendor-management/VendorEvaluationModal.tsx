@@ -119,7 +119,7 @@ export const VendorEvaluationModal: React.FC<VendorEvaluationModalProps> = ({
         </div>
 
         {/* Real-time System Scoring Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-brand-900 text-white rounded-2xl p-5 shadow-md border border-brand-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center">
               <Star className="w-3.5 h-3.5 mr-1 fill-amber-400" />
@@ -222,7 +222,7 @@ export const VendorEvaluationModal: React.FC<VendorEvaluationModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="py-2.5 px-5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+                className="py-2.5 px-5 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
               >
                 <Award className="w-4 h-4" />
                 <span>{UI_STRINGS.vendorManagement.submitEvaluationButton}</span>

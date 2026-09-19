@@ -12,9 +12,22 @@ export const MastersAudit: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-slate-900">{UI_STRINGS.mastersAudit.title}</h2>
-        <p className="text-xs text-slate-500">{UI_STRINGS.mastersAudit.subtitle}</p>
+      {/* Top Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30 flex items-center justify-center font-bold shrink-0">
+            <Database className="w-5 h-5 text-sky-300" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                SYSTEM GOVERNANCE
+              </span>
+            </div>
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">{UI_STRINGS.mastersAudit.title}</h1>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">{UI_STRINGS.mastersAudit.subtitle}</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

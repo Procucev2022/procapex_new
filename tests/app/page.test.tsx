@@ -14,7 +14,6 @@ jest.mock('../../src/components/Header', () => ({
       <button onClick={() => setCurrentTab('boq_raiser_studio')}>Tab BOQ</button>
       <button onClick={() => setCurrentTab('prs')}>Tab PRS</button>
       <button onClick={() => setCurrentTab('boq')}>Tab BOQ Alias</button>
-      <button onClick={() => setCurrentTab('pr_approval_queue')}>Tab PR Queue</button>
       <button onClick={() => setCurrentTab('category_manager_hub')}>Tab CM</button>
       <button onClick={() => setCurrentTab('commercial')}>Tab Commercial</button>
       <button onClick={() => setCurrentTab('ai-cost')}>Tab AICost</button>
@@ -25,7 +24,6 @@ jest.mock('../../src/components/Header', () => ({
       <button onClick={() => setCurrentTab('vendor_portal')}>Tab Vendor</button>
       <button onClick={() => setCurrentTab('tenant_overview')}>Tab Tenant</button>
       <button onClick={() => setCurrentTab('masters')}>Tab Masters</button>
-      <button onClick={onOpenNewPR}>Open New PR Header</button>
     </header>
   )
 }));
@@ -114,9 +112,6 @@ describe('Home Page (src/app/page.tsx)', () => {
     fireEvent.click(screen.getByText('Tab BOQ Alias'));
     expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Tab PR Queue'));
-    expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
-
     fireEvent.click(screen.getByText('Tab CM'));
     expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
     expect(screen.getByTestId('sub-tab').textContent).toBe('rfq_hub');
@@ -128,10 +123,10 @@ describe('Home Page (src/app/page.tsx)', () => {
     expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab Negotiation'));
-    expect(screen.getByTestId('negotiation-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab Vendor Negotiation Hub'));
-    expect(screen.getByTestId('negotiation-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Tab PPO'));
     expect(screen.getByTestId('ppo-module')).toBeInTheDocument();
@@ -167,72 +162,6 @@ describe('Home Page (src/app/page.tsx)', () => {
     // From BOQ & RFQ to Negotiation Hub
     fireEvent.click(screen.getByText('Tab BOQ RFQ'));
     fireEvent.click(screen.getByText('BOQ/RFQ Route to Neg'));
-    expect(screen.getByTestId('negotiation-hub')).toBeInTheDocument();
-
-    // Directly test Queue tab and route to BOQ/RFQ
-    fireEvent.click(screen.getByText('Tab PR Queue'));
-    expect(screen.getByTestId('pr-approval-queue')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Queue Route to CM'));
-    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
-  });
-
-  it('interacts with New PR Modal, inputs, cancel, X button, and form submit with/without custom fields', () => {
-    render(
-      <ProcurementProvider>
-        <Home />
-      </ProcurementProvider>
-    );
-
-    // Open via header button
-    fireEvent.click(screen.getByText('Open New PR Header'));
-    expect(screen.getByText(/Create New Purchase Request \(PR\)/i)).toBeInTheDocument();
-
-    // Close via Cancel
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    expect(screen.queryByText(/Create New Purchase Request \(PR\)/i)).not.toBeInTheDocument();
-
-    // Open via BOQ/RFQ module button
-    fireEvent.click(screen.getByText('Tab BOQ RFQ'));
-    fireEvent.click(screen.getByText('BOQ/RFQ Open Modal'));
-    expect(screen.getByText(/Create New Purchase Request \(PR\)/i)).toBeInTheDocument();
-
-    // Close via X button
-    const xButtons = screen.getAllByRole('button');
-    const xBtn = xButtons.find(b => b.querySelector('svg.lucide-x') !== null);
-    if (xBtn) {
-      fireEvent.click(xBtn);
-    }
-    expect(screen.queryByText(/Create New Purchase Request \(PR\)/i)).not.toBeInTheDocument();
-
-    // Reopen and fill inputs first
-    fireEvent.click(screen.getByText('Open New PR Header'));
-    const titleInput = screen.getByPlaceholderText(/Supply of Ready Mix Concrete M30/i);
-    const projectInput = screen.getByPlaceholderText(/Metro Line 4 Station/i);
-    const remarksInput = screen.getByPlaceholderText(/Additional specifications/i);
-
-    fireEvent.change(titleInput, { target: { value: 'Custom Steel Package' } });
-    fireEvent.change(projectInput, { target: { value: 'Skyline Tower 1' } });
-    fireEvent.change(remarksInput, { target: { value: 'Urgent procurement required' } });
-
-    // Select dropdowns
-    const selects = screen.getAllByRole('combobox');
-    if (selects.length >= 2) {
-      fireEvent.change(selects[0], { target: { value: 'CC-102 (Structural Steel)' } });
-      fireEvent.change(selects[1], { target: { value: 'Structural Steel' } });
-    }
-
-    // Change date input
-    const dateInput = screen.getByDisplayValue(/\d{4}-\d{2}-\d{2}/);
-    fireEvent.change(dateInput, { target: { value: '2026-10-15' } });
-
-    const submitBtn = screen.getByRole('button', { name: /Submit PR Requisition/i });
-    fireEvent.submit(submitBtn.closest('form')!);
-    expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
-
-    // Reopen and submit with empty title/project using fireEvent.submit to test fallback strings
-    fireEvent.click(screen.getByText('Open New PR Header'));
-    const submitBtn2 = screen.getByRole('button', { name: /Submit PR Requisition/i });
-    fireEvent.submit(submitBtn2.closest('form')!);
     expect(screen.getByTestId('boq-rfq-module')).toBeInTheDocument();
   });
 
@@ -311,7 +240,7 @@ describe('Home Page (src/app/page.tsx)', () => {
         <Home />
       </ProcurementProvider>
     );
-    expect(await screen.findByTestId('negotiation-hub')).toBeInTheDocument();
+    expect(await screen.findByTestId('boq-rfq-module')).toBeInTheDocument();
     window.location.hash = '';
   });
 });

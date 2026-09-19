@@ -34,24 +34,7 @@ export const BudgetPlanningModule: React.FC<BudgetPlanningModuleProps> = () => {
 
   return (
     <div className="space-y-6">
-      {/* Finance Manager Role Context Alert Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 shadow-sm border border-indigo-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5 text-indigo-400" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-indigo-200">
-              {strings.badge}
-            </div>
-            <div className="text-xs text-slate-300 font-medium">
-              {strings.financeRoleNotice}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 1. Executive Budget KPI & Baseline Overview */}
+      {/* 1. Executive Budget KPI & Baseline Overview (starts with Unified Dark Header Banner) */}
       <BudgetOverviewHeader
         budgetState={projectBudget}
         onContingencyChange={updateContingencyRate}
@@ -61,16 +44,33 @@ export const BudgetPlanningModule: React.FC<BudgetPlanningModuleProps> = () => {
         }}
       />
 
+      {/* Finance Manager Role Context Alert Banner */}
+      <div className="bg-blue-50/80 text-slate-900 rounded-2xl p-4 shadow-sm border border-blue-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-blue-900">
+              {strings.badge}
+            </div>
+            <div className="text-xs text-slate-600 font-medium">
+              {strings.financeRoleNotice}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 2. View Mode Toggle: Category Summary vs Detailed BOQs */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             type="button"
             onClick={() => setViewMode('summary')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'summary'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -81,8 +81,8 @@ export const BudgetPlanningModule: React.FC<BudgetPlanningModuleProps> = () => {
             onClick={() => setViewMode('detailed')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'detailed'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
           >
             <Table className="w-3.5 h-3.5" />

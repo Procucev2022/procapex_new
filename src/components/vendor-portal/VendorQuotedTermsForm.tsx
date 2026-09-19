@@ -67,7 +67,7 @@ export const VendorQuotedTermsForm: React.FC<VendorQuotedTermsFormProps> = ({
             className="w-full bg-white font-bold text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-purple-400"
           >
             <option value="PRESET_1">
-              10% Advance | 70% Progress RA | 10% Handover | 10% DLP (30D Credit) [PR Baseline Standard]
+              10% Advance | 70% Progress RA | 10% Handover | 10% DLP (30D Credit) [Target Baseline Standard]
             </option>
             <option value="PRESET_2">
               15% Advance | 75% Progress RA | 10% DLP (30D Credit) [Fast Track / Tooling Mobilization]

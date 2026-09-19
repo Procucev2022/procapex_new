@@ -34,8 +34,10 @@ export interface UseVendorPortalReturn {
   setActiveVendor: (vendorId: string) => void;
   activePR: string;
   setActivePR: (prId: string) => void;
-  activeTab: 'rfq' | 'quote' | 'ppo';
-  setActiveTab: (tab: 'rfq' | 'quote' | 'ppo') => void;
+  activeTab: 'rfq' | 'quote' | 'ppo' | 'rate_card' | 'catalogue' | 'eauction';
+  setActiveTab: (
+    tab: 'rfq' | 'quote' | 'ppo' | 'rate_card' | 'catalogue' | 'eauction'
+  ) => void;
   activeRound: 1 | 2 | 3 | 'all';
   setActiveRound: (round: 1 | 2 | 3 | 'all') => void;
   isAuthenticated: boolean;
@@ -189,7 +191,9 @@ export const useVendorPortal = (initialAuthenticated?: boolean): UseVendorPortal
 
   const [activeVendor, setActiveVendor] = useState<string>('VND-001');
   const [activePR, setActivePR] = useState<string>('PR-2026-0005');
-  const [activeTab, setActiveTab] = useState<'rfq' | 'quote' | 'ppo'>('rfq');
+  const [activeTab, setActiveTab] = useState<
+    'rfq' | 'quote' | 'ppo' | 'rate_card' | 'catalogue' | 'eauction'
+  >('rfq');
   const [activeRound, setActiveRound] = useState<1 | 2 | 3 | 'all'>(1);
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {

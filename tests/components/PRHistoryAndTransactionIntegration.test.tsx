@@ -86,7 +86,7 @@ describe('Requisition Pipeline & PR History Integration', () => {
       />
     );
 
-    expect(screen.getByText(/2 Requisitions in Registry/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 Packages in Registry/i)).toBeInTheDocument();
     expect(screen.getByText('PR-2026-0005')).toBeInTheDocument();
     expect(screen.getByText('PR-2026-0006')).toBeInTheDocument();
     expect(screen.getByText('Fabrication of Reception Counter')).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe('Requisition Pipeline & PR History Integration', () => {
     expect(onSelectPRForBOQ).toHaveBeenCalledWith('PR-2026-0005');
 
     // Trigger Raise New PR
-    const raiseNewBtn = screen.getByRole('button', { name: /Raise New PR/i });
+    const raiseNewBtn = screen.getByRole('button', { name: /New BOQ Package/i });
     fireEvent.click(raiseNewBtn);
     expect(onStartNewPR).toHaveBeenCalledTimes(1);
   });
@@ -119,7 +119,7 @@ describe('Requisition Pipeline & PR History Integration', () => {
       />
     );
 
-    const searchInput = screen.getByPlaceholderText(/Search by PR Number, Title, Project/i);
+    const searchInput = screen.getByPlaceholderText(/Search by Package ID, Title, Project/i);
     fireEvent.change(searchInput, { target: { value: 'Glass' } });
 
     expect(screen.queryByText('Fabrication of Reception Counter')).not.toBeInTheDocument();

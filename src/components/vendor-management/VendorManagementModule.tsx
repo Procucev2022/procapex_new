@@ -10,6 +10,7 @@ import {
   Search,
   Filter,
   KeyRound,
+  Send,
 } from 'lucide-react';
 import { useProcurement } from '@/context/ProcurementContext';
 import { UI_STRINGS } from '@/constants';
@@ -21,6 +22,7 @@ import { QuickAddVendorModal } from './QuickAddVendorModal';
 import { VendorEvaluationModal } from './VendorEvaluationModal';
 import { PPORatingModal } from './PPORatingModal';
 import { VendorCredibilityDrawer } from './VendorCredibilityDrawer';
+import { SendCatalogueIntimationModal } from './SendCatalogueIntimationModal';
 import type {
   ManagedVendor,
   VendorFilterSource,
@@ -29,6 +31,8 @@ import type {
   VendorPPORating,
   VendorManagementKPIs,
   VendorManagementModuleProps,
+  SendCatalogueIntimationInput,
+  VendorCatalogueItemPrice,
 } from '@/types';
 
 /**
@@ -80,6 +84,10 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
     sendEvaluationInvite,
     activeTenant,
     setActiveRole,
+    projectCategories,
+    updateVendorCataloguePrices,
+    sendVendorCatalogueIntimation,
+    updateVendorCategories,
   } = useProcurement();
 
   // Search & Filter State
@@ -93,10 +101,20 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
   const [selectedVendorForEval, setSelectedVendorForEval] = useState<ManagedVendor | null>(null);
   const [selectedVendorForPPO, setSelectedVendorForPPO] = useState<ManagedVendor | null>(null);
   const [selectedVendorForDossier, setSelectedVendorForDossier] = useState<ManagedVendor | null>(null);
+  const [dossierInitialTab, setDossierInitialTab] = useState<'credibility' | 'rate_card' | 'catalogue'>('credibility');
+  const [selectedVendorForIntimation, setSelectedVendorForIntimation] = useState<ManagedVendor | null>(null);
   const [onboardedNotice, setOnboardedNotice] = useState<{
     vendorName: string;
     vendorId?: string;
   } | null>(null);
+
+  const handleOpenDossier = (
+    vendor: ManagedVendor,
+    initialTab: 'credibility' | 'rate_card' | 'catalogue' = 'credibility'
+  ): void => {
+    setSelectedVendorForDossier(vendor);
+    setDossierInitialTab(initialTab);
+  };
 
   // Distinct Categories for Filter Dropdown
   const categories = useMemo(() => {
@@ -166,23 +184,88 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
     submitPPORating(vendorId, rating);
   };
 
+  const handleSaveCataloguePrices = (
+    vendorId: string,
+    prices: Record<string, VendorCatalogueItemPrice>
+  ): void => {
+    updateVendorCataloguePrices(vendorId, prices);
+    if (selectedVendorForDossier && selectedVendorForDossier.id === vendorId) {
+      const nowIso = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      setSelectedVendorForDossier((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          cataloguePrices: { ...(prev.cataloguePrices || {}), ...prices },
+          catalogueStatus: {
+            ...(prev.catalogueStatus || { intimationSent: false }),
+            hasSubmittedPrices: true,
+            lastSubmittedAt: nowIso,
+          },
+        };
+      });
+    }
+  };
+
+  const handleSendCatalogueIntimation = (
+    input: SendCatalogueIntimationInput
+  ): void => {
+    sendVendorCatalogueIntimation(input);
+    if (selectedVendorForDossier && selectedVendorForDossier.id === input.vendorId) {
+      const nowIso = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      const deadlineDate = input.customDeadline
+        ? input.customDeadline
+        : new Date(Date.now() + input.deadlineDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      setSelectedVendorForDossier((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          catalogueStatus: {
+            ...(prev.catalogueStatus || { hasSubmittedPrices: false }),
+            intimationSent: true,
+            intimationSentAt: nowIso,
+            intimationDaysAllowed: input.deadlineDays,
+            intimationDeadline: deadlineDate,
+            intimationNotes: input.notes,
+          },
+        };
+      });
+    }
+  };
+
+  const handleUpdateVendorCategories = (
+    vendorId: string,
+    cats: string[]
+  ): void => {
+    updateVendorCategories(vendorId, cats);
+    if (selectedVendorForDossier && selectedVendorForDossier.id === vendorId) {
+      setSelectedVendorForDossier((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          categories: cats,
+          category: cats[0] || prev.category,
+        };
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Title */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div className="space-y-2 max-w-2xl">
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="max-w-2xl">
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] uppercase font-black tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
               {UI_STRINGS.vendorManagement.badge}
             </span>
-            <span className="text-xs text-slate-500 font-semibold">
-              Tenant: <strong className="text-slate-900">{activeTenant.name}</strong>
+            <span className="text-xs text-slate-300 font-semibold">
+              Tenant: <strong className="text-white">{activeTenant.name}</strong>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">
             {UI_STRINGS.vendorManagement.title}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+          <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
             {UI_STRINGS.vendorManagement.subtitle}
           </p>
         </div>
@@ -192,9 +275,9 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
           <a
             href={getVendorTemplateCSVDataUri()}
             download="Client_Vendor_Format_Template.csv"
-            className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer"
+            className="py-2.5 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold text-xs rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer shadow-xs"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <Download className="w-3.5 h-3.5 text-slate-300" />
             <span>{UI_STRINGS.vendorManagement.downloadTemplateButton}</span>
           </a>
 
@@ -210,10 +293,23 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
           <button
             type="button"
             onClick={() => setIsQuickAddModalOpen(true)}
-            className="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+            className="py-2.5 px-4 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>{UI_STRINGS.vendorManagement.quickAddButton}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              const target = filteredVendors[0] || managedVendors[0];
+              if (target) setSelectedVendorForIntimation(target);
+            }}
+            className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+            title="Send Price Update Intimation to vendor with fixed timeline"
+          >
+            <Send className="w-4 h-4" />
+            <span>Send Price Intimation</span>
           </button>
         </div>
       </div>
@@ -222,20 +318,20 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
       {onboardedNotice && (
         <div
           data-testid="vendor-onboarded-alert"
-          className="bg-emerald-950 text-white p-4 sm:p-5 rounded-3xl border border-emerald-500/50 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          className="bg-emerald-50 text-emerald-950 p-4 sm:p-5 rounded-2xl border border-emerald-300 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
-              <Building className="w-5 h-5 text-emerald-300" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0">
+              <Building className="w-5 h-5 text-emerald-700" />
             </div>
             <div className="space-y-0.5">
-              <div className="text-xs sm:text-sm font-extrabold text-emerald-200 flex items-center space-x-1.5">
+              <div className="text-xs sm:text-sm font-extrabold text-emerald-900 flex items-center space-x-1.5">
                 <span>🎉 Vendor Onboarded Successfully:</span>
-                <span className="text-white underline decoration-emerald-400">
+                <span className="text-emerald-800 underline decoration-emerald-500">
                   {onboardedNotice.vendorName}
                 </span>
               </div>
-              <p className="text-[11px] text-emerald-300/90 font-mono">
+              <p className="text-[11px] text-emerald-700 font-mono">
                 Vendor Role Credentials: <strong>User ID: welcome</strong> |{' '}
                 <strong>Password: welcome</strong>
               </p>
@@ -255,7 +351,7 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
                 }
               }}
               data-testid="open-vendor-login-gate"
-              className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center space-x-1.5 cursor-pointer"
             >
               <KeyRound className="w-3.5 h-3.5" />
               <span>Go to Vendor Login Portal →</span>
@@ -279,14 +375,14 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
       {/* Search & Source Filter Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Source Segmented Switcher */}
-        <div className="inline-flex p-1 bg-slate-100 rounded-xl">
+        <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
           <button
             type="button"
             onClick={() => setSourceFilter('ALL')}
             className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               sourceFilter === 'ALL'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
           >
             {UI_STRINGS.vendorManagement.filterAll} ({kpis.totalVendors})
@@ -297,8 +393,8 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
             onClick={() => setSourceFilter('CLIENT_ONBOARDED')}
             className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer ${
               sourceFilter === 'CLIENT_ONBOARDED'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-emerald-800 hover:text-emerald-950'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
           >
             <Building className="w-3 h-3" />
@@ -310,8 +406,8 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
             onClick={() => setSourceFilter('PROCAPX_PLATFORM')}
             className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer ${
               sourceFilter === 'PROCAPX_PLATFORM'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'text-sky-800 hover:text-sky-950'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
           >
             <Globe className="w-3 h-3" />
@@ -355,7 +451,8 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
         vendors={filteredVendors}
         onOpenEvaluation={(vendor) => setSelectedVendorForEval(vendor)}
         onOpenPPORating={(vendor) => setSelectedVendorForPPO(vendor)}
-        onOpenDossier={(vendor) => setSelectedVendorForDossier(vendor)}
+        onOpenDossier={handleOpenDossier}
+        onOpenIntimation={(vendor) => setSelectedVendorForIntimation(vendor)}
         onSendInvite={sendEvaluationInvite}
       />
 
@@ -363,7 +460,19 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
       <VendorCredibilityDrawer
         isOpen={Boolean(selectedVendorForDossier)}
         vendor={selectedVendorForDossier}
+        initialTab={dossierInitialTab}
         onClose={() => setSelectedVendorForDossier(null)}
+        projectCategories={projectCategories}
+        onSaveCataloguePrices={handleSaveCataloguePrices}
+        onOpenIntimationModal={(v) => setSelectedVendorForIntimation(v)}
+        onUpdateCategories={handleUpdateVendorCategories}
+      />
+
+      <SendCatalogueIntimationModal
+        isOpen={Boolean(selectedVendorForIntimation)}
+        vendor={selectedVendorForIntimation}
+        onClose={() => setSelectedVendorForIntimation(null)}
+        onSend={handleSendCatalogueIntimation}
       />
 
       <VendorUploadModal
@@ -376,6 +485,7 @@ export const VendorManagementModule: React.FC<VendorManagementModuleProps> = ({
         isOpen={isQuickAddModalOpen}
         onClose={() => setIsQuickAddModalOpen(false)}
         onSubmit={handleQuickAddSubmit}
+        availableCategories={projectCategories.map((c) => c.name)}
       />
 
       <VendorEvaluationModal

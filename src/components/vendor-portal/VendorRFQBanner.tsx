@@ -21,11 +21,11 @@ export const VendorRFQBanner: React.FC<VendorRFQBannerProps> = ({
 }) => {
   const containerClass = rfqAccepted
     ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
-    : 'bg-gradient-to-r from-purple-900 via-slate-900 to-purple-950 text-white border-purple-700';
+    : 'bg-brand-900 text-white border-brand-800';
 
   const badgeClass = rfqAccepted
     ? 'bg-emerald-200 text-emerald-900 border border-emerald-400'
-    : 'bg-purple-500/30 text-purple-300 border border-purple-400/40';
+    : 'bg-blue-50/20 text-sky-200 border border-sky-400/30';
 
   const badgeText = rfqAccepted ? UI_STRINGS.vendorPortal.activeBidder : 'Action Required: Participation Invitation';
   const headingText = rfqAccepted ? UI_STRINGS.vendorPortal.rfqAccepted : 'Confirm RFQ Participation & Bidding Acceptance';

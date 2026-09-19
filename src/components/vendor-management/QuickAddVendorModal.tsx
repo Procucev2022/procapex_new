@@ -14,15 +14,27 @@ interface QuickAddVendorModalProps {
       'id' | 'source' | 'evaluationStatus' | 'ppoRatings' | 'compositeRating' | 'totalPPOsCompleted'
     >
   ) => void;
+  availableCategories?: string[];
 }
+
+const DEFAULT_CATEGORIES = [
+  'Civil & Structural Works',
+  'Interior & Fitouts',
+  'MEP (Mechanical & Electrical)',
+  'Facade & External Works',
+];
 
 export const QuickAddVendorModal: React.FC<QuickAddVendorModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  availableCategories,
 }) => {
   const [name, setName] = useState<string>('');
-  const [category, setCategory] = useState<string>('Civil & Structural Works');
+  const allCategories = availableCategories && availableCategories.length > 0
+    ? availableCategories
+    : DEFAULT_CATEGORIES;
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([allCategories[0]]);
   const [subCategory, setSubCategory] = useState<string>('General Contracting & Civil Works');
   const [gstin, setGstin] = useState<string>('');
   const [contactPerson, setContactPerson] = useState<string>('');
@@ -35,11 +47,23 @@ export const QuickAddVendorModal: React.FC<QuickAddVendorModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleToggleCategory = (cat: string): void => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((c) => c !== cat);
+      }
+      return [...prev, cat];
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
+    const primaryCategory = selectedCategories[0] || 'Civil & Structural Works';
     onSubmit({
       name,
-      category,
+      category: primaryCategory,
+      categories: selectedCategories,
       subCategory,
       region,
       regionLabel: `${region} (${city})`,
@@ -101,19 +125,34 @@ export const QuickAddVendorModal: React.FC<QuickAddVendorModalProps> = ({
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="procurement-category-select" className="block font-bold text-slate-700">Procurement Category *</label>
-              <select
-                id="procurement-category-select"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full border rounded-xl p-2.5 bg-slate-50 focus:bg-white border-slate-200"
-              >
-                <option value="Civil & Structural Works">Civil & Structural Works</option>
-                <option value="Interior & Fitouts">Interior & Fitouts</option>
-                <option value="MEP (Mechanical & Electrical)">MEP (Mechanical & Electrical)</option>
-                <option value="Facade & External Works">Facade & External Works</option>
-              </select>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="block font-bold text-slate-700">
+                <span>{UI_STRINGS.vendorManagement.multiCategorySelectLabel}</span>
+                <span className="text-rose-500 ml-0.5">*</span>
+              </label>
+              <p className="text-[11px] text-slate-500">
+                {UI_STRINGS.vendorManagement.multiCategorySelectHint}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                {allCategories.map((cat) => {
+                  const isSelected = selectedCategories.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => handleToggleCategory(cat)}
+                      className={`p-2.5 rounded-xl border text-left font-bold text-[11px] transition-all flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-sm'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="truncate pr-1">{cat}</span>
+                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-1">

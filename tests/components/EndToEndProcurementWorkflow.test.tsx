@@ -65,33 +65,26 @@ describe('End-to-End Procurement Workflow: PR to PPO and Vendor Profile Reflecti
     );
 
     // =========================================================================
-    // 1. PR MODULE: Verify Draft PR and Submit
+    // 1. BOQ STUDIO: Verify Draft BOQ and Proceed to Raise RFQ
     // =========================================================================
     expect(screen.getByText(UI_STRINGS.prModule.title)).toBeInTheDocument();
 
-    // Move to Step 7 (Documents & Review)
-    const reviewStepTab = screen.getByRole('button', {
-      name: new RegExp(UI_STRINGS.prModule.stepDocuments, 'i'),
+    // Click Proceed to Raise RFQ directly from BOQ Studio
+    const proceedToRfqBtns = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.prModule.proceedToRaiseRFQ, 'i'),
     });
-    fireEvent.click(reviewStepTab);
-
-    // Submit PR
-    const submitBtn = screen.getByRole('button', {
-      name: new RegExp(UI_STRINGS.prModule.submitPR, 'i'),
-    });
-    fireEvent.click(submitBtn);
-
-    // Verify submission feedback
-    expect(screen.getAllByText(/PR Successfully Submitted/i).length).toBeGreaterThan(0);
-
-    // Navigate to RFQ Hub using the confirmation button
-    const proceedToRfqBtn = screen.getByRole('button', { name: /Proceed to RFQ Hub/i });
-    fireEvent.click(proceedToRfqBtn);
+    fireEvent.click(proceedToRfqBtns[0]);
 
     // =========================================================================
     // 2. RFQ & COMMERCIAL COMMAND CENTER: Ingestion, RFQ tender, Commercial Matrix
     // =========================================================================
     expect(screen.getByText(UI_STRINGS.categoryManagerHub.title)).toBeInTheDocument();
+
+    // Select PR-2026-0005 package to evaluate the commercial quotation matrix and L1 award
+    const pr5Btn = screen.queryByRole('button', { name: 'PR-2026-0005' });
+    if (pr5Btn) {
+      fireEvent.click(pr5Btn);
+    }
 
     // Verify PR-2026-0005 is active in RFQ Hub
     expect(
