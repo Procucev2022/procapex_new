@@ -69,7 +69,7 @@ describe('Header Component', () => {
       />
     );
 
-    const roleSelect = screen.getByDisplayValue('1. BOQ & RFQ Management (Project Team & Category Manager)');
+    const roleSelect = screen.getByDisplayValue(UI_STRINGS.header.roleOptionBOQRFQManager);
 
     // 1. BOQ_RFQ_MANAGER
     fireEvent.change(roleSelect, { target: { value: 'BOQ_RFQ_MANAGER' } });
@@ -79,7 +79,7 @@ describe('Header Component', () => {
     // 2. VENDOR_NEGOTIATION_HUB
     fireEvent.change(roleSelect, { target: { value: 'VENDOR_NEGOTIATION_HUB' } });
     expect(mockSetActiveRole).toHaveBeenCalledWith('VENDOR_NEGOTIATION_HUB');
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('vendor_negotiation_hub');
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('boq_rfq_management');
 
     // 3. CATEGORY_MANAGER_2
     fireEvent.change(roleSelect, { target: { value: 'CATEGORY_MANAGER_2' } });
@@ -104,7 +104,6 @@ describe('Header Component', () => {
       <Header
         currentTab="dashboard"
         setCurrentTab={mockSetCurrentTab}
-        onOpenNewPR={mockOnOpenNewPR}
       />
     );
 
@@ -128,28 +127,10 @@ describe('Header Component', () => {
       <Header
         currentTab="budget_planning"
         setCurrentTab={mockSetCurrentTab}
-        onOpenNewPR={mockOnOpenNewPR}
       />
     );
 
     expect(screen.getByText(UI_STRINGS.header.financeManagerActiveLabel)).toBeInTheDocument();
-  });
-
-  it('handles "Raise New PR" button click', () => {
-    render(
-      <Header
-        currentTab="dashboard"
-        setCurrentTab={mockSetCurrentTab}
-        onOpenNewPR={mockOnOpenNewPR}
-      />
-    );
-
-    const raiseBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.header.raisePRButton, 'i') });
-    fireEvent.click(raiseBtn);
-
-    expect(mockSetActiveRole).toHaveBeenCalledWith('BOQ_RFQ_MANAGER');
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('boq_rfq_management');
-    expect(mockOnOpenNewPR).toHaveBeenCalled();
   });
 
   it('renders all nav tab items and switches active tab on click', () => {
@@ -157,14 +138,13 @@ describe('Header Component', () => {
       <Header
         currentTab="dashboard"
         setCurrentTab={mockSetCurrentTab}
-        onOpenNewPR={mockOnOpenNewPR}
       />
     );
 
     const tabLabels = [
-      '2. BOQ & RFQ Management Module',
-      '4. PPO Approvals',
-      '5. Vendor Portal (Bidding)',
+      'BOQ Studio & RFQ Management',
+      'PPO Approvals',
+      'Vendor Portal (Bidding)',
       'Tenant Hierarchy',
       'Masters & Audit',
     ];
@@ -176,15 +156,15 @@ describe('Header Component', () => {
     });
 
     // Also click Budget Planning tab
-    const budgetTabBtn = screen.getByRole('button', { name: /1\. Budget Planning Module/i });
+    const budgetTabBtn = screen.getByRole('button', { name: /Project Cost Budget Planning/i });
     expect(budgetTabBtn).toBeInTheDocument();
     fireEvent.click(budgetTabBtn);
     expect(mockSetCurrentTab).toHaveBeenCalledWith('budget_planning');
 
-    // Also click Vendor Negotiation Hub tab
-    const negTabBtn = screen.getByRole('button', { name: /3\. Vendor Negotiation Hub/i });
-    expect(negTabBtn).toBeInTheDocument();
-    fireEvent.click(negTabBtn);
-    expect(mockSetCurrentTab).toHaveBeenCalledWith('vendor_negotiation_hub');
+    // Also click PPO Approvals tab
+    const ppoTabBtn = screen.getByRole('button', { name: /PPO Approvals/i });
+    expect(ppoTabBtn).toBeInTheDocument();
+    fireEvent.click(ppoTabBtn);
+    expect(mockSetCurrentTab).toHaveBeenCalledWith('ppo_workorders');
   });
 });

@@ -60,16 +60,16 @@ export const VendorLoginView: React.FC<VendorLoginViewProps> = ({
   return (
     <div className="max-w-xl mx-auto py-8 px-4 sm:px-6">
       {/* Container Card */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden transition-all">
+      <div className="bg-white rounded-3xl border border-blue-200 shadow-xl overflow-hidden transition-all">
         {/* Brand Banner */}
-        <div className="bg-gradient-to-r from-purple-950 via-brand-950 to-slate-900 text-white p-6 sm:p-8 relative overflow-hidden border-b border-purple-800/60">
+        <div className="bg-brand-900 text-white p-6 sm:p-8 relative overflow-hidden border-b border-brand-800">
           <div className="relative z-10 space-y-2">
             <div className="flex items-center space-x-2">
-              <span className="bg-purple-500/30 text-purple-300 border border-purple-400/40 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full flex items-center space-x-1">
+              <span className="bg-blue-50/20 text-sky-200 border border-sky-400/40 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full flex items-center space-x-1">
                 <Store className="w-3 h-3" />
                 <span>{UI_STRINGS.vendorPortal.roleBadge}</span>
               </span>
-              <span className="text-[11px] text-purple-200/80 font-mono">
+              <span className="text-[11px] text-sky-200/80 font-mono">
                 ProCapX Supplier Network
               </span>
             </div>
@@ -200,7 +200,7 @@ export const VendorLoginView: React.FC<VendorLoginViewProps> = ({
             type="submit"
             data-testid="vendor-login-submit"
             disabled={isLoggingIn}
-            className="w-full py-3 px-4 bg-gradient-to-r from-purple-700 via-brand-700 to-slate-900 hover:from-purple-800 hover:to-black text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-75"
+            className="w-full py-3 px-4 bg-brand-900 hover:bg-brand-800 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-75"
           >
             {isLoggingIn ? (
               <>

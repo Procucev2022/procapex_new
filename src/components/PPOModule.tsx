@@ -115,35 +115,40 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-brand-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-emerald-800">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black">{UI_STRINGS.ppoModule.title}</h1>
-            <p className="text-xs text-slate-300 mt-1">
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                PPO &amp; PO COMMAND CENTER
+              </span>
+            </div>
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">{UI_STRINGS.ppoModule.title}</h1>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
               {UI_STRINGS.ppoModule.subtitle}
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center bg-brand-950/80 p-1.5 rounded-xl border border-sky-500/20 shrink-0 gap-1">
             <button
               onClick={() => setSubTab('WORKFLOW')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                subTab === 'WORKFLOW' ? 'bg-emerald-500 text-brand-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                subTab === 'WORKFLOW' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium'
               }`}
             >
               {UI_STRINGS.ppoModule.tabWorkflow}
             </button>
             <button
               onClick={() => setSubTab('PPO')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                subTab === 'PPO' ? 'bg-emerald-500 text-brand-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                subTab === 'PPO' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium'
               }`}
             >
               {formatString(UI_STRINGS.ppoModule.tabAllPPOsTemplate, { count: ppos.length })}
             </button>
             <button
               onClick={() => setSubTab('PO')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                subTab === 'PO' ? 'bg-emerald-500 text-brand-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                subTab === 'PO' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium'
               }`}
             >
               {formatString(UI_STRINGS.ppoModule.tabIssuedPOsTemplate, { count: pos.length })}
@@ -153,7 +158,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
       </div>
 
       {subTab === 'WORKFLOW' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-3 gap-2">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 flex-wrap">
@@ -285,13 +290,13 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
 
       {/* PPO LIST */}
       {subTab === 'PPO' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h3 className="text-sm font-bold text-slate-900">{UI_STRINGS.ppoModule.allPPOsTitle}</h3>
             {onOpenCreatePPO && (
               <button
                 onClick={onOpenCreatePPO}
-                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg flex items-center space-x-1"
+                className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{UI_STRINGS.ppoModule.createPPO}</span>
@@ -299,12 +304,12 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
             )}
           </div>
 
-          <div className="overflow-x-auto border rounded-xl">
+          <div className="overflow-x-auto border border-blue-200 rounded-xl">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-100 font-bold border-b text-slate-800">
+              <thead className="bg-blue-50/80 font-bold border-b-2 border-blue-200 text-blue-950">
                 <tr>
                   <th className="p-3">PPO Ref</th>
-                  <th className="p-3">Target PR</th>
+                  <th className="p-3">Package Ref</th>
                   <th className="p-3">Awarded Vendor</th>
                   <th className="p-3">Description</th>
                   <th className="p-3 text-right">Grand Total (INR)</th>
@@ -312,7 +317,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                   <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-blue-100">
                 {ppos.map(ppo => (
                   <tr key={ppo.id} className="hover:bg-slate-50">
                     <td className="p-3 font-mono font-bold text-sky-800">{ppo.id}</td>
@@ -347,11 +352,11 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
 
       {/* PO LIST */}
       {subTab === 'PO' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-6 space-y-4">
           <h3 className="text-sm font-bold text-slate-900">{UI_STRINGS.ppoModule.issuedPOsTitle}</h3>
-          <div className="overflow-x-auto border rounded-xl">
+          <div className="overflow-x-auto border border-blue-200 rounded-xl">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-100 font-bold border-b text-slate-800">
+              <thead className="bg-blue-50/80 font-bold border-b-2 border-blue-200 text-blue-950">
                 <tr>
                   <th className="p-3">PO Number</th>
                   <th className="p-3">PPO Ref</th>
@@ -362,7 +367,7 @@ export const PPOModule: React.FC<PPOModuleProps> = ({ onOpenCreatePPO }) => {
                   <th className="p-3 text-right">Download</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-blue-100">
                 {pos.map(po => (
                   <tr key={po.id} className="hover:bg-slate-50">
                     <td className="p-3 font-mono font-bold text-emerald-700">{po.id}</td>

@@ -96,7 +96,7 @@ export const RFQCirculationHistoryTable: React.FC<RFQCirculationHistoryTableProp
             <tr>
               <th className="p-3 w-10 text-center">#</th>
               <th className="p-3 min-w-[120px]">RFQ ID</th>
-              <th className="p-3 min-w-[110px]">Requisition</th>
+              <th className="p-3 min-w-[110px]">Package Ref</th>
               <th className="p-3 min-w-[220px]">Package Scope Description</th>
               <th className="p-3 min-w-[160px]">Project &amp; Location</th>
               <th className="p-3 min-w-[160px]">Invited Vendors</th>
@@ -141,14 +141,18 @@ export const RFQCirculationHistoryTable: React.FC<RFQCirculationHistoryTableProp
                   </td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1">
-                      {rfq.invitedVendors?.map((v) => (
-                        <span
-                          key={v}
-                          className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-mono border border-slate-300 font-bold"
-                        >
-                          {v}
-                        </span>
-                      ))}
+                      {rfq.invitedVendors && rfq.invitedVendors.length > 0 ? (
+                        rfq.invitedVendors.map((v) => (
+                          <span
+                            key={v}
+                            className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-mono border border-slate-300 font-bold"
+                          >
+                            {v}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">No suppliers nominated</span>
+                      )}
                     </div>
                   </td>
                   <td className="p-3 font-mono text-[11px] text-slate-600">

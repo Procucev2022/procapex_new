@@ -218,8 +218,9 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(ids).toContain('budget_planning');
       expect(ids).toContain('boq_rfq_management');
       expect(ids).toContain('category_standard_boq_master');
+      expect(ids).toContain('rate_cards');
       expect(ids).toContain('vendor_management');
-      expect(ids).toContain('vendor_negotiation_hub');
+      expect(ids).not.toContain('vendor_negotiation_hub');
       expect(ids).toContain('ppo_workorders');
       expect(ids).toContain('vendor_portal');
       expect(ids).toContain('tenant_overview');
@@ -363,7 +364,7 @@ describe('Constants Architecture & Integrity Test Suite', () => {
       expect(stringsModule.UI_STRINGS.boqStudio.title).toBe('BOQ Extraction by Drawing Name');
       expect(stringsModule.UI_STRINGS.ppoModule.title).toBe('Multi-Tier PPO Approval & Purchase Order Release');
       expect(stringsModule.UI_STRINGS.vendorPortal.title).toBe('Vendor Partner Quotation & Bidding Portal');
-      expect(stringsModule.UI_STRINGS.prModule.title).toBe('Purchase Requisition Management');
+      expect(stringsModule.UI_STRINGS.prModule.title).toBe('BOQ Studio');
       expect(stringsModule.UI_STRINGS.categoryManagerHub.title).toBe('Category Manager Procurement Hub');
       expect(stringsModule.UI_STRINGS.modals.newPRTitle).toBe('Raise New Purchase Requisition (PR)');
     });

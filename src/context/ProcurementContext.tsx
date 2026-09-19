@@ -33,6 +33,8 @@ import { logger } from '../lib/logger';
 import { validateSchema } from '../lib/validator';
 import { useBudgetManager } from './useBudgetManager';
 import { useVendorManager } from './useVendorManager';
+import { useRateCardManager } from './useRateCardManager';
+import { useEAuctionManager } from './useEAuctionManager';
 
 export { TENANTS } from '@/constants';
 
@@ -47,7 +49,14 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
         const stored = window.localStorage?.getItem('procapex_prs_v1');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((p: PurchaseRequest) => ({
+              ...p,
+              nominatedVendors: p.id.startsWith('PR-2026-000') && parseInt(p.id.split('-')[2] || '99', 10) <= 5
+                ? []
+                : (Array.isArray(p.nominatedVendors) ? p.nominatedVendors : []),
+            }));
+          }
         }
       } catch {
         // ignore
@@ -130,7 +139,18 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       try {
         const stored = window.localStorage?.getItem('procapex_circulated_rfqs_v1');
         if (stored) {
-          return { ...INITIAL_CIRCULATED_RFQS, ...JSON.parse(stored) };
+          const parsed = JSON.parse(stored);
+          const sanitized: Record<string, VendorRFQItem> = {};
+          Object.entries(parsed).forEach(([key, val]) => {
+            const rfqVal = val as VendorRFQItem;
+            sanitized[key] = {
+              ...rfqVal,
+              invitedVendors: key.startsWith('PR-2026-000') && parseInt(key.split('-')[2] || '99', 10) <= 5
+                ? []
+                : (Array.isArray(rfqVal.invitedVendors) ? rfqVal.invitedVendors : []),
+            };
+          });
+          return { ...INITIAL_CIRCULATED_RFQS, ...sanitized };
         }
       } catch {
         // ignore
@@ -224,6 +244,8 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
   };
 
   const vendorManager = useVendorManager(activeTenantKey, activeTenant.name, setAuditLogs);
+  const rateCardManager = useRateCardManager(budgetManager.projectCategories);
+  const eauctionManager = useEAuctionManager();
 
   const currentTenants: Record<TenantKey, typeof TENANTS[TenantKey]> = (
     Object.keys(TENANTS) as TenantKey[]
@@ -680,8 +702,12 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
     setPrs((prevPrs) => {
       const updated = prevPrs.map((pr) => {
         if (pr.id !== prId) return pr;
+        const quoteVendors = (pr.items || []).flatMap((it) => Object.keys(it.vendorQuotes || {}));
+        const uniqueQuoteVendors = Array.from(new Set(quoteVendors));
         const targetVendors = vendorId === 'ALL'
-          ? (pr.nominatedVendors && pr.nominatedVendors.length > 0 ? pr.nominatedVendors : ['VND-001', 'VND-002'])
+          ? (pr.nominatedVendors && pr.nominatedVendors.length > 0
+              ? pr.nominatedVendors
+              : (uniqueQuoteVendors.length > 0 ? uniqueQuoteVendors : ['VND-001', 'VND-002']))
           : [vendorId];
 
         const updatedItems = (pr.items || []).map((it) => {
@@ -830,6 +856,32 @@ export function ProcurementProvider({ children }: { children: React.ReactNode })
       submitVendorEvaluation: vendorManager.submitVendorEvaluation,
       submitPPORating: vendorManager.submitPPORating,
       sendEvaluationInvite: vendorManager.sendEvaluationInvite,
+      updateVendorCataloguePrices: vendorManager.updateVendorCataloguePrices,
+      sendVendorCatalogueIntimation: vendorManager.sendVendorCatalogueIntimation,
+      updateVendorCategories: vendorManager.updateVendorCategories,
+      // Rate Card Management (Module 4)
+      rateCards: rateCardManager.rateCards,
+      createRateCardProposal: rateCardManager.createRateCardProposal,
+      sellerRespondRateCardProposal: rateCardManager.sellerRespondRateCardProposal,
+      finalizeRateCard: rateCardManager.finalizeRateCard,
+      addItemToRateCard: rateCardManager.addItemToRateCard,
+      checkPRRateCardCoverage: rateCardManager.checkPRRateCardCoverage,
+      getVendorCategoryRateCardCoverage: rateCardManager.getVendorCategoryRateCardCoverage,
+      getLinePricingReferences: rateCardManager.getLinePricingReferences,
+      // E-Auction Management (Module 5)
+      eauctions: eauctionManager.eauctions,
+      activeEAuctionId: eauctionManager.activeEAuctionId,
+      setActiveEAuctionId: eauctionManager.setActiveEAuctionId,
+      getEAuctionByPRId: eauctionManager.getEAuctionByPRId,
+      startEAuction: eauctionManager.startEAuction,
+      pauseEAuction: eauctionManager.pauseEAuction,
+      resumeEAuction: eauctionManager.resumeEAuction,
+      extendEAuction: eauctionManager.extendEAuction,
+      concludeEAuction: eauctionManager.concludeEAuction,
+      submitEAuctionBid: eauctionManager.submitEAuctionBid,
+      setEAuctionProxyFloor: eauctionManager.setEAuctionProxyFloor,
+      simulateNextCompetitiveBid: eauctionManager.simulateNextCompetitiveBid,
+      awardEAuctionToL1: eauctionManager.awardEAuctionToL1,
     }}>
       {children}
     </ProcurementContext.Provider>

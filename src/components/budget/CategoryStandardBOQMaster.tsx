@@ -11,7 +11,6 @@ import {
   Lock,
   PauseCircle,
   PlayCircle,
-  ArrowUpRight,
   ShieldCheck,
   Tag,
   UploadCloud,
@@ -19,6 +18,7 @@ import {
   List,
   X,
   Download,
+  ArrowUpRight,
 } from 'lucide-react';
 import type {
   CategoryStandardBOQMasterProps,
@@ -201,9 +201,9 @@ export const CategoryStandardBOQMaster: React.FC<CategoryStandardBOQMasterProps>
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-2">
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
             <div className="flex items-center space-x-2">
               <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
                 {strings.badge}
@@ -212,50 +212,50 @@ export const CategoryStandardBOQMaster: React.FC<CategoryStandardBOQMasterProps>
                 {strings.badgeImmutable}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-              <FolderTree className="w-8 h-8 text-sky-400" />
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white flex items-center gap-2.5">
+              <FolderTree className="w-6 h-6 text-sky-400" />
               <span>{strings.title}</span>
             </h1>
-            <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
+            <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
               {strings.subtitle}
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsCategoryModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-200 bg-brand-800/80 hover:bg-brand-700 hover:text-white transition-all flex items-center space-x-2 border border-sky-500/30 shadow-sm"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-sky-400" />
+              <Plus className="w-3.5 h-3.5 text-sky-400" />
               <span>{strings.addCategoryButton}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsSubCategoryModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-200 bg-brand-800/80 hover:bg-brand-700 hover:text-white transition-all flex items-center space-x-2 border border-indigo-500/30 shadow-sm"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
             >
-              <Layers className="w-4 h-4 text-indigo-400" />
+              <Layers className="w-3.5 h-3.5 text-sky-400" />
               <span>{strings.addSubCategoryButton}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsItemModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 transition-all flex items-center space-x-2 shadow-lg shadow-sky-950/40"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>{strings.addStandardBOQItemButton}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsUploadModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-200 bg-brand-800/80 hover:bg-brand-700 hover:text-white transition-all flex items-center space-x-2 border border-emerald-500/30 shadow-sm"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
             >
-              <UploadCloud className="w-4 h-4 text-emerald-400" />
+              <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
               <span>{strings.uploadButton}</span>
             </button>
 
@@ -263,10 +263,10 @@ export const CategoryStandardBOQMaster: React.FC<CategoryStandardBOQMasterProps>
               <button
                 type="button"
                 onClick={onRouteToBudget}
-                className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-all flex items-center space-x-1.5 border border-slate-700"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
               >
                 <span>{strings.routeToBudgetButton}</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-300" />
               </button>
             )}
           </div>
@@ -485,8 +485,8 @@ export const CategoryStandardBOQMaster: React.FC<CategoryStandardBOQMasterProps>
           </div>
 
           {/* Interactive Master Standard BOQ Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-blue-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-blue-100 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Tag className="w-4 h-4 text-sky-600" />
                 <span className="text-xs font-bold text-slate-900">
@@ -500,7 +500,7 @@ export const CategoryStandardBOQMaster: React.FC<CategoryStandardBOQMasterProps>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <thead className="bg-blue-50/80 text-blue-950 font-bold uppercase text-[10px] tracking-wider border-b-2 border-blue-200">
                   <tr>
                     <th className="py-3.5 px-4 min-w-[130px]">{strings.tableColItemCode}</th>
                     <th className="py-3.5 px-4 min-w-[160px]">{strings.tableColCategory}</th>
@@ -513,7 +513,7 @@ export const CategoryStandardBOQMaster: React.FC<CategoryStandardBOQMasterProps>
                     <th className="py-3.5 px-4 text-center min-w-[150px]">{strings.tableColActions}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-blue-100">
                   {filteredItems.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-12 px-6 text-center">

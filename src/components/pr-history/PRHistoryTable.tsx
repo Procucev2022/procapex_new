@@ -72,17 +72,17 @@ export const PRHistoryTable: React.FC<PRHistoryTableProps> = ({
         <div>
           <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
             <FileText className="w-5 h-5 text-purple-600" />
-            <span>Requisition Pipeline &amp; Previous PR History</span>
+            <span>Package Pipeline &amp; Scope History</span>
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time auditable registry of all purchase requisitions raised,
+            Real-time auditable registry of all scoped procurement packages,
             technical approvals, and tender dispatch statuses.
           </p>
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">
           <span className="text-xs font-mono font-bold px-3 py-1 bg-purple-100 text-purple-900 rounded-full border border-purple-200">
-            {prs.length} Requisitions in Registry
+            {prs.length} Packages in Registry
           </span>
           {onStartNewPR && (
             <button
@@ -91,7 +91,7 @@ export const PRHistoryTable: React.FC<PRHistoryTableProps> = ({
               className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center space-x-1.5 transition-all cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Raise New PR</span>
+              <span>New BOQ Package</span>
             </button>
           )}
         </div>
@@ -103,7 +103,7 @@ export const PRHistoryTable: React.FC<PRHistoryTableProps> = ({
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by PR Number, Title, Project, or Requester..."
+            placeholder="Search by Package ID, Title, Project, or Requester..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium text-slate-900"
@@ -124,14 +124,14 @@ export const PRHistoryTable: React.FC<PRHistoryTableProps> = ({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs bg-white">
+      <div className="overflow-x-auto border border-blue-200 rounded-xl shadow-xs bg-white">
         <table className="w-full text-left text-xs text-slate-700" data-testid="pr-history-table">
-          <thead className="bg-slate-100 font-bold border-b border-slate-200 text-slate-800">
+          <thead className="bg-blue-50/80 font-bold border-b-2 border-blue-200 text-blue-950">
             <tr>
               <th className="p-3 w-10 text-center">#</th>
-              <th className="p-3 min-w-[130px]">PR Number</th>
-              <th className="p-3 min-w-[200px]">Requisition Title &amp; Project</th>
-              <th className="p-3 min-w-[150px]">Raiser &amp; Date</th>
+              <th className="p-3 min-w-[130px]">Package ID</th>
+              <th className="p-3 min-w-[200px]">Package Title &amp; Project</th>
+              <th className="p-3 min-w-[150px]">Scope Lead &amp; Date</th>
               <th className="p-3 min-w-[130px]">Cost Centre &amp; Cat</th>
               <th className="p-3 text-center w-24">Items</th>
               <th className="p-3 text-right min-w-[120px]">Est. Baseline</th>
@@ -140,7 +140,7 @@ export const PRHistoryTable: React.FC<PRHistoryTableProps> = ({
               <th className="p-3 text-right min-w-[160px]">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-blue-100">
             {filteredPRs.map((pr, idx) => {
               const isActive = pr.id === activePRId;
               const suffix = pr.id.split('-')[2] ?? '0005';

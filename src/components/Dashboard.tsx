@@ -22,65 +22,58 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#082f49] to-[#0c4a6e] text-white rounded-2xl p-6 shadow-sm border border-[#0c4a6e] relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs uppercase font-bold text-sky-400 tracking-wider">
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
                 Enterprise Dashboard
               </span>
-              <h1 className="text-2xl font-bold mt-1">
-                {activeTenant
-                  ? formatString(UI_STRINGS.dashboard.sourcingCommandTemplate, { tenantName: activeTenant.name })
-                  : UI_STRINGS.dashboard.defaultTitle}
-              </h1>
-              <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-                Active Project: <strong className="text-white font-semibold">{activeTenant?.project}</strong> • Real-time pipeline across BOQ Studio, Technical Approvals, 4-Way Commercial Matrix, Multi-Tier PPO sign-offs, and Vendor Awards.
-              </p>
             </div>
-            <div className="hidden md:flex items-center space-x-3 bg-[#031726]/40 p-3 rounded-xl border border-[#0c4a6e]/50 backdrop-blur-sm">
-              <div className="text-right">
-                <p className="text-[10px] uppercase font-semibold text-slate-400">Total Savings Identified</p>
-                <p className="text-lg font-bold text-emerald-400">₹ 14,85,000</p>
-              </div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
-                <TrendingDown className="w-5 h-5" />
-              </div>
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">
+              {activeTenant
+                ? formatString(UI_STRINGS.dashboard.sourcingCommandTemplate, { tenantName: activeTenant.name })
+                : UI_STRINGS.dashboard.defaultTitle}
+            </h1>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              Active Project: <strong className="text-white font-semibold">{activeTenant?.project}</strong> • Sourcing pipeline across BOQ Studio, Commercial Evaluation, and PPO Release.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 bg-brand-950/80 p-3 rounded-xl border border-sky-500/20 shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] uppercase font-bold text-slate-300">Total Savings Identified</p>
+              <p className="text-lg font-bold text-emerald-400">₹ 14,85,000</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+              <TrendingDown className="w-5 h-5" />
             </div>
           </div>
         </div>
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
       {/* Finance Manager & Budget Planning Spotlight Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-sm border border-indigo-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white text-slate-900 rounded-2xl p-5 shadow-sm border border-blue-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 mt-0.5">
-            <Calculator className="w-6 h-6 text-indigo-400" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
+            <Calculator className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-extrabold text-indigo-300 tracking-wider">
+              <span className="text-[10px] uppercase font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full tracking-wider">
                 {UI_STRINGS.dashboard.budgetSpotlightBadge}
               </span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-bold">
-                Active Module
-              </span>
             </div>
-            <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
+            <h2 className="text-base sm:text-lg font-black text-slate-900 mt-1">
               {UI_STRINGS.dashboard.budgetSpotlightTitle}
             </h2>
-            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              {UI_STRINGS.dashboard.budgetSpotlightDescription}
-            </p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-slate-300 font-medium flex-wrap">
-              <div>Baseline: <span className="font-bold text-white">₹ 14.20 Cr</span></div>
-              <div className="w-1 h-1 rounded-full bg-slate-600"></div>
-              <div>Estimated: <span className="font-bold text-indigo-300">₹ 12.46 Cr</span></div>
-              <div className="w-1 h-1 rounded-full bg-slate-600"></div>
-              <div>Rate: <span className="font-bold text-emerald-400">₹ 1,047 / sq.ft</span></div>
-              <div className="w-1 h-1 rounded-full bg-slate-600"></div>
-              <div>Categories: <span className="font-bold text-white">6 Standard Scope</span></div>
+            <div className="flex items-center gap-4 mt-2 text-xs text-slate-600 font-medium flex-wrap">
+              <div>Baseline: <strong className="text-slate-900">₹ 14.20 Cr</strong></div>
+              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+              <div>Estimated: <strong className="text-blue-700">₹ 12.46 Cr</strong></div>
+              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+              <div>Rate: <strong className="text-emerald-700">₹ 1,047 / sq.ft</strong></div>
+              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+              <div>Scope: <strong className="text-slate-900">6 Standard Categories</strong></div>
             </div>
           </div>
         </div>
@@ -88,7 +81,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <button
           type="button"
           onClick={() => onNavigate('budget')}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2 shrink-0 self-start md:self-center"
+          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-sm flex items-center gap-2 shrink-0 self-start md:self-center cursor-pointer"
         >
           <span>{UI_STRINGS.dashboard.budgetSpotlightButton}</span>
         </button>
@@ -100,7 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{UI_STRINGS.dashboard.activePRs}</p>
             <p className="text-2xl font-extrabold text-slate-800 mt-1">{prs.length}</p>
-            <p className="text-[11px] text-slate-400 mt-1">2 Pending Approval • 2 Accepted</p>
+            <p className="text-[11px] text-slate-400 mt-1">2 In Tender • 2 Finalized</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
             <FileText className="w-6 h-6" />
@@ -155,7 +148,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center cursor-pointer hover:border-sky-300" onClick={() => onNavigate('prs')}>
               <span className="text-[10px] font-bold uppercase text-slate-500">{UI_STRINGS.dashboard.stage1}</span>
-              <p className="text-lg font-bold text-slate-800 mt-1">2 Requests</p>
+              <p className="text-lg font-bold text-slate-800 mt-1">2 Scopes</p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="bg-sky-500 h-full w-2/3"></div>
               </div>
@@ -186,9 +179,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           {/* Variance Overview Table */}
           <div className="pt-4">
             <h4 className="text-xs font-semibold text-slate-600 mb-2">Quotation vs Rate Card vs AI Benchmark Variance (Live Items)</h4>
-            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+            <div className="overflow-x-auto border border-blue-200 rounded-xl">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                <thead className="bg-blue-50/80 text-blue-950 font-bold border-b-2 border-blue-200">
                   <tr>
                     <th className="p-2.5">Item Description</th>
                     <th className="p-2.5 text-right">Master Rate Card</th>
@@ -197,7 +190,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <th className="p-2.5 text-center">Variance %</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-blue-100">
                   <tr>
                     <td className="p-2.5 font-medium">Ready Mix Concrete M30 (Cum)</td>
                     <td className="p-2.5 text-right font-mono">₹ 4,200</td>

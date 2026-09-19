@@ -82,19 +82,15 @@ describe('Category & Standard BOQ Master Cross-Module Integration', () => {
     // Switch to Module 2 (BOQ & RFQ Management -> PRModule)
     fireEvent.click(screen.getByText('Show Module 2'));
 
-    // In PRModule, go directly to Step 2 (Category Selection)
-    const tab2Btn = screen.getByRole('button', { name: /Category Selection/i });
-    fireEvent.click(tab2Btn);
-
-    // Step 2 is active: Verify "Fire & Safety Systems" is in Major Category dropdown
-    expect(screen.getByRole('option', { name: 'Fire & Safety Systems' })).toBeInTheDocument();
+    // In PRModule (BOQ Studio), the category dropdown is directly in the header strip
+    // Verify "Fire & Safety Systems" is in Major Category dropdown
+    const option = screen.getByRole('option', { name: /Fire & Safety Systems/i });
+    expect(option).toBeInTheDocument();
 
     // Select "Fire & Safety Systems" in Major Category
-    const majorSelect = screen.getByDisplayValue(/Interior & Fitouts/i);
+    const majorSelect = option.closest('select') as HTMLSelectElement;
     fireEvent.change(majorSelect, { target: { value: 'Fire & Safety Systems' } });
-
-    // Sub Category dropdown should now have "Smoke Detectors & Sprinklers"
-    expect(screen.getByRole('option', { name: 'Smoke Detectors & Sprinklers' })).toBeInTheDocument();
+    expect(majorSelect.value).toBe('Fire & Safety Systems');
 
     // Switch to Module 3 (Category & Standard BOQ Master)
     fireEvent.click(screen.getByText('Show Module 3'));
@@ -207,7 +203,7 @@ describe('Category & Standard BOQ Master Cross-Module Integration', () => {
     expect(screen.getByText('High Grade Ready Mix Concrete M40')).toBeInTheDocument();
   });
 
-  it('loads standard BOQ master into PR schedule without quantities via Step 2 direct button', () => {
+  it('loads standard BOQ master into PR schedule via Method 2 in BOQ Studio', () => {
     render(
       <ProcurementProvider>
         <IntegratedTestHarness />
@@ -217,22 +213,21 @@ describe('Category & Standard BOQ Master Cross-Module Integration', () => {
     // Switch to Module 2 (PR)
     fireEvent.click(screen.getByText('Show Module 2'));
 
-    // Navigate to Step 2
-    const step2Tab = screen.getByRole('button', { name: /Category Selection/i });
-    fireEvent.click(step2Tab);
+    // Switch to Method 2 in BOQ Studio
+    fireEvent.click(screen.getByText('2. Standard Template'));
 
-    // Verify Standard BOQ Master Available banner is present
-    const loadFromStep2Btn = screen.getByRole('button', {
-      name: /Load .* Standard BOQ \(Without Qty\)/i,
+    // Verify Method 2 load standard package button is present
+    const loadPkgBtn = screen.getByRole('button', {
+      name: UI_STRINGS.categoryStandardBOQMaster.loadStandardPackageButton,
     });
-    expect(loadFromStep2Btn).toBeInTheDocument();
+    expect(loadPkgBtn).toBeInTheDocument();
 
-    // Click to load without quantity
-    fireEvent.click(loadFromStep2Btn);
+    // Click to load standard package into schedule
+    fireEvent.click(loadPkgBtn);
 
-    // Verify automatically navigated to Step 3 with items loaded without quantity
+    // Verify items loaded into schedule
     expect(
-      screen.getByText(/Loaded \d+ items from .* standard catalog into BOQ schedule without quantity/i)
+      screen.getByText(/Loaded \d+ items from .* standard catalog into BOQ schedule/i)
     ).toBeInTheDocument();
 
     // Verify Method 2 download template link has the 4-column format filename

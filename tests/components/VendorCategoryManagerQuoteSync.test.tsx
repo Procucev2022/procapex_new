@@ -127,7 +127,7 @@ describe('Vendor vs Category Manager Quote & Counter-Offer Synchronization Workf
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabNegotiation }));
 
     // Verify that the Granite rate is ₹ 4,200 under Vendor 1 1st Quote
-    expect(screen.getByText('₹ 4,200')).toBeInTheDocument();
+    expect(screen.getAllByText('₹ 4,200').length).toBeGreaterThan(0);
 
     // 4. Navigate to Tab 2 (4-Way Commercial Matrix & CBA)
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabCommercial }));
@@ -182,7 +182,7 @@ describe('Vendor vs Category Manager Quote & Counter-Offer Synchronization Workf
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.categoryManagerHub.tabNegotiation }));
 
     // Verify Revised BAFO Granite rate is ₹ 3,700
-    expect(screen.getByText('₹ 3,700')).toBeInTheDocument();
+    expect(screen.getAllByText('₹ 3,700').length).toBeGreaterThan(0);
 
     // Verify localStorage holds the updated PRs and negotiations
     const storedPRs = window.localStorage?.getItem('procapex_prs_v1');

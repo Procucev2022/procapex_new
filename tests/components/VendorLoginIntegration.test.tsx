@@ -87,9 +87,7 @@ describe('Vendor Onboarding & Login Page Integration (welcome / welcome)', () =>
     fireEvent.change(screen.getByLabelText(/Company \/ Contractor Name/i), {
       target: { value: 'Elite Spaces Fitouts Pvt Ltd' },
     });
-    fireEvent.change(screen.getByLabelText(/Procurement Category/i), {
-      target: { value: 'Interior & Fitouts' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: /Interior & Fitouts/i }));
     fireEvent.change(screen.getByLabelText(/GSTIN/i), {
       target: { value: '27AABCU9603R1ZM' },
     });

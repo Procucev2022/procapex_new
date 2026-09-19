@@ -210,6 +210,63 @@ export const AMEND_BOQ_ITEM_SCHEMA: ObjectSchema = {
   },
 };
 
+export const API_REFINE_BOQ_ITEM_SCHEMA: ObjectSchema = {
+  itemCode: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'BOQ item code to refine',
+  },
+  currentDesc: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 1000,
+    description: 'Current technical specification description',
+  },
+  currentUom: {
+    type: 'string',
+    required: false,
+    maxLength: 20,
+    description: 'Current unit of measurement',
+  },
+  currentQty: {
+    type: 'number',
+    required: false,
+    min: 0.001,
+    max: 10000000,
+    coerce: true,
+    description: 'Current quantity',
+  },
+  currentBenchmarkRate: {
+    type: 'number',
+    required: false,
+    min: 0,
+    coerce: true,
+    description: 'Current benchmark unit rate in INR',
+  },
+  userInputSpecs: {
+    type: 'string',
+    required: true,
+    minLength: 2,
+    maxLength: 2000,
+    description: 'User-provided refinement guidelines, specifications, or brand preferences',
+  },
+  categoryHint: {
+    type: 'string',
+    required: false,
+    maxLength: 200,
+    description: 'Project procurement category for domain pricing calibration',
+  },
+  subCategoryHint: {
+    type: 'string',
+    required: false,
+    maxLength: 200,
+    description: 'Sub-category or trade classification',
+  },
+};
+
 
 export const API_GRAPHQL_SCHEMA: ObjectSchema = {
   query: {
@@ -842,6 +899,67 @@ export const VENDOR_PPO_RATING_SCHEMA: ObjectSchema = {
     max: 5,
     coerce: true,
     description: 'Invoicing & contract commercial integrity score (1-5)',
+  },
+};
+
+export const API_VENDOR_CATALOGUE_PRICE_SCHEMA: ObjectSchema = {
+  vendorId: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'Target vendor ID',
+  },
+  itemCode: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'Standard BOQ item code',
+  },
+  vendorPrice: {
+    type: 'number',
+    required: true,
+    min: 0,
+    max: 1000000000,
+    coerce: true,
+    description: 'Baseline catalogue unit price in INR',
+  },
+  notes: {
+    type: 'string',
+    required: false,
+    maxLength: 500,
+    description: 'Optional pricing basis, material grade, or delivery notes',
+  },
+};
+
+export const API_VENDOR_INTIMATION_SCHEMA: ObjectSchema = {
+  vendorId: {
+    type: 'string',
+    required: true,
+    minLength: 1,
+    maxLength: 50,
+    description: 'Target vendor ID',
+  },
+  deadlineDays: {
+    type: 'number',
+    required: true,
+    min: 1,
+    max: 365,
+    coerce: true,
+    description: 'Days allowed for vendor submission',
+  },
+  customDeadline: {
+    type: 'string',
+    required: false,
+    maxLength: 50,
+    description: 'Optional custom deadline date ISO string',
+  },
+  notes: {
+    type: 'string',
+    required: false,
+    maxLength: 1000,
+    description: 'Intimation message and instructions for vendor',
   },
 };
 

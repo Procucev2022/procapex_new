@@ -241,7 +241,7 @@ export const PPORatingModal: React.FC<PPORatingModalProps> = ({
             </button>
             <button
               type="submit"
-              className="py-2.5 px-5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+              className="py-2.5 px-5 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{UI_STRINGS.vendorManagement.submitRatingButton}</span>

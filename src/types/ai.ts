@@ -73,3 +73,27 @@ export interface AmendBOQItemInput {
   subCategoryId?: string;
 }
 
+export interface RefineBOQItemRequest {
+  itemCode: string;
+  currentDesc: string;
+  currentUom: string;
+  currentQty: number;
+  currentBenchmarkRate: number;
+  userInputSpecs: string;
+  categoryHint?: string;
+  subCategoryHint?: string;
+}
+
+export interface RefineBOQItemResult {
+  refinedCode: string;
+  refinedDesc: string;
+  refinedUom: string;
+  refinedQty: number;
+  refinedBenchmarkRate: number;
+  aiRationale: string;
+  specsHighlighted: string[];
+  modelUsed: string;
+  isLiveAi: boolean;
+  confidence: string;
+}
+

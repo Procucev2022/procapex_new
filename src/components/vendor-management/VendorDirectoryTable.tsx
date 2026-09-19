@@ -10,8 +10,9 @@ interface VendorDirectoryTableProps {
   vendors: ManagedVendor[];
   onOpenEvaluation: (vendor: ManagedVendor) => void;
   onOpenPPORating: (vendor: ManagedVendor) => void;
-  onOpenDossier: (vendor: ManagedVendor) => void;
+  onOpenDossier: (vendor: ManagedVendor, initialTab?: 'credibility' | 'rate_card' | 'catalogue') => void;
   onSendInvite: (vendorId: string, email: string) => void;
+  onOpenIntimation?: (vendor: ManagedVendor) => void;
 }
 
 export const VendorDirectoryTable: React.FC<VendorDirectoryTableProps> = ({
@@ -20,6 +21,7 @@ export const VendorDirectoryTable: React.FC<VendorDirectoryTableProps> = ({
   onOpenPPORating,
   onOpenDossier,
   onSendInvite,
+  onOpenIntimation,
 }) => {
   if (vendors.length === 0) {
     return (
@@ -35,20 +37,20 @@ export const VendorDirectoryTable: React.FC<VendorDirectoryTableProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-blue-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 text-[11px] uppercase font-bold tracking-wider">
+          <thead className="bg-blue-50/80 border-b-2 border-blue-200 text-blue-950 text-[11px] uppercase font-bold tracking-wider">
             <tr>
-              <th className="py-3.5 px-4">{UI_STRINGS.vendorManagement.tableColVendor}</th>
-              <th className="py-3.5 px-4">{UI_STRINGS.vendorManagement.tableColCategory}</th>
-              <th className="py-3.5 px-4">{UI_STRINGS.vendorManagement.tableColSource}</th>
-              <th className="py-3.5 px-4">{UI_STRINGS.vendorManagement.tableColRating}</th>
-              <th className="py-3.5 px-4">{UI_STRINGS.vendorManagement.tableColEvaluationStatus}</th>
-              <th className="py-3.5 px-4 text-right">{UI_STRINGS.vendorManagement.tableColActions}</th>
+              <th className="py-3.5 px-4 w-[24%]">{UI_STRINGS.vendorManagement.tableColVendor}</th>
+              <th className="py-3.5 px-4 w-[18%]">{UI_STRINGS.vendorManagement.tableColCategory}</th>
+              <th className="py-3.5 px-4 w-[14%]">{UI_STRINGS.vendorManagement.tableColSource}</th>
+              <th className="py-3.5 px-4 w-[14%]">{UI_STRINGS.vendorManagement.tableColRating}</th>
+              <th className="py-3.5 px-4 w-[12%]">{UI_STRINGS.vendorManagement.tableColEvaluationStatus}</th>
+              <th className="py-3.5 px-4 w-[18%] text-right">{UI_STRINGS.vendorManagement.tableColActions}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-600">
+          <tbody className="divide-y divide-blue-100 text-slate-600">
             {vendors.map((vendor) => (
               <VendorTableRow
                 key={vendor.id}
@@ -57,6 +59,7 @@ export const VendorDirectoryTable: React.FC<VendorDirectoryTableProps> = ({
                 onOpenPPORating={onOpenPPORating}
                 onOpenDossier={onOpenDossier}
                 onSendInvite={onSendInvite}
+                onOpenIntimation={onOpenIntimation}
               />
             ))}
           </tbody>

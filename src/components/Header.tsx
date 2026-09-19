@@ -4,7 +4,6 @@ import React from 'react';
 import { 
   Building2, 
   UserCheck, 
-  PlusCircle, 
   Calculator,
   Lock,
 } from 'lucide-react';
@@ -12,7 +11,7 @@ import { useProcurement } from '../context/ProcurementContext';
 import type { HeaderProps, UserRole, TenantKey } from '@/types';
 import { NAV_ITEMS, UI_STRINGS, PRICING_TIERS } from '@/constants';
 
-export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpenNewPR }) => {
+export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpenNewPR: _onOpenNewPR }) => {
   const {
     activeRole,
     setActiveRole,
@@ -33,10 +32,8 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
       case 'BOQ_RFQ_MANAGER':
       case 'PROJECT_TEAM':
       case 'CATEGORY_MANAGER':
-        setCurrentTab('boq_rfq_management');
-        break;
       case 'VENDOR_NEGOTIATION_HUB':
-        setCurrentTab('vendor_negotiation_hub');
+        setCurrentTab('boq_rfq_management');
         break;
       case 'CATEGORY_MANAGER_2':
       case 'PROJECT_HEAD_PPO':
@@ -160,19 +157,6 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
                   : UI_STRINGS.header.financeManagerLoginButton}
               </span>
             </button>
-
-            {/* 4. Quick Action: Raise PR */}
-            <button
-              onClick={() => {
-                setActiveRole('BOQ_RFQ_MANAGER');
-                setCurrentTab('boq_rfq_management');
-                onOpenNewPR();
-              }}
-              className="bg-emerald-500 hover:bg-emerald-400 text-brand-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all shadow-md flex items-center space-x-1.5 shrink-0"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden md:inline">{UI_STRINGS.header.raisePRButton}</span>
-            </button>
           </div>
 
         </div>
@@ -188,17 +172,13 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
               <button
                 key={item.id}
                 onClick={() => setCurrentTab(item.id)}
-                className={`px-3 py-2 rounded-md flex items-center space-x-1.5 transition-colors whitespace-nowrap ${
+                className={`px-3 py-2 rounded-lg flex items-center space-x-1.5 transition-all whitespace-nowrap text-xs ${
                   isActive
-                    ? item.id === 'budget_planning'
-                      ? 'bg-indigo-600 text-white font-bold ring-2 ring-indigo-400'
-                      : 'bg-brand-800 text-white font-bold'
-                    : item.id === 'budget_planning'
-                      ? 'bg-indigo-950/80 text-indigo-200 border border-indigo-500/40 hover:bg-indigo-900'
-                      : 'hover:text-white hover:bg-brand-800/60'
+                    ? 'bg-blue-600 text-white font-bold shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10 font-medium'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${item.highlight ? 'text-amber-300' : ''}`} />
+                <Icon className="w-4 h-4 text-slate-300" />
                 <span>{item.label}</span>
                 {!isAllowed && (
                   <span className="text-[9px] bg-slate-800 text-amber-400 border border-amber-500/30 font-bold px-1.5 py-0.2 rounded-full ml-1 flex items-center">
@@ -207,18 +187,13 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, onOpe
                   </span>
                 )}
                 {item.id === 'budget_planning' && isAllowed && (
-                  <span className="text-[9px] bg-indigo-500 text-white font-black px-1.5 py-0.5 rounded-full ml-1">
+                  <span className="text-[9px] bg-blue-500 text-white font-bold px-1.5 py-0.5 rounded-full ml-1">
                     FINANCE
                   </span>
                 )}
                 {item.id === 'vendor_management' && isAllowed && (
-                  <span className="text-[9px] bg-emerald-500 text-brand-950 font-black px-1.5 py-0.5 rounded-full ml-1">
+                  <span className="text-[9px] bg-blue-500 text-white font-bold px-1.5 py-0.5 rounded-full ml-1">
                     DIRECTORY
-                  </span>
-                )}
-                {item.id === 'vendor_negotiation_hub' && isAllowed && (
-                  <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full ml-1">
-                    NEGOTIATOR
                   </span>
                 )}
               </button>

@@ -136,6 +136,37 @@ export interface VendorPPORating {
   ratedAt: string;
 }
 
+export interface VendorCatalogueItemPrice {
+  itemCode: string;
+  itemDesc: string;
+  category: string;
+  subCategory?: string;
+  uom: string;
+  masterBenchmarkRate: number;
+  vendorPrice: number;
+  variancePercent: number;
+  submittedAt?: string;
+  updatedBy?: string;
+  notes?: string;
+}
+
+export interface VendorCatalogueStatus {
+  hasSubmittedPrices: boolean;
+  lastSubmittedAt?: string;
+  intimationSent: boolean;
+  intimationSentAt?: string;
+  intimationDeadline?: string;
+  intimationDaysAllowed?: number;
+  intimationNotes?: string;
+}
+
+export interface SendCatalogueIntimationInput {
+  vendorId: string;
+  deadlineDays: number;
+  customDeadline?: string;
+  notes?: string;
+}
+
 export interface ManagedVendor extends VendorItem {
   source: VendorSource;
   tenantKey?: TenantKey;
@@ -148,11 +179,15 @@ export interface ManagedVendor extends VendorItem {
   ppoRatings: VendorPPORating[];
   compositeRating: number;
   totalPPOsCompleted: number;
+  categories?: string[];
+  cataloguePrices?: Record<string, VendorCatalogueItemPrice>;
+  catalogueStatus?: VendorCatalogueStatus;
 }
 
 export interface VendorCSVRow {
   name: string;
   category: string;
+  categories?: string[];
   subCategory: string;
   gstin: string;
   contactPerson: string;

@@ -807,7 +807,7 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
     site: 'Tower C Reception Lobby, Godrej Woods, Sector 43, Noida',
     contact: 'Rajesh Sharma (+91 98765 43210)',
     docCount: 2,
-    nominatedVendors: ['VND-001', 'VND-002', 'CLT-VND-003'],
+    nominatedVendors: [],
     items: [
       {
         code: 'CNT-TOP-GRN20',
@@ -925,7 +925,7 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
     site: 'HVAC Plant Room & Floor 4-8 AHU, Godrej One, Mumbai',
     contact: 'Anil Deshmukh (+91 98330 44556)',
     docCount: 2,
-    nominatedVendors: ['VND-014', 'VND-015'],
+    nominatedVendors: [],
     items: [
       {
         code: 'MEP-HVAC-AHU01',
@@ -1022,7 +1022,7 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
     site: 'Block A Substructure, Infotech Park, Powai, Mumbai',
     contact: 'Vikram Patil (+91 98220 11223)',
     docCount: 3,
-    nominatedVendors: ['VND-011', 'VND-012'],
+    nominatedVendors: [],
     items: [
       {
         code: 'CIV-CONC-M30',
@@ -1073,7 +1073,7 @@ export const INITIAL_PRS_DATA: Record<string, PRData> = {
     site: '7th Floor Executive Suites, Cyber City, Bengaluru',
     contact: 'Karan Mehta (+91 97110 55443)',
     docCount: 1,
-    nominatedVendors: ['VND-001', 'VND-003', 'VND-007'],
+    nominatedVendors: [],
     items: [
       {
         code: 'INT-ACS-PANEL',

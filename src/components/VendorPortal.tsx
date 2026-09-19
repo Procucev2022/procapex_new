@@ -1,9 +1,13 @@
 'use client';
 
-import React from 'react';
-import { Award, FileText, FileEdit } from 'lucide-react';
-import type { VendorPortalProps } from '@/types';
+import React, { useMemo, useContext } from 'react';
+import { Award, FileText, FileEdit, Layers, CreditCard, Zap } from 'lucide-react';
+import type { VendorPortalProps, ManagedVendor } from '@/types';
 import { UI_STRINGS } from '@/constants';
+import { ProcurementContext } from '@/context/ProcurementContext';
+import { VendorCataloguePricingTab } from './vendor-management/VendorCataloguePricingTab';
+import { VendorProfileRateCardTab } from './rate-card/VendorProfileRateCardTab';
+import { VendorEAuctionPage } from './eauction';
 import { VendorLoginView } from './vendor-portal/VendorLoginView';
 import { VendorIdentityBar } from './vendor-portal/VendorIdentityBar';
 import { VendorRFQSummaryTab } from './vendor-portal/VendorRFQSummaryTab';
@@ -47,6 +51,21 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({ initialAuthenticated
     submitVendorQuote,
   } = useVendorPortal(initialAuthenticated);
 
+  const procurement = useContext(ProcurementContext);
+  const projectCategories = procurement?.projectCategories ?? [];
+  const updateVendorCataloguePrices = procurement?.updateVendorCataloguePrices;
+  const rawManagedVendors = procurement?.managedVendors;
+
+  const activeManagedVendor: ManagedVendor = useMemo(() => {
+    const list = rawManagedVendors ?? [];
+    const found = list.find((v) => v.id === activeVendor);
+    if (found) return found;
+    return {
+      ...activeVendorObj,
+      categories: activeVendorObj.categories || [activeVendorObj.category],
+    } as ManagedVendor;
+  }, [rawManagedVendors, activeVendor, activeVendorObj]);
+
   if (!isAuthenticated) {
     return (
       <VendorLoginView
@@ -78,15 +97,17 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({ initialAuthenticated
       />
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-        <div className="flex items-center space-x-2 border-b border-slate-200 pb-3 overflow-x-auto">
+        <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 overflow-x-auto gap-1 mb-4">
           <button
             type="button"
             onClick={() => setActiveTab('rfq')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-              activeTab === 'rfq' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+              activeTab === 'rfq'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
             }`}
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-3.5 h-3.5" />
             <span>{UI_STRINGS.vendorPortal.tabRfqSummary}</span>
           </button>
 
@@ -96,23 +117,77 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({ initialAuthenticated
               setActiveTab('quote');
               setActiveRound(1);
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-              activeTab === 'quote' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+              activeTab === 'quote'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
             }`}
           >
-            <FileEdit className="w-4 h-4" />
+            <FileEdit className="w-3.5 h-3.5" />
             <span>{UI_STRINGS.vendorPortal.tabQuotationSummary}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('ppo')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-              activeTab === 'ppo' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+              activeTab === 'ppo'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
             }`}
           >
-            <Award className="w-4 h-4" />
+            <Award className="w-3.5 h-3.5" />
             <span>{UI_STRINGS.vendorPortal.tabPPOAward}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('rate_card')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+              activeTab === 'rate_card'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>{UI_STRINGS.rateCards.tabRateCard}</span>
+            {activeManagedVendor.isRateCard && (
+              <span className="text-[9px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full ml-1">
+                Rate Card Active
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('catalogue')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+              activeTab === 'catalogue'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{UI_STRINGS.vendorPortal.tabCataloguePricing}</span>
+            {activeManagedVendor.catalogueStatus?.intimationSent &&
+              !activeManagedVendor.catalogueStatus?.hasSubmittedPrices && (
+                <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full ml-1">
+                  Intimation Pending
+                </span>
+              )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('eauction')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+              activeTab === 'eauction'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>{UI_STRINGS.eauction.tabEAuctionArena}</span>
           </button>
         </div>
 
@@ -220,6 +295,40 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({ initialAuthenticated
             activeVendorName={activeVendorObj.name}
             terms={terms}
           />
+        )}
+
+        {activeTab === 'rate_card' && (
+          <div className="pt-2">
+            <VendorProfileRateCardTab
+              vendorId={activeManagedVendor.id}
+              vendorName={activeManagedVendor.name}
+              vendorCategory={activeManagedVendor.category}
+              vendorCategories={activeManagedVendor.categories}
+              isVendorPortal
+            />
+          </div>
+        )}
+
+        {activeTab === 'catalogue' && (
+          <div className="pt-2">
+            <VendorCataloguePricingTab
+              vendor={activeManagedVendor}
+              projectCategories={projectCategories}
+              onSaveCataloguePrices={(vendorId, prices) => {
+                updateVendorCataloguePrices?.(vendorId, prices);
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === 'eauction' && (
+          <div className="pt-2">
+            <VendorEAuctionPage
+              vendorId={activeVendor}
+              vendorName={activeVendorObj.name}
+              prId={activePR}
+            />
+          </div>
         )}
       </div>
     </div>

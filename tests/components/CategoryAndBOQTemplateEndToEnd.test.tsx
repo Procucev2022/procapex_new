@@ -173,23 +173,15 @@ describe('Category & Standard BOQ Master End-to-End Workflow', () => {
 
   describe('PR Module Category-Specific Standard BOQ Template Download', () => {
     it('downloads the specific Standard BOQ template corresponding to the selected PR category', async () => {
-      render(
+      const { container } = render(
         <ProcurementProvider>
           <PRModule />
         </ProcurementProvider>
       );
 
-      // Go to Step 2: Category Selection
-      const step2Btn = screen.getByRole('button', { name: /Category Selection/i });
-      fireEvent.click(step2Btn);
-
-      // Select Civil & Structural Works
-      const categorySelect = screen.getByDisplayValue(/Interior & Fitouts/i);
+      // Select Civil & Structural Works directly from Category Scope dropdown in BOQ Studio
+      const categorySelect = container.querySelector('select') as HTMLSelectElement;
       fireEvent.change(categorySelect, { target: { value: 'Civil & Structural Works' } });
-
-      // Move to Step 3: BOQ Studio
-      const step3Btn = screen.getByRole('button', { name: /BOQ Studio/i });
-      fireEvent.click(step3Btn);
 
       // Click Method 1 card to open Method 1 workbench
       const method1Card = screen.getByText('1. Upload New BOQ');

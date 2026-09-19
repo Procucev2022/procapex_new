@@ -26,55 +26,55 @@ export const BudgetOverviewHeader: React.FC<BudgetOverviewHeaderProps> = ({
   const formatCrores = (val: number): string => `₹ ${(val / 10000000).toFixed(2)} Cr`;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 mb-6">
-      {/* Top Banner: Title, Role Badge, and Primary Actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold">
-              <Calculator className="w-5 h-5" />
+    <div className="space-y-6 mb-6">
+      {/* Top Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                {strings.badge}
+              </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">
               {strings.title}
             </h1>
-            <span className="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-              {strings.badge}
-            </span>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed font-medium">
+              {budgetState.projectName} • {strings.subtitle}
+            </p>
           </div>
-          <p className="text-xs text-slate-500 font-medium">
-            {budgetState.projectName} • {strings.subtitle}
-          </p>
-        </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            type="button"
-            onClick={onExportProjectSummary}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1.5 border border-slate-200"
-          >
-            <Download className="w-4 h-4 text-slate-600" />
-            <span>{strings.exportProjectSummaryButton}</span>
-          </button>
+          {/* Action Controls */}
+          <div className="flex items-center flex-wrap gap-2.5">
+            <button
+              type="button"
+              onClick={onExportProjectSummary}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-slate-300" />
+              <span>{strings.exportProjectSummaryButton}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={onFreezeBaseline}
-            disabled={isBaselined}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${
-              isBaselined
-                ? 'bg-emerald-600 text-white cursor-default'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-            }`}
-          >
-            {isBaselined ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-            <span>{isBaselined ? strings.statusBaselined : strings.freezeBaselineButton}</span>
-          </button>
+            <button
+              type="button"
+              onClick={onFreezeBaseline}
+              disabled={isBaselined}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm cursor-pointer ${
+                isBaselined
+                  ? 'bg-emerald-600 text-white cursor-default'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+              }`}
+            >
+              {isBaselined ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              <span>{isBaselined ? strings.statusBaselined : strings.freezeBaselineButton}</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mt-6">
+      {/* KPI Cards & Contingency Container */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Card 1: Baseline Budget */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
@@ -192,6 +192,7 @@ export const BudgetOverviewHeader: React.FC<BudgetOverviewHeaderProps> = ({
           <span>{strings.baselineLockedNotice}</span>
         </div>
       )}
+      </div>
     </div>
   );
 };

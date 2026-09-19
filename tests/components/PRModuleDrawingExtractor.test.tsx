@@ -149,7 +149,7 @@ describe('PRModule Drawing AI Extractor & Amendment Workflow', () => {
 
     // Find and click the Amend button on the first item
     const amendButtons = screen.getAllByRole('button', {
-      name: /Amend item/i,
+      name: new RegExp(`^${UI_STRINGS.prModule.amendItemButton}$`, 'i'),
     });
     expect(amendButtons.length).toBeGreaterThan(0);
     fireEvent.click(amendButtons[0]);
@@ -199,12 +199,12 @@ describe('PRModule Drawing AI Extractor & Amendment Workflow', () => {
     );
     fireEvent.click(screen.getByText('3. Drawing AI Extractor'));
 
-    // Click "Full Height Storage Details" quick preset
-    const storagePresetBtn = screen.getByRole('button', { name: 'Full Height Storage Details' });
-    fireEvent.click(storagePresetBtn);
+    // Select "Full Height Storage Details" from sample drawing dropdown
+    const drawingSelect = screen.getByDisplayValue(/Reception Counter Elevation D/i);
+    fireEvent.change(drawingSelect, { target: { value: 'Full Height Storage Details' } });
 
     // Verify drawing title is populated
-    expect(screen.getByDisplayValue('Full Height Storage Details')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/Full Height Storage Details/i)).toBeInTheDocument();
 
     // Verify interior woodwork items are populated
     await waitFor(() => {

@@ -9,7 +9,15 @@ import type {
   PurchaseOrder,
   AuditLog,
   VendorRFQItem,
+  BOQItem,
 } from './procurement';
+import type {
+  RateCardAgreement,
+  CreateRateCardProposalInput,
+  PRRateCardCoverage,
+  AddItemToRateCardInput,
+  VendorRateCardCategoryCoverage,
+} from './rate-cards';
 import type {
   BudgetCategory,
   ProjectBudgetState,
@@ -26,7 +34,15 @@ import type {
   VendorEvaluationSubmission,
   VendorEvaluationScoreResult,
   VendorPPORating,
+  VendorCatalogueItemPrice,
+  SendCatalogueIntimationInput,
 } from './vendor-management';
+import type {
+  EAuctionSession,
+  SubmitBidInput,
+  SetProxyFloorInput,
+  BidValidationResult,
+} from './eauction';
 
 export interface ProcurementContextType {
   activeRole: UserRole;
@@ -118,5 +134,50 @@ export interface ProcurementContextType {
     rating: Omit<VendorPPORating, 'id' | 'ratedAt'>
   ) => void;
   sendEvaluationInvite: (vendorId: string, email: string) => void;
+  updateVendorCataloguePrices: (
+    vendorId: string,
+    prices: Record<string, VendorCatalogueItemPrice>
+  ) => void;
+  sendVendorCatalogueIntimation: (
+    input: SendCatalogueIntimationInput
+  ) => void;
+  updateVendorCategories: (
+    vendorId: string,
+    categories: string[]
+  ) => void;
+  // Rate Card Management (Module 4)
+  rateCards: RateCardAgreement[];
+  createRateCardProposal: (input: CreateRateCardProposalInput) => RateCardAgreement;
+  sellerRespondRateCardProposal: (
+    id: string,
+    action: 'ACCEPT' | 'COUNTER',
+    counterRates?: Record<string, number>
+  ) => void;
+  finalizeRateCard: (id: string) => void;
+  addItemToRateCard: (input: AddItemToRateCardInput) => void;
+  checkPRRateCardCoverage: (prItems: BOQItem[], vendorId: string) => PRRateCardCoverage;
+  getVendorCategoryRateCardCoverage: (vendorId: string, categoryCodeOrName?: string) => VendorRateCardCategoryCoverage;
+  getLinePricingReferences: (itemCode: string) => {
+    aiCost: number;
+    recentBestRate?: number;
+    lastPpoRate?: number;
+    aiConfidence?: string;
+  };
+  // E-Auction Management (Module 5)
+  eauctions: EAuctionSession[];
+  activeEAuctionId: string | null;
+  setActiveEAuctionId: (id: string | null) => void;
+  getEAuctionByPRId: (prId: string) => EAuctionSession | undefined;
+  startEAuction: (auctionId: string) => void;
+  pauseEAuction: (auctionId: string) => void;
+  resumeEAuction: (auctionId: string) => void;
+  extendEAuction: (auctionId: string, extensionSeconds?: number) => void;
+  concludeEAuction: (auctionId: string) => void;
+  submitEAuctionBid: (input: SubmitBidInput) => BidValidationResult;
+  setEAuctionProxyFloor: (input: SetProxyFloorInput) => void;
+  simulateNextCompetitiveBid: (auctionId: string) => boolean;
+  awardEAuctionToL1: (
+    auctionId: string
+  ) => { winnerVendorId: string; winningPrice: number } | null;
 }
 

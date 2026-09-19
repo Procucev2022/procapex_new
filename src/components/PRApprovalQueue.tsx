@@ -22,39 +22,41 @@ export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCateg
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-amber-950 text-white rounded-2xl p-6 shadow-sm border border-amber-700">
+      <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-brand-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <span className="bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
-              Role 2: Project Head (Technical Approver)
-            </span>
-            <h1 className="text-2xl font-black mt-1">{UI_STRINGS.prApprovalQueue.title}</h1>
-            <p className="text-xs text-amber-200 mt-1">
+            <div className="flex items-center space-x-2">
+              <span className="bg-sky-500/20 text-sky-300 border border-sky-400/30 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full">
+                Role 2: Project Head (Technical Approver)
+              </span>
+            </div>
+            <h1 className="text-2xl font-black mt-1.5 tracking-tight text-white">{UI_STRINGS.prApprovalQueue.title}</h1>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
               {UI_STRINGS.prApprovalQueue.subtitle}
             </p>
           </div>
           <div className="text-right">
-            <span className="text-[10px] uppercase font-bold text-amber-300 block">Current Tenant</span>
+            <span className="text-[10px] uppercase font-bold text-sky-300 block">Current Tenant</span>
             <span className="font-extrabold text-sm text-white">{activeTenant.name}</span>
           </div>
         </div>
       </div>
 
       {/* PR Approvals Queue Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-            <CheckSquare className="w-4 h-4 text-amber-600" />
+            <CheckSquare className="w-4 h-4 text-sky-600" />
             <span>Pending PR Approvals Queue</span>
           </h3>
-          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 border border-blue-200">
             {pendingPRs.length} Requisition{pendingPRs.length !== 1 ? 's' : ''} Awaiting Authorization
           </span>
         </div>
 
-        <div className="overflow-x-auto border border-slate-200 rounded-xl">
+        <div className="overflow-x-auto border border-blue-200 rounded-xl">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-100 font-bold border-b border-slate-200 text-slate-800">
+            <thead className="bg-blue-50/80 font-bold border-b-2 border-blue-200 text-blue-950">
               <tr>
                 <th className="p-3">PR Number</th>
                 <th className="p-3">Requisition Title & Project</th>
@@ -66,7 +68,7 @@ export const PRApprovalQueue: React.FC<PRApprovalQueueProps> = ({ onRouteToCateg
                 <th className="p-3 text-right">Project Head Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-blue-100">
               {prs.map((pr) => {
                 const isPending = pr.status === 'SUBMITTED' || pr.status === 'PENDING_APPROVAL';
                 return (
